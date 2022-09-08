@@ -1,4 +1,5 @@
 import discord
+from load_db import db
 from debug_utils import gen_gids
 from utils import check_server_text_channel
 
