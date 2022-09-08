@@ -1,9 +1,6 @@
-import json
-
-# load secret information
-with open('secret.json') as f:
-	secret = json.load(f)
-
+from load_secrets import secret
 from basebot import bot
+
+# Install command groups here...
 
 bot.run(secret['bot_token'])
