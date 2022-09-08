@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Specified for this project
+docker-compose.yml
+secret.json
