@@ -4,6 +4,6 @@ from dataclasses import dataclass
 class Maid:
 	name: str
 	display_name: str
-	avatar_base64: str
+	avatar_base64: bytes
 
 __all__ = ['Maid']
