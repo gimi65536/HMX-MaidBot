@@ -1,6 +1,6 @@
 from threading import Lock
 from load_db import db
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 class _State:
 	def __init__(self):
@@ -21,6 +21,10 @@ class _State:
 			lock = self._real_dict[key][0]
 			with lock:
 				self._real_dict[key] = (lock, obj)
+	def get_installed_hooks(self, channel_id: int) -> Optional[Tuple[int, ...]]:
+		return self.get(f'installed_hooks_{channel_id}')
+	def set_installed_hooks(self, channel_id: int, immutable_list: Tuple[int, ...]):
+		self.set(f'installed_hooks_{channel_id}', immutable_list)
 
 # Importing is already threading-safe in python, so we don't need to concern this:
 state = _State()
