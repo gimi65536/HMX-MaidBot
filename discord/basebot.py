@@ -1,6 +1,7 @@
 import discord
 from datetime import datetime
 from typing import Dict, Tuple
+from utils import autocomplete_get_maid_names
 
 perm_admin_only = discord.Permissions(administrator = True)
 
@@ -111,9 +112,17 @@ class BasicCommands(discord.Cog, name = 'Base'):
 
 	@discord.commands.slash_command(
 		description = 'Introduce the maids',
-		guild_only = True
+		guild_only = True,
+		options = [
+			discord.Option(
+				name = 'Maid',
+				description = 'What maid to introduce? (Optional)',
+				input_type = str,
+				autocomplete = autocomplete_get_maid_names,
+				default = None)
+		]
 	)
-	async def introduce(self, ctx):
+	async def introduce(self, ctx, maid_name):
 		'''
 		/introduce is a basic command to let the bot introduce maids we have.
 		This command also attempt to add maids if the server process has not remembered the
@@ -121,7 +130,12 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		Can be only called in a server channel.
 		'''
 		await self._fetch_maids(ctx)
-		await ctx.send_response("Here puts introduce.")
+		if maid_name is None or maid_name not in self.maids:
+			# Introduce all maids
+			await ctx.send_response("Here puts introduce.")
+		else:
+			# Introduce a specific maid
+			await ctx.send_response("Here puts introduce.")
 
 	@discord.commands.slash_command(
 		description = 'Retrieve the server time'
