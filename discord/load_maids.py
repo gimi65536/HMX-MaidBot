@@ -5,9 +5,9 @@ from types import MappingProxyType
 
 # The maids information is loaded once per execution.
 _maids = list(db['maid-list'].find("_id", ASCENDING))
-maids = tuple(Maid(m['name'], m['display_name'], m['avatar'].encode()) for m in _maids)
+_maids_list = list(Maid(m['name'], m['display_name'], m['avatar'].encode()) for m in _maids)
 # This dict provides a way to retrieve maids by names.
 # Also, with the features of dict, the maid order is kept.
-maids_dict = MappingProxyType({m.name: m for m in maids})
+maids: Dict[str, Maid] = MappingProxyType({m.name: m for m in _maids_list})
 
-__all__ = ['maids', 'maids_dict']
+__all__ = ['maids']
