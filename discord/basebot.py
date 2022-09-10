@@ -1,4 +1,5 @@
 import discord
+from datetime import datetime
 
 perm_admin_only = discord.Permissions(administrator = True)
 
@@ -79,6 +80,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		This command will not do anything if the server process already has the information
 		of the channel, so this command is free to call by any user.
 		The response of the command is ephemeral.
+		Can be only called in a server channel.
 		'''
 		await self._fetch_maids(ctx)
 		await ctx.send_response(
@@ -96,6 +98,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		/update lets server OPs force to fetch the maid information stored on the process.
 		This command is for OPs only.
 		The response of the command is ephemeral.
+		Can be only called in a server channel.
 		'''
 		await self._fetch_maids(ctx, True)
 		await ctx.send_response(
@@ -112,8 +115,18 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		/introduce is a basic command to let the bot introduce maids we have.
 		This command also attempt to add maids if the server process has not remembered the
 		channel, just like what /initialize does, so this command is free to call by any user.
+		Can be only called in a server channel.
 		'''
 		await self._fetch_maids(ctx)
 		await ctx.send_response("Here puts introduce.")
+
+	@discord.commands.slash_command(
+		description = 'Retrieve the server time'
+	)
+	async def now(self, ctx):
+		'''
+		/now returns the server time.
+		'''
+		await ctx.send_response(f"<t:{int(datetime.now().timestamp())}:f>")
 
 __all__ = ['BasicCommands']
