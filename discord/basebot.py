@@ -3,7 +3,6 @@ from load_db import db
 from load_maids import maids, maids_dict
 from debug_utils import gen_gids
 from server_state import state
-from utils import check_server_text_channel
 
 bot = discord.Bot()
 
@@ -13,7 +12,8 @@ async def on_ready():
 
 # Basic commands
 
-kwargs_for_text_channel = {'checks': [check_server_text_channel], 'guild_ids': gen_gids()}
+kwargs_for_text_channel = {'guild_only': True, 'guild_ids': gen_gids()}
+perm_admin_only = discord.Permissions(administrator = True)
 
 # After fetch, the state "installed_hooks" should match the maid lists.
 # That is, if we have maid A B C, then hooks are like [42, 84, 1].
@@ -21,6 +21,8 @@ async def _fetch_maids(ctx, force = False):
 	channel = ctx.channel
 	channel_id = ctx.channel_id
 
+	# Here, we use "hook" to indicate the webhooks we know from our db,
+	# and "webhook" to the real webhooks in the channel.
 	installed_hooks = state.get_installed_hooks(channel_id)
 
 	if force or installed_hooks is None:
@@ -71,17 +73,51 @@ async def _fetch_maids(ctx, force = False):
 		installed_hooks = tuple(installed_hooks_dict[maid_name] for maid_name in maids_dict.keys())
 		state.set_installed_hooks(channel_id, installed_hooks)
 
-@bot.slash_command(**kwargs_for_text_channel)
+@bot.slash_command(
+	description = 'Initialize or update the maids',
+	**kwargs_for_text_channel
+)
 async def initialize(ctx):
+	'''
+	/initialize is a basic command that users should call first to add maids (webhooks).
+	This command will not do anything if the server process already has the information
+	of the channel, so this command is free to call by any user.
+	The response of the command is ephemeral.
+	'''
 	await _fetch_maids(ctx)
+	await ctx.send_response(
+		content = "Successfully Initialized.",
+		ephemeral = True
+	)
 
-@bot.slash_command(**kwargs_for_text_channel)
+@bot.slash_command(
+	description = 'Force the channel to synchronize the maids information',
+	default_member_permissions = perm_admin_only,
+	**kwargs_for_text_channel
+)
 async def update(ctx):
-	await _fetch_maids(ctx)
+	'''
+	/update lets server OPs force to fetch the maid information stored on the process.
+	This command is for OPs only.
+	The response of the command is ephemeral.
+	'''
+	await _fetch_maids(ctx, True)
+	await ctx.send_response(
+		content = "Successfully Updated.",
+		ephemeral = True
+	)
 
-@bot.slash_command(**kwargs_for_text_channel)
+@bot.slash_command(
+	description = 'Introduce the maids',
+	**kwargs_for_text_channel
+)
 async def introduce(ctx):
+	'''
+	/introduce is a basic command to let the bot introduce maids we have.
+	This command also attempt to add maids if the server process has not remembered the
+	channel, just like what /initialize does, so this command is free to call by any user.
+	'''
 	await _fetch_maids(ctx)
-	...
+	await ctx.send_response("Here puts introduce.")
 
 __all__ = ['bot']
