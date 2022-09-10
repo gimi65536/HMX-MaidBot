@@ -1,5 +1,6 @@
 import discord
 from datetime import datetime
+from typing import Dict, Tuple
 
 perm_admin_only = discord.Permissions(administrator = True)
 
@@ -14,6 +15,8 @@ class BasicCommands(discord.Cog, name = 'Base'):
 
 	# After fetch, the state "installed_hooks" should match the maid lists.
 	# That is, if we have maid A B C, then hooks are like [42, 84, 1].
+	# Also, note that we don't store webhook tokens in our db but store the
+	# full webhooks (containing tokens) in the server state.
 	async def _fetch_maids(self, ctx, force = False):
 		channel = ctx.channel
 		channel_id = ctx.channel_id
@@ -23,7 +26,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		installed_hooks = self.state.get_installed_hooks(channel_id)
 
 		if force or installed_hooks is None:
-			installed_hooks_dict = {}
+			installed_hooks_dict: Dict[str, discord.Webhook] = {}
 
 			# If the state already stores the information, we don't start a
 			# query again. We trust users not to delete the webhooks (maids).
@@ -57,17 +60,17 @@ class BasicCommands(discord.Cog, name = 'Base'):
 					maid = self.maids[maid_name]
 					undealt_maids.remove(maid_name)
 					await webhook.edit(reason = 'Fetch maid information', name = maid.display_name, avatar = maid.avatar_base64)
-					installed_hooks_dict[maid_name] = webhook.id
+					installed_hooks_dict[maid_name] = webhook
 
 			# 3. Add new cute maids!
 			for maid_name in undealt_maids:
 				maid = self.maids[maid_name]
 				webhook = await channel.create_webhook(reason = 'Add new maid', name = maid.display_name, avatar = maid.avatar_base64)
 				self.db.insert_one({'channel_id': channel_id, 'name': maid_name, 'hook_id': webhook.id})
-				installed_hooks_dict[maid_name] = webhook.id
+				installed_hooks_dict[maid_name] = webhook
 
 			# Reorder the installed_hooks to match the maids order
-			installed_hooks = tuple(installed_hooks_dict[maid_name] for maid_name in self.maids.keys())
+			installed_hooks: Tuple[discord.Webhook, ...] = tuple(installed_hooks_dict[maid_name] for maid_name in self.maids.keys())
 			self.state.set_installed_hooks(channel_id, installed_hooks)
 
 	@discord.commands.slash_command(
