@@ -131,3 +131,4 @@ dmypy.json
 # Specified for this project
 docker-compose.yml
 secret.json
+restart.sh

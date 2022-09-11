@@ -22,6 +22,8 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		channel = ctx.channel
 		channel_id = ctx.channel_id
 
+		col = self.db['channel-installed-maids']
+
 		# Here, we use "hook" to indicate the webhooks we know from our db,
 		# and "webhook" to the real webhooks in the channel.
 		installed_hooks = self.state.get_installed_hooks(channel_id)
@@ -34,16 +36,16 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			channel_webhooks = await channel.webhooks()
 			channel_webhooks_dict = {h.id: h for h in channel_webhooks}
 			channel_webhooks_id = set(h.id for h in channel_webhooks)
-			registered_hooks = list(self.db['channel-installed-maids'].find({'channel_id': channel_id}))
+			registered_hooks = list(col.find({'channel_id': channel_id}))
 			registered_hooks_id = set(h['hook_id'] for h in registered_hooks)
 
 			# 1. Check if some hooks are deleted
 			for h_id in (registered_hooks_id - channel_webhooks_id):
-				self.db.delete_one({'channel_id': channel_id, 'hook_id': h_id})
+				col.delete_one({'channel_id': channel_id, 'hook_id': h_id})
 
 			# Now, these are in the new version. All registered hooks corresponds an active webhook.
 			# The query operation is supposed to be cheap because we index 'channel_id' and 'hook_id' columns
-			registered_hooks = list(self.db['channel-installed-maids'].find({'channel_id': channel_id}))
+			registered_hooks = list(col.find({'channel_id': channel_id}))
 			registered_hooks_id = set(h['hook_id'] for h in registered_hooks)
 
 			undealt_maids = set(self.maids.keys())
@@ -55,7 +57,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				if maid_name not in undealt_maids:
 					# This maid may be fired by us, or the channel has redundant maids (how can this happen?)
 					await webhook.delete()
-					self.db.delete_one({'channel_id': channel_id, 'hook_id': h_id})
+					col.delete_one({'channel_id': channel_id, 'hook_id': h_id})
 				else:
 					# Update maids information
 					maid = self.maids[maid_name]
@@ -67,7 +69,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			for maid_name in undealt_maids:
 				maid = self.maids[maid_name]
 				webhook = await channel.create_webhook(reason = 'Add new maid', name = maid.display_name, avatar = maid.avatar)
-				self.db.insert_one({'channel_id': channel_id, 'name': maid_name, 'hook_id': webhook.id})
+				col.insert_one({'channel_id': channel_id, 'name': maid_name, 'hook_id': webhook.id})
 				installed_hooks_dict[maid_name] = webhook
 
 			# Reorder the installed_hooks to match the maids order
