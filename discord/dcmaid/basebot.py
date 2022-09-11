@@ -60,13 +60,13 @@ class BasicCommands(discord.Cog, name = 'Base'):
 					# Update maids information
 					maid = self.maids[maid_name]
 					undealt_maids.remove(maid_name)
-					await webhook.edit(reason = 'Fetch maid information', name = maid.display_name, avatar = maid.avatar_base64)
+					await webhook.edit(reason = 'Fetch maid information', name = maid.display_name, avatar = maid.avatar)
 					installed_hooks_dict[maid_name] = webhook
 
 			# 3. Add new cute maids!
 			for maid_name in undealt_maids:
 				maid = self.maids[maid_name]
-				webhook = await channel.create_webhook(reason = 'Add new maid', name = maid.display_name, avatar = maid.avatar_base64)
+				webhook = await channel.create_webhook(reason = 'Add new maid', name = maid.display_name, avatar = maid.avatar)
 				self.db.insert_one({'channel_id': channel_id, 'name': maid_name, 'hook_id': webhook.id})
 				installed_hooks_dict[maid_name] = webhook
 
