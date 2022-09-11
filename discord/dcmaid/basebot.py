@@ -113,6 +113,36 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		)
 
 	@discord.commands.slash_command(
+		description = 'Uninstall maids',
+		default_member_permissions = perm_admin_only,
+		guild_only = True
+	)
+	async def uninstall(self, ctx):
+		'''
+		/uninstall will delete the webhooks installed in this channel.
+		This command will fetch the maids information first.
+		This command is for OPs only.
+		The response of the command is ephemeral.
+		Can be only called in a server channel.
+		'''
+		await self._fetch_maids(ctx, True)
+
+		channel = ctx.channel
+		channel_id = ctx.channel_id
+		webhooks = self.state.get_installed_hooks(channel_id)
+
+		for webhook in webhooks:
+			await webhook.delete()
+
+		self.db['channel-installed-maids'].delete_many({'channel_id': channel_id})
+		self.state.remove_installed_hooks(channel_id)
+
+		await ctx.send_response(
+			content = "Successfully Uninstalled.",
+			ephemeral = True
+		)
+
+	@discord.commands.slash_command(
 		description = 'Introduce the maids',
 		guild_only = True,
 		options = [
