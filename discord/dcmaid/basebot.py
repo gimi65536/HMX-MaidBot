@@ -115,7 +115,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		guild_only = True,
 		options = [
 			discord.Option(
-				name = 'Maid',
+				name = 'maid',
 				description = 'What maid to introduce? (Optional)',
 				input_type = str,
 				autocomplete = autocomplete_get_maid_names,
