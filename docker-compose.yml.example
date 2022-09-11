@@ -4,6 +4,14 @@ services:
       context: ./discord
       args:
         production: #"Production if given any value"
+    environment:
+      - APP_ID=114514
+      - APP_CLIENT_SECRET=<secret>
+      - BOT_TOKEN=<token>
+      - MONGO_ADDRESS=mongodb
+      - MONGO_ADMIN=admin
+      - MONGO_PWD=<password>
+      - DEBUG_SERVER_ID=1919810
     networks:
       - mongo
 networks:
