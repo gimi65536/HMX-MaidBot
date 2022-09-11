@@ -1,5 +1,5 @@
 from load_db import db
-from maid import Maid
+from dcmaid.maid import Maid
 from pymongo import ASCENDING
 from types import MappingProxyType
 

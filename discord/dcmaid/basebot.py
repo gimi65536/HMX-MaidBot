@@ -1,7 +1,7 @@
 import discord
 from datetime import datetime
 from typing import Dict, Tuple
-from utils import autocomplete_get_maid_names
+from .utils import autocomplete_get_maid_names
 
 perm_admin_only = discord.Permissions(administrator = True)
 

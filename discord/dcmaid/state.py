@@ -1,9 +1,8 @@
 import discord
 from threading import Lock
-from load_db import db
 from typing import Dict, Optional, Tuple
 
-class _State:
+class State:
 	def __init__(self):
 		# To ensure that each update is handled by mutex lock,
 		# the "object" part is recommended to be immutable.
@@ -26,8 +25,3 @@ class _State:
 		return self.get(f'installed_hooks_{channel_id}')
 	def set_installed_hooks(self, channel_id: int, immutable_list: Tuple[discord.Webhook, ...]):
 		self.set(f'installed_hooks_{channel_id}', immutable_list)
-
-# Importing is already threading-safe in python, so we don't need to concern this:
-state = _State()
-
-__all__ = ['state']
