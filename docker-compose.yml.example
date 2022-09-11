@@ -1,0 +1,12 @@
+services:
+  dcbot:
+    build:
+      context: ./discord
+      args:
+        production: #"Production if given any value"
+    networks:
+      - mongo
+networks:
+  mongo:
+    external: true
+    name: mongo
