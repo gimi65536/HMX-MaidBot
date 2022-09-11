@@ -17,4 +17,4 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> List[str]:
 	except:
 		return []
 
-	return list(maid.keys())
+	return list(maids.keys())
