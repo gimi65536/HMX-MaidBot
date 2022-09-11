@@ -11,6 +11,6 @@ COPY . .
 # If given, the image will be treated as in production
 ARG production
 
-RUN if [[ -z "$production" ]] ; then echo "python -O app.py" > start.sh ; else echo "python app.py" > start.sh ; fi
+RUN if [[ -z "$production" ]] ; then echo "python app.py" > start.sh ; else echo "python -O app.py" > start.sh ; fi
 
 CMD ["/bin/bash", "start.sh"]
