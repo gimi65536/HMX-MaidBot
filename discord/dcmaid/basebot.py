@@ -166,8 +166,10 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			# Introduce all maids
 			await ctx.send_response("Here puts introduce.")
 		else:
+			if maid_name not in self.maids:
+				NotImplemented
 			# Introduce a specific maid
-			await ctx.send_response("Here puts introduce.")
+			await ctx.send_response(f"Here puts introduce of {maid_name}.")
 
 	@discord.commands.slash_command(
 		description = 'Retrieve the server time'
