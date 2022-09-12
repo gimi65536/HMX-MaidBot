@@ -151,7 +151,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		Can be only called in a server channel.
 		'''
 		await ctx.send_response(
-			content = "Are you sure to uninstall?",
+			content = "Are you sure to uninstall? (Press `Yes` in 3 minutes)",
 			ephemeral = True,
 			view = YesNoView(
 				yes_label = 'Yes',
@@ -160,8 +160,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				no_style = discord.ButtonStyle.secondary,
 				yes_callback = partial(self._uninstall, ctx),
 				yes_left = True,
-				timeout = 180.0,
-				disable_on_timeout = True
+				timeout = 180.0
 			),
 			delete_after = 180.0
 		)
