@@ -8,7 +8,7 @@ from typing import Dict
 
 class Bot(discord.Bot):
 	def __init__(self, db, state, description = None, *args, **options):
-		super(description, *args, **options)
+		super().__init__(description, *args, **options)
 		self._db = db
 		self._state = state
 		self._maids = self._retrieve_maids(db)
