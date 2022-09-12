@@ -118,6 +118,9 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		)
 
 	async def _uninstall(self, ctx, button, interaction):
+		await interaction.response.defer()
+		await interaction.edit_original_message(content = "Uninstalling...", view = None)
+
 		await self._fetch_maids(ctx, True)
 
 		channel = ctx.channel
@@ -130,9 +133,8 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		self.db['channel-installed-maids'].delete_many({'channel_id': channel_id})
 		self.state.remove_installed_hooks(channel_id)
 
-		await interaction.response.edit_message(
-			content = "Successfully Uninstalled.",
-			view = None
+		await interaction.edit_original_message(
+			content = "Successfully Uninstalled."
 		)
 
 	@discord.commands.slash_command(
