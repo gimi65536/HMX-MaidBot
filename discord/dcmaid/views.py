@@ -9,11 +9,10 @@ class _Button(discord.ui.Button):
 		await self._c(self, interaction)
 
 async def _default_yes_callback(button, interaction):
-	# no-op
-	pass
+	await interaction.response.edit_message(content = "Yes", view = None)
 
 async def _default_no_callback(button, interaction):
-	await interaction.delete_original_message()
+	await interaction.response.edit_message(content = "No", view = None)
 
 class YesNoView(discord.ui.View):
 	def __init__(self,
@@ -38,6 +37,3 @@ class YesNoView(discord.ui.View):
 		else:
 			self.add_item(self._no)
 			self.add_item(self._yes)
-
-		self._yc = yes_callback
-		self._nc = no_callback
