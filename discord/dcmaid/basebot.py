@@ -1,5 +1,4 @@
 import discord
-from datetime import datetime
 from typing import Dict, Tuple
 from .utils import autocomplete_get_maid_names
 
@@ -178,6 +177,10 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		'''
 		/now returns the server time.
 		'''
-		await ctx.send_response(f"<t:{int(datetime.now().timestamp())}:f>")
+		t = int(discord.utils.utcnow().timestamp())
+		embed = discord.Embed(title = "Current Time", color = discord.Color.blue())
+		embed.add_field(name = "", value = f"<t:{t}:f>", inline = False)
+		embed.set_footer(text = "Shown in your timezone")
+		await ctx.send_response(embed = embed)
 
 __all__ = ['BasicCommands']
