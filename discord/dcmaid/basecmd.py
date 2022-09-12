@@ -1,7 +1,9 @@
 import discord
+from functools import partial
 from typing import Dict, Tuple
 from .basebot import Bot
 from .utils import autocomplete_get_maid_names
+from .views import YesNoView
 
 perm_admin_only = discord.Permissions(administrator = True)
 
@@ -115,19 +117,9 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			ephemeral = True
 		)
 
-	@discord.commands.slash_command(
-		description = 'Uninstall maids',
-		default_member_permissions = perm_admin_only,
-		guild_only = True
-	)
-	async def uninstall(self, ctx):
-		'''
-		/uninstall will delete the webhooks installed in this channel.
-		This command will fetch the maids information first.
-		This command is for OPs only.
-		The response of the command is ephemeral.
-		Can be only called in a server channel.
-		'''
+	async def _uninstall(self, ctx, button, interaction):
+		await interaction.delete_original_message()
+
 		await self._fetch_maids(ctx, True)
 
 		channel = ctx.channel
@@ -143,6 +135,35 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		await ctx.send_response(
 			content = "Successfully Uninstalled.",
 			ephemeral = True
+		)
+
+	@discord.commands.slash_command(
+		description = 'Uninstall maids',
+		default_member_permissions = perm_admin_only,
+		guild_only = True
+	)
+	async def uninstall(self, ctx):
+		'''
+		/uninstall will delete the webhooks installed in this channel.
+		This command will fetch the maids information first.
+		This command is for OPs only.
+		The response of the command is ephemeral.
+		Can be only called in a server channel.
+		'''
+		await ctx.send_response(
+			content = "Are you sure to uninstall?",
+			ephemeral = True,
+			view = YesNoView(
+				yes_label = 'Yes',
+				no_label = 'No',
+				yes_style = discord.ButtonStyle.danger,
+				no_style = discord.ButtonStyle.secondary,
+				yes_callback = partial(self._uninstall, ctx = ctx),
+				yes_left = True,
+				timeout = 180.0,
+				disable_on_timeout = True
+			),
+			delete_after = 180.0
 		)
 
 	@discord.commands.slash_command(
