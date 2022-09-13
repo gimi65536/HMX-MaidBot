@@ -207,6 +207,51 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		embed.set_footer(text = "Shown in your timezone")
 		await ctx.send_response(embed = embed)
 
+	async def _cls(self, button, interaction):
+		await interaction.response.defer()
+
+		channel = interaction.channel
+
+		if (isinstance(channel, discord.abc.GuildChannel) and hasattr(channel, 'purge')) or isinstance(channel, discord.Thread):
+			# TextChannel, VoiceChannel, ForumChannel, and Thread
+			await channel.purge(limit = None, reason = 'Clear all messages in the channel')
+		elif isinstance(channel, discord.PartialMessageable) or isinstance(channel, discord.DMChannel):
+			# So far, the DMChannel case won't be triggered at all.
+			messages = []
+			async for m in channel.history(limit = None):
+				if m.author == self.bot.user:
+					messages.append(m)
+			for m in messages:
+				await m.delete()
+		else:
+			raise discord.InvalidArgument('Unknown channel type')
+
+	@discord.commands.slash_command(
+		description = 'Clear the chat room',
+		default_member_permissions = discord.Permissions(manage_messages = True)
+	)
+	async def cls(self, ctx):
+		'''
+		/cls will clear the chat room.
+		If it is called in DM channels, only the messages sent by the bot get deleted.
+		This command is for channel managers only.
+		The response of the command is ephemeral.
+		'''
+		await ctx.send_response(
+			content = "Are you sure to delete all messages? (Press `Yes` in 3 minutes)",
+			ephemeral = True,
+			view = YesNoView(
+				yes_label = 'Yes',
+				no_label = 'No',
+				yes_style = discord.ButtonStyle.danger,
+				no_style = discord.ButtonStyle.secondary,
+				yes_callback = self._cls,
+				yes_left = True,
+				timeout = 180.0
+			),
+			delete_after = 180.0
+		)
+
 __all__ = ['BasicCommands']
 
 def setup(bot):
