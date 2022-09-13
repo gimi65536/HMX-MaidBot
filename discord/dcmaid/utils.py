@@ -1,5 +1,5 @@
 import discord
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 # When creating commands, 'guild_only' does the same thing as what this fundtion does.
 # But for convenience, we preserve this function.
@@ -18,3 +18,11 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> List[str]:
 		return []
 
 	return list(maids.keys())
+
+# Given a messageable chat room in a guild, returns the parent channel if the chat room
+# is a thread, otherwise returns the argument itself.
+def get_guild_channel(ch: Union[discord.abc.GuildChannel, discord.Thread]):
+	if isinstance(ch, discord.Thread):
+		return ch.parent
+
+	return ch

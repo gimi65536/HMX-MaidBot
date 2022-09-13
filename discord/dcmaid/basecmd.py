@@ -2,7 +2,7 @@ import discord
 from functools import partial
 from typing import Dict, Tuple
 from .basebot import Bot
-from .utils import autocomplete_get_maid_names
+from .utils import autocomplete_get_maid_names, get_guild_channel
 from .views import YesNoView
 
 perm_admin_only = discord.Permissions(administrator = True)
@@ -24,7 +24,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	# Also, note that we don't store webhook tokens in our db but store the
 	# full webhooks (containing tokens) in the server state.
 	async def _fetch_maids(self, ctx, force = False):
-		channel = ctx.channel
+		channel = get_guild_channel(ctx.channel)
 		channel_id = ctx.channel_id
 
 		col = self.db['channel-installed-maids']
@@ -123,7 +123,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 
 		await self._fetch_maids(ctx, True)
 
-		channel = ctx.channel
+		channel = get_guild_channel(ctx.channel)
 		channel_id = ctx.channel_id
 		webhooks = self.state.get_installed_hooks(channel_id)
 
