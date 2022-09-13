@@ -209,6 +209,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 
 	async def _cls(self, button, interaction):
 		await interaction.response.defer()
+		await interaction.edit_original_message(content = "Deleting...", view = None)
 
 		channel = interaction.channel
 
