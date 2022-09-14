@@ -2,6 +2,7 @@ import discord
 from functools import partial
 from typing import Dict, Tuple
 from .basebot import Bot
+from .helper import preserve_help, get_help
 from .utils import autocomplete_get_maid_names, get_guild_channel
 from .views import YesNoView
 
@@ -85,6 +86,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		description = 'Initialize or update the maids',
 		guild_only = True
 	)
+	@preserve_help
 	async def initialize(self, ctx):
 		'''
 		/initialize is a basic command that users should call first to add maids (webhooks).
@@ -104,6 +106,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		default_member_permissions = perm_admin_only,
 		guild_only = True
 	)
+	@preserve_help
 	async def update(self, ctx):
 		'''
 		/update lets server OPs force to fetch the maid information stored on the process.
@@ -142,6 +145,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		default_member_permissions = perm_admin_only,
 		guild_only = True
 	)
+	@preserve_help
 	async def uninstall(self, ctx):
 		'''
 		/uninstall will delete the webhooks installed in this channel.
@@ -177,6 +181,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				default = None)
 		]
 	)
+	@preserve_help
 	async def introduce(self, ctx, maid_name):
 		'''
 		/introduce is a basic command to let the bot introduce maids we have.
@@ -197,6 +202,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@discord.commands.slash_command(
 		description = 'Retrieve the server time'
 	)
+	@preserve_help
 	async def now(self, ctx):
 		'''
 		/now returns the server time.
@@ -231,6 +237,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		description = 'Clear the chat room',
 		default_member_permissions = discord.Permissions(manage_messages = True)
 	)
+	@preserve_help
 	async def cls(self, ctx):
 		'''
 		/cls will clear the chat room.
@@ -263,10 +270,12 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				default = 'help')
 		]
 	)
+	@preserve_help
 	async def help(self, ctx, cmd_name):
 		'''
 		/help <command name> gives the illustration of the command written by the author.
-		Internally, this command retrieves __doc__ of every command as illustration.
+		Internally, this command retrieves __commands_help__ of every command as illustration.
+		by default, or the description will be returned.
 		'''
 		if not cmd_name:
 			# None, '', etc.
@@ -281,9 +290,13 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			)
 			await ctx.send_response(embed = embed)
 		else:
-			doc = getattr(cmd, '__doc__', None)
+			doc = get_help(cmd)
 			if doc is None:
-				doc = '**No illustration found.**'
+				try:
+					doc = cmd.description
+				except:
+					# When the command does not support description...
+					doc = '**No illustration found.**'
 			embed = discord.Embed(color = discord.Color.green(), title = 'Help')
 			embed.add_field(
 				name = f'/{cmd_name}',
