@@ -279,7 +279,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				name = 'Command not found',
 				value = f'`/{cmd_name}` is not found! Please check the command name.'
 			)
-			ctx.send_response(embed = embed)
+			await ctx.send_response(embed = embed)
 		else:
 			doc = getattr(cmd, '__doc__', None)
 			if doc is None:
@@ -289,7 +289,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				name = f'/{cmd_name}',
 				value = doc.format(cog = self, bot = self.bot)
 			)
-			ctx.send_response(embed = embed)
+			await ctx.send_response(embed = embed)
 
 __all__ = ['BasicCommands']
 
