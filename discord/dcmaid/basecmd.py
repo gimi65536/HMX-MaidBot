@@ -3,7 +3,7 @@ from functools import partial
 from typing import Dict, Tuple
 from .basebot import Bot
 from .helper import preserve_help, get_help
-from .utils import autocomplete_get_maid_names, get_guild_channel
+from .utils import autocomplete_get_maid_names, get_guild_channel, send_error_embed
 from .views import YesNoView
 
 perm_admin_only = discord.Permissions(administrator = True)
@@ -283,12 +283,10 @@ class BasicCommands(discord.Cog, name = 'Base'):
 
 		cmd = self.bot.get_application_command(cmd_name)
 		if cmd is None:
-			embed = discord.Embed(color = discord.Color.red())
-			embed.add_field(
+			await send_error_embed(ctx,
 				name = 'Command not found',
 				value = f'`/{cmd_name}` is not found! Please check the command name.'
 			)
-			await ctx.send_response(embed = embed)
 		else:
 			doc = get_help(cmd)
 			if doc is None:
