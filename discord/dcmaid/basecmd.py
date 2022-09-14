@@ -253,6 +253,44 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			delete_after = 180.0
 		)
 
+	@discord.commands.slash_command(
+		description = 'Get illustration of a command',
+		options = [
+			discord.Option(
+				name = 'command',
+				description = 'What command to illustrate',
+				input_type = str,
+				default = 'help')
+		]
+	)
+	async def help(self, ctx, cmd_name):
+		'''
+		/help <command name> gives the illustration of the command written by the author.
+		Internally, this command retrieves __doc__ of every command as illustration.
+		'''
+		if not cmd_name:
+			# None, '', etc.
+			cmd_name = 'help'
+
+		cmd = self.bot.get_application_command(cmd_name)
+		if cmd is None:
+			embed = discord.Embed(color = discord.Color.red())
+			embed.add_field(
+				name = 'Command not found',
+				value = f'`/{cmd_name}` is not found! Please check the command name.'
+			)
+			ctx.send_response(embed = embed)
+		else:
+			doc = getattr(cmd, '__doc__', None)
+			if doc is None:
+				doc = '**No illustration found.**'
+			embed = discord.Embed(color = discord.Color.green(), title = 'Help')
+			embed.add_field(
+				name = f'/{cmd_name}',
+				value = doc.format(cog = self, bot = self.bot)
+			)
+			ctx.send_response(embed = embed)
+
 __all__ = ['BasicCommands']
 
 def setup(bot):
