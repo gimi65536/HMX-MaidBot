@@ -29,10 +29,10 @@ def get_guild_channel(ch: Union[discord.abc.GuildChannel, discord.Thread]):
 
 # A simple function to send an embed to indicate an error.
 # The embed contains one field only.
-async def send_error_embed(ctx, name, value, title = discord.Embed.Empty, description = discord.Embed.Empty):
+async def send_error_embed(ctx, name, value, title = discord.Embed.Empty, description = discord.Embed.Empty, **kwargs):
 	embed = discord.Embed(color = discord.Color.red(), title = title, description = description)
 	embed.add_field(
 		name = name,
 		value = value
 	)
-	await ctx.send_response(embed = embed)
+	await ctx.send_response(embed = embed, **kwargs)
