@@ -89,7 +89,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@preserve_help
 	async def initialize(self, ctx):
 		'''
-		/initialize is a basic command that users should call first to add maids (webhooks).
+		`/initialize` is a basic command that users should call first to add maids (webhooks).
 		This command will not do anything if the server process already has the information
 		of the channel, so this command is free to call by any user.
 		The response of the command is ephemeral.
@@ -109,7 +109,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@preserve_help
 	async def update(self, ctx):
 		'''
-		/update lets server OPs force to fetch the maid information stored on the process.
+		`/update` lets server OPs force to fetch the maid information stored on the process.
 		This command is for OPs only.
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
@@ -148,7 +148,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@preserve_help
 	async def uninstall(self, ctx):
 		'''
-		/uninstall will delete the webhooks installed in this channel.
+		`/uninstall` will delete the webhooks installed in this channel.
 		This command will fetch the maids information first.
 		This command is for OPs only.
 		The response of the command is ephemeral.
@@ -184,9 +184,9 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@preserve_help
 	async def introduce(self, ctx, maid_name):
 		'''
-		/introduce is a basic command to let the bot introduce maids we have.
+		`/introduce` is a basic command to let the bot introduce maids we have.
 		This command also attempt to add maids if the server process has not remembered the
-		channel, just like what /initialize does, so this command is free to call by any user.
+		channel, just like what `/initialize` does, so this command is free to call by any user.
 		Can be only called in a server channel.
 		'''
 		await self._fetch_maids(ctx)
@@ -205,7 +205,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@preserve_help
 	async def now(self, ctx):
 		'''
-		/now returns the server time.
+		`/now` returns the server time.
 		'''
 		t = int(discord.utils.utcnow().timestamp())
 		embed = discord.Embed(title = discord.Embed.Empty, color = discord.Color.blue())
@@ -240,7 +240,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@preserve_help
 	async def cls(self, ctx):
 		'''
-		/cls will clear the chat room.
+		`/cls` will clear the chat room.
 		If it is called in DM channels, only the messages sent by the bot get deleted.
 		This command is for channel managers only.
 		The response of the command is ephemeral.
@@ -273,8 +273,8 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	@preserve_help
 	async def help(self, ctx, cmd_name):
 		'''
-		/help <command name> gives the illustration of the command written by the author.
-		Internally, this command retrieves __commands_help__ of every command as illustration.
+		`/help` <command name> gives the illustration of the command written by the author.
+		Internally, this command retrieves `__commands_help__` of every command as illustration.
 		by default, or the description will be returned.
 		'''
 		if not cmd_name:
