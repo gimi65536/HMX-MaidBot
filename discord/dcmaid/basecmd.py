@@ -350,6 +350,8 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		This command is for OPs only.
 		Can be only called in a server channel.
 		'''
+		await self._fetch_maids(ctx)
+
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
 			await send_error_embed(ctx,
