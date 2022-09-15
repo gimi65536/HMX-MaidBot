@@ -295,6 +295,81 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			)
 			await ctx.send_response(embed = embed)
 
+	class _SpeakModal(discord.ui.Modal):
+		def __init__(self, webhook = None, *args, **kwargs):
+			super().__init__(*args, **kwargs)
+			self.webhook = webhook
+
+			self.add_item(discord.ui.InputText(label = 'Input', style = discord.InputTextStyle.long))
+
+		async def callback(self, interaction):
+			text = self.children[0].value
+			if len(text) == 0:
+				await send_error_embed(interaction,
+					name = 'Empty Content',
+					value = f'The text cannot be empty.',
+					ephemeral = True
+				)
+				return
+			if self.webhook is None:
+				await interaction.response.send_message(text)
+			else:
+				await interaction.defer()
+
+				channel = interaction.channel
+				if isinstance(interaction.channel, discord.Thread):
+					await self.webhook.send(text, thread = channel)
+				else:
+					await self.webhook.send(text)
+
+	@discord.commands.slash_command(
+		description = 'Send a message as the bot or a maid',
+		default_member_permissions = perm_admin_only,
+		guild_only = True,
+		options = [
+			discord.Option(
+				name = 'maid',
+				description = 'What maid? (Optional)',
+				input_type = str,
+				autocomplete = autocomplete_get_maid_names,
+				default = None),
+			discord.Option(
+				name = 'text',
+				description = 'What to say?',
+				input_type = str
+			)
+		]
+	)
+	async def speak(self, ctx, maid_name, text):
+		'''
+		`/speak` <maid_name> is a command to make a maid send a message.
+		This command is for OPs only.
+		Can be only called in a server channel.
+		'''
+		if maid_name is not None and maid_name not in self.maids:
+			await send_error_embed(ctx,
+				name = 'Maid not found',
+				value = f'`/{maid_name}` is not found! Please check the maid name.',
+				ephemeral = True
+			)
+		else:
+			if maid_name is None:
+				if len(text) == 0:
+					await ctx.send_modal(self._SpeakModal())
+				else:
+					await ctx.send_response(text)
+			else:
+				installed_hooks = self.state.get_installed_hooks(ctx.channel_id)
+				webhook = installed_hooks[maid_name]
+				if len(text) == 0:
+					await ctx.send_modal(self._SpeakModal(webhook))
+				else:
+					await ctx.defer()
+					if isinstance(ctx.channel, discord.Thread):
+						await webhook.send(text, thread = ctx.channel)
+					else:
+						await webhook.send(text)
+
 __all__ = ['BasicCommands']
 
 def setup(bot):
