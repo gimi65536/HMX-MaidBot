@@ -1,5 +1,6 @@
 import discord
 from functools import partial
+from types import MappingProxyType
 from typing import Dict, Tuple
 from .basebot import Bot
 from .helper import get_help
@@ -20,8 +21,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		self.maids = bot.maids
 		self.state = bot.state
 
-	# After fetch, the state "installed_hooks" should match the maid lists.
-	# That is, if we have maid A B C, then hooks are like [42, 84, 1].
+	# After fetch, the state "installed_hooks" should match the maid mapping.
 	# Also, note that we don't store webhook tokens in our db but store the
 	# full webhooks (containing tokens) in the server state.
 	async def _fetch_maids(self, ctx, force = False):
@@ -79,7 +79,8 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				installed_hooks_dict[maid_name] = webhook
 
 			# Reorder the installed_hooks to match the maids order
-			installed_hooks: Tuple[discord.Webhook, ...] = tuple(installed_hooks_dict[maid_name] for maid_name in self.maids.keys())
+			installed_hooks: Mapping[str, discord.Webhook] =
+				MappingProxyType({maid_name: installed_hooks_dict[maid_name] for maid_name in self.maids.keys()})
 			self.state.set_installed_hooks(channel_id, installed_hooks)
 
 	@discord.commands.slash_command(
@@ -128,7 +129,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		channel_id = ctx.channel_id
 		webhooks = self.state.get_installed_hooks(channel_id)
 
-		for webhook in webhooks:
+		for webhook in webhooks.values():
 			await webhook.delete()
 
 		self.db['channel-installed-maids'].delete_many({'channel_id': channel_id})

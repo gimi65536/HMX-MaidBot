@@ -1,6 +1,6 @@
 import discord
 from threading import Lock
-from typing import Dict, Optional, Tuple
+from typing import Dict, Mapping, Optional, Tuple
 
 class State:
 	def __init__(self):
@@ -26,9 +26,9 @@ class State:
 			lock = self._real_dict[key][0]
 			with lock:
 				del self._real_dict[key]
-	def get_installed_hooks(self, channel_id: int) -> Optional[Tuple[discord.Webhook, ...]]:
+	def get_installed_hooks(self, channel_id: int) -> Optional[Mapping[str, discord.Webhook]]:
 		return self.get(f'installed_hooks_{channel_id}')
-	def set_installed_hooks(self, channel_id: int, immutable_list: Tuple[discord.Webhook, ...]):
-		self.set(f'installed_hooks_{channel_id}', immutable_list)
+	def set_installed_hooks(self, channel_id: int, immutable_map: Mapping[str, discord.Webhook]):
+		self.set(f'installed_hooks_{channel_id}', immutable_map)
 	def remove_installed_hooks(self, channel_id):
 		self.remove(f'installed_hooks_{channel_id}')
