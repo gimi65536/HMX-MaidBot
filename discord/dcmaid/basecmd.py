@@ -311,7 +311,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 
 	class _SpeakModal(discord.ui.Modal):
 		def __init__(self, webhook = None, *args, **kwargs):
-			super().__init__(*args, **kwargs)
+			super().__init__(title = "Input text", *args, **kwargs)
 			self.webhook = webhook
 
 			self.add_item(discord.ui.InputText(label = 'Input', style = discord.InputTextStyle.long))
@@ -328,7 +328,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 			if self.webhook is None:
 				await interaction.response.send_message(text)
 			else:
-				await interaction.defer()
+				await interaction.response.defer()
 
 				channel = interaction.channel
 				if isinstance(interaction.channel, discord.Thread):
