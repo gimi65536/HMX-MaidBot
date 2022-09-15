@@ -333,14 +333,14 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		options = [
 			discord.Option(
 				name = 'maid',
-				description = 'What maid? (Optional)',
+				description = 'What maid?',
 				input_type = str,
-				autocomplete = autocomplete_get_maid_names,
-				default = None),
+				autocomplete = autocomplete_get_maid_names),
 			discord.Option(
 				name = 'text',
-				description = 'What to say?',
-				input_type = str
+				description = 'What to say? (Empty to call a modal)',
+				input_type = str,
+				default = ''
 			)
 		]
 	)
@@ -351,14 +351,14 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		Can be only called in a server channel.
 		'''
 		maid_name = trim(maid_name)
-		if maid_name is not None and maid_name not in self.maids:
+		if maid_name != '' and maid_name not in self.maids:
 			await send_error_embed(ctx,
 				name = 'Maid not found',
 				value = f'`/{maid_name}` is not found! Please check the maid name.',
 				ephemeral = True
 			)
 		else:
-			if maid_name is None:
+			if maid_name == '':
 				if len(text) == 0:
 					await ctx.send_modal(self._SpeakModal())
 				else:
