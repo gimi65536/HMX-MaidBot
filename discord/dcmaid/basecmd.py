@@ -3,7 +3,7 @@ from functools import partial
 from typing import Dict, Tuple
 from .basebot import Bot
 from .helper import get_help
-from .utils import autocomplete_get_maid_names, get_guild_channel, send_error_embed
+from .utils import autocomplete_get_maid_names, get_guild_channel, send_error_embed, trim
 from .views import YesNoView
 
 perm_admin_only = discord.Permissions(administrator = True)
@@ -186,6 +186,9 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		Can be only called in a server channel.
 		'''
 		await self._fetch_maids(ctx)
+
+		maid_name = trim(maid_name)
+
 		if maid_name is None or maid_name not in self.maids:
 			# Introduce all maids
 			await ctx.send_response("Here puts introduce.")
@@ -270,6 +273,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		Internally, this command retrieves `__commands_help__` of every command as illustration.
 		by default, or the description will be returned.
 		'''
+		cmd_name = trim(cmd_name)
 		if not cmd_name:
 			# None, '', etc.
 			cmd_name = 'help'
@@ -346,6 +350,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		This command is for OPs only.
 		Can be only called in a server channel.
 		'''
+		maid_name = trim(maid_name)
 		if maid_name is not None and maid_name not in self.maids:
 			await send_error_embed(ctx,
 				name = 'Maid not found',

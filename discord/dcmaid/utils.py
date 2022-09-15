@@ -1,5 +1,5 @@
 import discord
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 # When creating commands, 'guild_only' does the same thing as what this fundtion does.
 # But for convenience, we preserve this function.
@@ -40,3 +40,8 @@ async def send_error_embed(ctx: Union[discord.ApplicationContext, discord.Intera
 		await ctx.send_response(embed = embed, **kwargs)
 	else:
 		await ctx.response.send_message(embed = embed, **kwargs)
+
+def trim(string: Optional[str]):
+	if string is not None:
+		return string.strip()
+	return None
