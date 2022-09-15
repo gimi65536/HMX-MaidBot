@@ -1,15 +1,7 @@
-'''
-This module defines simple decorators to preserve the __doc__ information
-as illustration in the command callback functions.
-'''
 import discord
 import inspect
 
 _help_attr = '__commands_help__'
-
-def preserve_help(func):
-	setattr(func, _help_attr, getattr(func, '__doc__'))
-	return func
 
 def injure_help(text):
 	def decorator(cmd):
@@ -19,7 +11,14 @@ def injure_help(text):
 	return decorator
 
 def get_help(cmd):
-	return getattr(cmd.callback, _help_attr)
+	if hasattr(cmd, _help_attr):
+		return getattr(cmd, _help_attr)
+
+	doc = cmd.callback.__doc__
+	if doc is not None:
+		doc = inspect.cleandoc(doc)
+	setattr(cmd, _help_attr, doc)
+	return doc
 
 def set_help(cmd, text):
-	setattr(cmd.callback, _help_attr, text)
+	setattr(cmd, _help_attr, inspect.cleandoc(text))
