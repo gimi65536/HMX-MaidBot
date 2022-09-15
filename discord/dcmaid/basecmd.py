@@ -88,7 +88,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		This method should be called in every command if the command uses maids.
 		An extension will call this method with `bot.get_cog('Base').fetch_maids(ctx)`.
 		'''
-		await self._fetch_maids(self, ctx)
+		await self._fetch_maids(ctx)
 
 	@discord.commands.slash_command(
 		description = 'Initialize or update the maids',
