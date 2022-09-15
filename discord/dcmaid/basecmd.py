@@ -325,12 +325,15 @@ class BasicCommands(discord.Cog, name = 'Base'):
 					ephemeral = True
 				)
 				return
-			if self.webhook is None:
-				await interaction.response.send_message(text)
-			else:
-				await interaction.response.defer()
 
-				channel = interaction.channel
+			await interaction.response.defer()
+			channel = interaction.channel
+
+			if self.webhook is None:
+				# Use bot
+				await channel.send(text)
+			else:
+				# Use webhook
 				if isinstance(interaction.channel, discord.Thread):
 					await self.webhook.send(text, thread = channel)
 				else:
@@ -345,7 +348,9 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				name = 'maid',
 				description = 'What maid?',
 				input_type = str,
-				autocomplete = autocomplete_get_maid_names),
+				autocomplete = autocomplete_get_maid_names,
+				default = ''
+			),
 			discord.Option(
 				name = 'text',
 				description = 'What to say? (Empty to call a modal)',
@@ -374,7 +379,8 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				if len(text) == 0:
 					await ctx.send_modal(self._SpeakModal())
 				else:
-					await ctx.send_response(text)
+					await remove_thinking(ctx)
+					await ctx.channel.send(text)
 			else:
 				installed_hooks = self.state.get_installed_hooks(ctx.channel_id)
 				webhook = installed_hooks[maid_name]
