@@ -4,7 +4,7 @@ from types import MappingProxyType
 from typing import Dict, Tuple
 from .basebot import Bot
 from .helper import get_help
-from .utils import autocomplete_get_maid_names, get_guild_channel, send_error_embed, trim
+from .utils import *
 from .views import YesNoView
 
 perm_admin_only = discord.Permissions(administrator = True)
@@ -381,7 +381,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				if len(text) == 0:
 					await ctx.send_modal(self._SpeakModal(webhook))
 				else:
-					await ctx.defer()
+					await remove_thinking(ctx)
 					if isinstance(ctx.channel, discord.Thread):
 						await webhook.send(text, thread = ctx.channel)
 					else:

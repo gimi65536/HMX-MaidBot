@@ -45,3 +45,11 @@ def trim(string: Optional[str]):
 	if string is not None:
 		return string.strip()
 	return None
+
+# This function removes the "thinking" mode without sending anything from the interaction.
+async def remove_thinking(ctx: Union[discord.ApplicationContext, discord.Interaction]):
+	await ctx.defer()
+	if isinstance(ctx, discord.ApplicationContext):
+		await ctx.delete()
+	else:
+		await ctx.delete_original_message()
