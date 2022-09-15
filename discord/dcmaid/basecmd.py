@@ -83,19 +83,28 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				MappingProxyType({maid_name: installed_hooks_dict[maid_name] for maid_name in self.maids.keys()})
 			self.state.set_installed_hooks(channel_id, installed_hooks)
 
+	async def fetch_maids(self, ctx):
+		'''
+		This method should be called in every command if the command uses maids.
+		An extension will call this method with `bot.get_cog('Base').fetch_maids(ctx)`.
+		'''
+		await self._fetch_maids(self, ctx)
+
 	@discord.commands.slash_command(
 		description = 'Initialize or update the maids',
 		guild_only = True
 	)
 	async def initialize(self, ctx):
 		'''
-		`/initialize` is a basic command that users should call first to add maids (webhooks).
+		`/initialize` is a basic command that users can call first to add maids (webhooks).
 		This command will not do anything if the server process already has the information
 		of the channel, so this command is free to call by any user.
+		This command is not really needed to call as each command with maids ought to call
+		the fetch method first.
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
 		'''
-		await self._fetch_maids(ctx)
+		await self.fetch_maids(ctx)
 		await ctx.send_response(
 			content = "Successfully Initialized.",
 			ephemeral = True
@@ -186,7 +195,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		channel, just like what `/initialize` does, so this command is free to call by any user.
 		Can be only called in a server channel.
 		'''
-		await self._fetch_maids(ctx)
+		await self.fetch_maids(ctx)
 
 		maid_name = trim(maid_name)
 
@@ -351,7 +360,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 		This command is for OPs only.
 		Can be only called in a server channel.
 		'''
-		await self._fetch_maids(ctx)
+		await self.fetch_maids(ctx)
 
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
