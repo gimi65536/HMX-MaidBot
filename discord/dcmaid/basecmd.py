@@ -79,7 +79,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 				installed_hooks_dict[maid_name] = webhook
 
 			# Reorder the installed_hooks to match the maids order
-			installed_hooks: Mapping[str, discord.Webhook] =
+			installed_hooks: Mapping[str, discord.Webhook] = \
 				MappingProxyType({maid_name: installed_hooks_dict[maid_name] for maid_name in self.maids.keys()})
 			self.state.set_installed_hooks(channel_id, installed_hooks)
 
