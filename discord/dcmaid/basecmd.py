@@ -1,7 +1,7 @@
 import discord
 from functools import partial
 from types import MappingProxyType
-from typing import Dict, Tuple
+from typing import Dict
 from .basebot import Bot
 from .helper import get_help
 from .utils import *
@@ -97,9 +97,9 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	async def initialize(self, ctx):
 		'''
 		`/initialize` is a basic command that users can call first to add maids (webhooks).
-		This command will not do anything if the server process already has the information
+		This command will not do anything if the server process already has the information \
 		of the channel, so this command is free to call by any user.
-		This command is not really needed to call as each command with maids ought to call
+		This command is not really needed to call as each command with maids ought to call \
 		the fetch method first.
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
@@ -191,7 +191,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	async def introduce(self, ctx, maid_name):
 		'''
 		`/introduce` is a basic command to let the bot introduce maids we have.
-		This command also attempt to add maids if the server process has not remembered the
+		This command also attempt to add maids if the server process has not remembered the \
 		channel, just like what `/initialize` does, so this command is free to call by any user.
 		Can be only called in a server channel.
 		'''
@@ -280,7 +280,7 @@ class BasicCommands(discord.Cog, name = 'Base'):
 	async def help(self, ctx, cmd_name):
 		'''
 		`/help` <command name> gives the illustration of the command written by the author.
-		Internally, this command retrieves `__commands_help__` of every command as illustration.
+		Internally, this command retrieves `__commands_help__` of every command as illustration \
 		by default, or the description will be returned.
 		'''
 		cmd_name = trim(cmd_name)
