@@ -13,11 +13,11 @@ perm_admin_only = discord.Permissions(administrator = True)
 # This cog (name = 'Base') defines the basic commands.
 class BasicCommands(BaseCog, name = 'Base'):
 	# Notice that we only accept the bot of '.basebot.Bot' class or its subclasses.
-	def __init__(self, bot: Bot, locale = None):
+	def __init__(self, bot: Bot):
 		if not isinstance(bot, Bot):
 			raise TypeError('Only accepts basebot.Bot type.')
 
-		super().__init__(locale = locale)
+		super().__init__()
 		self.bot = bot
 		self.db = bot.db
 		self.maids = bot.maids
@@ -297,7 +297,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 				value = f'`/{cmd_name}` is not found! Please check the command name.'
 			)
 		else:
-			doc = get_help(cmd)
+			doc_locale_table = get_help(cmd)
+			locale = ctx.locale
+			if locale not in doc_locale_table:
+				doc = doc_locale_table.get(None, None)
+			else:
+				doc = doc_locale_table[locale]
+
 			if doc is None:
 				try:
 					doc = cmd.description

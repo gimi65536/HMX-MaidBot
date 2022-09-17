@@ -4,7 +4,7 @@ before a cog class is created.
 '''
 import discord
 import json
-from .helper import get_help, set_help
+from .helper import get_help, set_help, update_help
 
 class HelpCog(discord.Cog):
 	'''
@@ -16,10 +16,6 @@ class HelpCog(discord.Cog):
 		for cmd in self.get_commands():
 			# Make help properties attach on commands
 			get_help(cmd)
-
-		self._help_locale = kwargs.get('locale', None)
-		if self._help_locale is None:
-			return
 
 		try:
 			fp = open(f'help_{ self.qualified_name.lower() }.json')
@@ -33,10 +29,7 @@ class HelpCog(discord.Cog):
 			table = d.get(cmd.name, None)
 			if table is None:
 				continue
-			localization_help = table.get(self._help_locale, None)
-			if localization_help is None:
-				continue
-			set_help(cmd, localization_help)
+			update_help(cmd, table)
 
 class BaseCog(HelpCog):
 	pass
