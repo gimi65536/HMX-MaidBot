@@ -3,6 +3,7 @@ from functools import partial
 from types import MappingProxyType
 from typing import Dict
 from .basebot import Bot
+from .basecog import BaseCog
 from .helper import get_help
 from .utils import *
 from .views import YesNoView
@@ -10,12 +11,13 @@ from .views import YesNoView
 perm_admin_only = discord.Permissions(administrator = True)
 
 # This cog (name = 'Base') defines the basic commands.
-class BasicCommands(discord.Cog, name = 'Base'):
+class BasicCommands(BaseCog, name = 'Base'):
 	# Notice that we only accept the bot of '.basebot.Bot' class or its subclasses.
-	def __init__(self, bot: Bot):
+	def __init__(self, bot: Bot, locale = None):
 		if not isinstance(bot, Bot):
 			raise TypeError('Only accepts basebot.Bot type.')
 
+		super().__init__(locale = locale)
 		self.bot = bot
 		self.db = bot.db
 		self.maids = bot.maids
