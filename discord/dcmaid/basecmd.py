@@ -120,6 +120,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	async def update(self, ctx):
 		'''
 		`/update` lets server OPs force to fetch the maid information stored on the process.
+		Usually users need this command if some maids are fired/deleted...
 		This command is for OPs only.
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
@@ -192,7 +193,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def introduce(self, ctx, maid_name):
 		'''
-		`/introduce` is a basic command to let the bot introduce maids we have.
+		`/introduce <?maid name>` is a basic command to let the bot introduce maids we have.
 		This command also attempt to add maids if the server process has not remembered the \
 		channel, just like what `/initialize` does, so this command is free to call by any user.
 		Can be only called in a server channel.
@@ -281,7 +282,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def help(self, ctx, cmd_name):
 		'''
-		`/help` <command name> gives the illustration of the command written by the author.
+		`/help` <?command name> gives the illustration of the command written by the author.
 		Internally, this command retrieves `__commands_help__` of every command as illustration \
 		by default, or the description will be returned.
 		'''
@@ -370,7 +371,10 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def speak(self, ctx, maid_name, text):
 		'''
-		`/speak` <maid_name> is a command to make a maid send a message.
+		`/speak` <?maid_name> <?text> is a command to make a maid send a message.
+		If the name is not provided, then the bot itself will speak the text.
+		If the text is not provided, then a form is given to type a long article
+		(up to 1024 characters).
 		This command is for OPs only.
 		Can be only called in a server channel.
 		'''
