@@ -11,7 +11,7 @@ class BaseReader:
 		obj = None
 		for suffix in cls.support_suffices:
 			try:
-				with open(add_suffix) as f:
+				with open(add_suffix(path, suffix)) as f:
 					obj = cls.process(f)
 			except:
 				continue
