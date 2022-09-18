@@ -15,7 +15,7 @@ class BaseCogMeta(discord.CogMeta):
 		cls = super().__new__(mcls, *args, **kwargs)
 
 		commands: List[discord.ApplicationCommand] = cls.__cog_commands__
-		d = load(f'help_{ cls.__cog_name__.lower() }')
+		d = load(f'{ cls.__cog_name__.lower() }')
 
 		for cmd in commands:
 			# Make help properties attach on commands
@@ -23,7 +23,8 @@ class BaseCogMeta(discord.CogMeta):
 
 			if d is None:
 				continue
-			table = d.get(cmd.name, None)
+			cmd_locale = d.get(cmd.name, {})
+			table = cmd_locale.get('help', None)
 			update_help(cmd, table)
 
 		... # Do localization (name_localication, etc.) here
