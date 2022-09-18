@@ -1,4 +1,5 @@
 import discord
+from pathlib import PurePath
 from typing import Any, Dict, List, Optional, Union
 
 # When creating commands, 'guild_only' does the same thing as what this fundtion does.
@@ -54,3 +55,6 @@ async def remove_thinking(ctx: Union[discord.ApplicationContext, discord.Interac
 	else:
 		await ctx.response.defer()
 		await ctx.delete_original_message()
+
+def add_suffix(path: PurePath, suffix: str):
+	return path.with_suffix(path.suffix + suffix)
