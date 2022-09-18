@@ -304,12 +304,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 			else:
 				doc = doc_locale_table[locale]
 
-			if doc is None:
-				try:
-					doc = cmd.description
-				except:
-					# When the command does not support description...
-					doc = '**No illustration found.**'
+			if doc is None: # Caused by get(None, None)
+				doc_locale_table = cmd.description_localizations
+				if locale in doc_locale_table:
+					doc = doc_locale_table[locale]
+				else:
+					doc = cmd.description # There SHOULD be a string, not None
+
 			embed = discord.Embed(color = discord.Color.green(), title = 'Help')
 			embed.add_field(
 				name = f'/{cmd_name}',
