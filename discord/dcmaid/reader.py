@@ -48,7 +48,7 @@ class YAMLReader(BaseReader):
 	@classmethod
 	def process(cls, f: TextIO):
 		import yaml
-		return yaml.load(f)
+		return yaml.safe_load(f)
 
 class TOMLReader(BaseReader):
 	support_suffices = ('.yaml', '.yml')
@@ -65,7 +65,7 @@ class CUEReader(BaseReader):
 _readers = (JSONReader, YAMLReader, JSON5Reader, TOMLReader)
 
 def load(filename):
-	path = files('.').joinpath('locale').joinpath(filename)
+	path = files(__package__).joinpath('locale').joinpath(filename)
 	for reader in _readers:
 		obj = reader.load(path)
 		if obj is not None:
