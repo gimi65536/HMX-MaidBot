@@ -3,33 +3,32 @@ This module defines basic cogs class that will do some works \
 before a cog class is created.
 '''
 import discord
-import json
+from typing import List
 from .helper import get_help, set_help, update_help
+from .reader import load
 
-class HelpCog(discord.Cog):
+class BaseCogMeta(discord.CogMeta):
 	'''
-	Define a cog that automatically supports our help structure.
+	Define a cog that automatically supports our help structure and localization.
 	'''
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+	def __new__(mcls, *args, **kwargs):
+		cls = super().__new__(mcls, *args, **kwargs)
 
-		for cmd in self.get_commands():
+		commands: List[discord.ApplicationCommand] = cls.__cog_commands__
+		d = load(f'help_{ cls.__cog_name__ }')
+
+		for cmd in commands:
 			# Make help properties attach on commands
-			get_help(cmd)
+			get_help()
 
-		try:
-			fp = open(f'help_{ self.qualified_name.lower() }.json')
-		except:
-			return
-
-		d = json.load(fp)
-		fp.close()
-
-		for cmd in self.get_commands():
-			table = d.get(cmd.name, None)
-			if table is None:
+			if d is None:
 				continue
+			table = d.get(cmd.name, None)
 			update_help(cmd, table)
 
-class BaseCog(HelpCog):
+		... # Do localization (name_localication, etc.) here
+
+		return cls
+
+class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 	pass
