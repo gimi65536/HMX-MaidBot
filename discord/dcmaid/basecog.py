@@ -29,6 +29,10 @@ class BaseCogMeta(discord.CogMeta):
 
 		... # Do localization (name_localication, etc.) here
 
+		... # Do option localization here
+
+		... # Do embed localization??
+
 		return cls
 
 class BaseCog(discord.Cog, metaclass = BaseCogMeta):
