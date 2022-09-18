@@ -19,7 +19,7 @@ class BaseCogMeta(discord.CogMeta):
 
 		for cmd in commands:
 			# Make help properties attach on commands
-			get_help()
+			get_help(cmd)
 
 			if d is None:
 				continue
