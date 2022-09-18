@@ -1,4 +1,5 @@
 import json
+from importlib_resources import files, as_file
 from pathlib import PurePath
 from typing import TextIO, Tuple
 from .utils import add_suffix
@@ -10,9 +11,12 @@ class BaseReader:
 	def load(cls, path: PurePath):
 		obj = None
 		for suffix in cls.support_suffices:
+			path_with_suffix = add_suffix(path, suffix)
 			try:
-				with open(add_suffix(path, suffix)) as f:
-					obj = cls.process(f)
+				# Compatible in zip...
+				with as_file(path_with_suffix) as real_path:
+					with open(real_path) as f:
+						obj = cls.process(f)
 			except:
 				continue
 			else:
@@ -61,7 +65,7 @@ class CUEReader(BaseReader):
 _readers = (JSONReader, YAMLReader, JSON5Reader, TOMLReader)
 
 def load(filename):
-	path = PurePath(filename)
+	path = files('.').joinpath('locale').joinpath(filename)
 	for reader in _readers:
 		obj = reader.load(path)
 		if obj is not None:
