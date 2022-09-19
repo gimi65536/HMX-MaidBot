@@ -5,10 +5,9 @@ from typing import Dict
 from .basebot import Bot
 from .basecog import BaseCog
 from .helper import get_help
+from .perm import admin_only
 from .utils import *
 from .views import YesNoView
-
-perm_admin_only = discord.Permissions(administrator = True)
 
 # This cog (name = 'Base') defines the basic commands.
 class BasicCommands(BaseCog, name = 'Base'):
@@ -109,7 +108,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 	@discord.commands.slash_command(
 		description = 'Force the channel to synchronize the maids information',
-		default_member_permissions = perm_admin_only,
+		default_member_permissions = admin_only,
 		guild_only = True
 	)
 	async def update(self, ctx):
@@ -148,7 +147,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 	@discord.commands.slash_command(
 		description = 'Uninstall maids',
-		default_member_permissions = perm_admin_only,
+		default_member_permissions = admin_only,
 		guild_only = True
 	)
 	async def uninstall(self, ctx):
@@ -349,7 +348,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 	@discord.commands.slash_command(
 		description = 'Send a message as the bot or a maid',
-		default_member_permissions = perm_admin_only,
+		default_member_permissions = admin_only,
 		guild_only = True,
 		options = [
 			discord.Option(
