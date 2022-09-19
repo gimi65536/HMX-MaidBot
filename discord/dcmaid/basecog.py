@@ -92,7 +92,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 
 		table = cls.__cog_translation_table__
 		if isinstance(locale_or_localeable, str):
-			return cls._get_nested_str(table, *args, locale, default = default, format = format)
+			return cls._get_nested_str(table, *args, locale_or_localeable, default = default, format = format)
 		else:
 			return cls._get_nested_str(table, *args, locale_or_localeable.locale, default = default, format = format)
 

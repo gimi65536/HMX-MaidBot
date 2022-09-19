@@ -321,19 +321,20 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 	class _SpeakModal(discord.ui.Modal):
 		# Add outer to enable localization of the cog. Maybe it is awful.
-		def __init__(self, outer, webhook = None, *args, **kwargs):
-			super().__init__(title = self._trans(ctx, 'speak-modal-title'), *args, **kwargs)
+		def __init__(self, outer, locale, webhook = None, *args, **kwargs):
+			super().__init__(title = outer._trans(locale, 'speak-modal-title'), *args, **kwargs)
 			self._trans = outer._trans
+			self.locale = locale
 			self.webhook = webhook
 
-			self.add_item(discord.ui.InputText(label = self._trans(ctx, 'speak-modal-label'), style = discord.InputTextStyle.long))
+			self.add_item(discord.ui.InputText(label = self._trans(locale, 'speak-modal-label'), style = discord.InputTextStyle.long))
 
 		async def callback(self, interaction):
 			text = self.children[0].value
 			if len(text) == 0:
 				await send_error_embed(interaction,
-					name = self._trans(ctx, 'speak-modal-empty'),
-					value = self._trans(ctx, 'speak-modal-empty-value'),
+					name = self._trans(self.locale, 'speak-modal-empty'),
+					value = self._trans(self.locale, 'speak-modal-empty-value'),
 					ephemeral = True
 				)
 				return
@@ -392,7 +393,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		else:
 			if maid_name == '':
 				if len(text) == 0:
-					await ctx.send_modal(self._SpeakModal(self))
+					await ctx.send_modal(self._SpeakModal(self, ctx.locale))
 				else:
 					await remove_thinking(ctx)
 					await ctx.channel.send(text)
@@ -400,7 +401,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 				installed_hooks = self.state.get_installed_hooks(ctx.channel_id)
 				webhook = installed_hooks[maid_name]
 				if len(text) == 0:
-					await ctx.send_modal(self._SpeakModal(self, webhook))
+					await ctx.send_modal(self._SpeakModal(self, ctx.locale, webhook))
 				else:
 					await remove_thinking(ctx)
 					if isinstance(ctx.channel, discord.Thread):
