@@ -128,3 +128,65 @@ speak:
     zh-TW: 句子
   text.description:
     zh-TW: 要說些什麼？（可選）
+
+__translation_table:
+  ~:
+    ~: Please check the translation key.
+    zh-TW: 請檢查翻譯代碼是否正確。
+  example:
+    ~: example
+    zh-TW: 範例
+  succ-init:
+    ~: Successfully Initialized.
+    zh-TW: 初始化完成。
+  succ-update:
+    ~: Successfully Updated.
+    zh-TW: 更新完成。
+  uninstalling:
+    ~: Uninstalling...
+    zh-TW: 正在解除安裝……
+  succ-uninst:
+    ~: Successfully Uninstalled.
+    zh-TW: 解除安裝完成。
+  ensure-uninst:
+    ~: Are you sure to uninstall? (Press `Yes` in 3 minutes)
+    zh-TW: 確定要解除安裝嗎？（請在三分鐘內按下Yes）
+  current-time:
+    ~: Current Time
+    zh-TW: 現在時刻
+  shown-timezone:
+    ~: Shown in your timezone
+    zh-TW: 使用您的時區顯示
+  deleting:
+    ~: Deleting...
+    zh-TW: 正在刪除……
+  ensure-delete:
+    ~: Are you sure to delete all messages? (Press `Yes` in 3 minutes)
+    zh-TW: 確定要刪除所有訊息嗎？（請在三分鐘內按下Yes）
+  help-no-cmd:
+    ~: Command not found
+    zh-TW: 找不到指令
+  help-no-cmd-value:
+    ~: `/{cmd_name}` is not found! Please check the command name.
+    zh-TW: `/{cmd_name}` 不是正確的指令名稱！請檢查是否有拼字錯誤。
+  Help:
+    ~: Help
+    zh-TW: 幫助
+  speak-modal-title:
+    ~: Input text
+    zh-TW: 輸入句子
+  speak-modal-label:
+    ~: Input
+    zh-TW: 輸入
+  speak-modal-empty:
+    ~: Empty Content
+    zh-TW: 空白句子
+  speak-modal-empty-value:
+    ~: The text cannot be empty.
+    zh-TW: 句子不得為空。
+  speak-no-maid:
+    ~: Maid not found
+    zh-TW: 查無女僕
+  speak-no-maid-value:
+    ~: `/{maid_name}` is not found! Please check the maid name.
+    zh-TW: `/{maid_name}` 不是正確的女僕代號！請檢查是否有拼字錯誤。

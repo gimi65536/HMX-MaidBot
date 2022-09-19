@@ -108,7 +108,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		await self.fetch_maids(ctx)
 		await ctx.send_response(
-			content = "Successfully Initialized.",
+			content = self._trans(ctx, 'succ-init'),
 			ephemeral = True
 		)
 
@@ -127,13 +127,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		await self._fetch_maids(ctx, True)
 		await ctx.send_response(
-			content = "Successfully Updated.",
+			content = self._trans(ctx, 'succ-update'),
 			ephemeral = True
 		)
 
 	async def _uninstall(self, ctx, button, interaction):
 		await interaction.response.defer()
-		await interaction.edit_original_message(content = "Uninstalling...", view = None)
+		await interaction.edit_original_message(content = self._trans(ctx, 'uninstalling'), view = None)
 
 		await self._fetch_maids(ctx, True)
 
@@ -148,7 +148,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		self.state.remove_installed_hooks(channel_id)
 
 		await interaction.edit_original_message(
-			content = "Successfully Uninstalled."
+			content = self._trans(ctx, 'succ-uninst')
 		)
 
 	@discord.commands.slash_command(
@@ -165,7 +165,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		Can be only called in a server channel.
 		'''
 		await ctx.send_response(
-			content = "Are you sure to uninstall? (Press `Yes` in 3 minutes)",
+			content = self._trans(ctx, 'ensure-uninst'),
 			ephemeral = True,
 			view = YesNoView(
 				yes_label = 'Yes',
@@ -220,13 +220,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		t = int(discord.utils.utcnow().timestamp())
 		embed = discord.Embed(title = discord.Embed.Empty, color = discord.Color.blue())
-		embed.add_field(name = "Current Time", value = f"<t:{t}:f>", inline = False)
-		embed.set_footer(text = "Shown in your timezone")
+		embed.add_field(name = self._trans(ctx, 'current-time'), value = f"<t:{t}:f>", inline = False)
+		embed.set_footer(text = self._trans(ctx, 'shown-timezone'))
 		await ctx.send_response(embed = embed)
 
 	async def _cls(self, button, interaction):
 		await interaction.response.defer()
-		await interaction.edit_original_message(content = "Deleting...", view = None)
+		await interaction.edit_original_message(content = self._trans(ctx, 'deleting'), view = None)
 
 		channel = interaction.channel
 
@@ -256,7 +256,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		The response of the command is ephemeral.
 		'''
 		await ctx.send_response(
-			content = "Are you sure to delete all messages? (Press `Yes` in 3 minutes)",
+			content = self._trans(ctx, 'ensure-delete'),
 			ephemeral = True,
 			view = YesNoView(
 				yes_label = 'Yes',
@@ -294,8 +294,8 @@ class BasicCommands(BaseCog, name = 'Base'):
 		cmd = self.bot.get_application_command(cmd_name)
 		if cmd is None:
 			await send_error_embed(ctx,
-				name = 'Command not found',
-				value = f'`/{cmd_name}` is not found! Please check the command name.'
+				name = self._trans(ctx, 'help-no-cmd'),
+				value = self._trans(ctx, 'help-no-cmd-value', format = {'cmd_name': cmd_name})
 			)
 		else:
 			doc_locale_table = get_help(cmd)
@@ -312,7 +312,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 				else:
 					doc = cmd.description # There SHOULD be a string, not None
 
-			embed = discord.Embed(color = discord.Color.green(), title = 'Help')
+			embed = discord.Embed(color = discord.Color.green(), title = self._trans(ctx, 'Help'))
 			embed.add_field(
 				name = f'/{cmd_name}',
 				value = doc.format(cog = self, bot = self.bot)
@@ -321,17 +321,17 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 	class _SpeakModal(discord.ui.Modal):
 		def __init__(self, webhook = None, *args, **kwargs):
-			super().__init__(title = "Input text", *args, **kwargs)
+			super().__init__(title = self._trans(ctx, 'speak-modal-title'), *args, **kwargs)
 			self.webhook = webhook
 
-			self.add_item(discord.ui.InputText(label = 'Input', style = discord.InputTextStyle.long))
+			self.add_item(discord.ui.InputText(label = self._trans(ctx, 'speak-modal-label'), style = discord.InputTextStyle.long))
 
 		async def callback(self, interaction):
 			text = self.children[0].value
 			if len(text) == 0:
 				await send_error_embed(interaction,
-					name = 'Empty Content',
-					value = f'The text cannot be empty.',
+					name = self._trans(ctx, 'speak-modal-empty'),
+					value = self._trans(ctx, 'speak-modal-empty-value'),
 					ephemeral = True
 				)
 				return
@@ -383,8 +383,8 @@ class BasicCommands(BaseCog, name = 'Base'):
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
 			await send_error_embed(ctx,
-				name = 'Maid not found',
-				value = f'`/{maid_name}` is not found! Please check the maid name.',
+				name = self._trans(ctx, 'speak-no-maid'),
+				value = self._trans(ctx, 'speak-no-maid-value', format = {'maid_name': maid_name}),
 				ephemeral = True
 			)
 		else:
