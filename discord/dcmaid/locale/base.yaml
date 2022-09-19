@@ -61,6 +61,10 @@ introduce:
     zh-TW: 介紹
   description:
     zh-TW: 介紹女僕
+  maid.name:
+    zh-TW: 女僕
+  maid.description:
+    zh-TW: 要介紹哪位女僕？（可選）
 
 now:
   help:
@@ -95,6 +99,10 @@ help:
     zh-TW: 幫助
   description:
     zh-TW: 獲取說明資訊
+  command.name:
+    zh-TW: 指令名稱
+  command.description:
+    zh-TW: 要解說哪條指令？（可選）
 
 speak:
   help:
@@ -112,3 +120,11 @@ speak:
     zh-TW: 代替發言
   description:
     zh-TW: 以女僕名義發言
+  maid.name:
+    zh-TW: 女僕
+  maid.description:
+    zh-TW: 哪位女僕？（可選）
+  text.name:
+    zh-TW: 句子
+  text.description:
+    zh-TW: 要說些什麼？（可選）

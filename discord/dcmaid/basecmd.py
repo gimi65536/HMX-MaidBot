@@ -275,7 +275,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		options = [
 			discord.Option(
 				name = 'command',
-				description = 'What command to illustrate',
+				description = 'What command to illustrate (Optional)',
 				input_type = str,
 				default = 'help')
 		]
