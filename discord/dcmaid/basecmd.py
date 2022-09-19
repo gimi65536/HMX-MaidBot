@@ -226,7 +226,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 	async def _cls(self, button, interaction):
 		await interaction.response.defer()
-		await interaction.edit_original_message(content = self._trans(ctx, 'deleting'), view = None)
+		await interaction.edit_original_message(content = self._trans(interaction, 'deleting'), view = None)
 
 		channel = interaction.channel
 
@@ -330,7 +330,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 			self.add_item(discord.ui.InputText(label = self._trans(locale, 'speak-modal-label'), style = discord.InputTextStyle.long))
 
 		async def callback(self, interaction):
-			text = self.children[0].value
+			text = self.children[0].value.strip()
 			if len(text) == 0:
 				await send_error_embed(interaction,
 					name = self._trans(self.locale, 'speak-modal-empty'),
