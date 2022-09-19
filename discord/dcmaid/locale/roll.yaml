@@ -1,0 +1,26 @@
+seed:
+  help:
+    zh-TW: >
+      `/seed <?種子碼>` 會設定這個頻道的隨機數生成器的種子碼。
+
+      這條指令僅限伺服器管理員使用。
+
+      這條指令的回覆訊息僅限呼叫者看見。
+
+      這條指令只能在伺服器頻道內使用。
+  name:
+    zh-TW: 設定種子碼
+  description:
+    zh-TW: 設定或重設這個頻道的隨機種子碼
+  command.name:
+    zh-TW: 種子碼
+  command.description:
+    zh-TW: 隨機種子碼（可選）
+
+__translation_table:
+  ~:
+    ~: Please check the translation key.
+    zh-TW: 請檢查翻譯代碼是否正確。
+  seed-set:
+    ~: Seed has been set.
+    zh-TW: 種子碼設定完成。
