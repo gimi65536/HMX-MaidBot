@@ -61,6 +61,7 @@ class BaseCogMeta(discord.CogMeta):
 
 		return cls
 
+class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 	# Given a complex dictionary which every key is optional string and every element is either
 	# a string or a complex dictionary and given keys, return the string if any.
 	# If a key does not exist, the function tries to retrieve None key.
@@ -95,5 +96,4 @@ class BaseCogMeta(discord.CogMeta):
 		else:
 			return cls._get_nested_str(table, *args, locale_or_localeable.locale, default = default, format = format)
 
-class BaseCog(discord.Cog, metaclass = BaseCogMeta):
-	pass
+__all__ = ('BaseCogMeta', 'BaseCog')
