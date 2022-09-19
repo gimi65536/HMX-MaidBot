@@ -60,6 +60,15 @@ class BaseCogMeta(discord.CogMeta):
 					_replace_localization(option, 'name', 'name_localizations', f'{ option.name }.name', cmd_locale)
 					_replace_localization(option, 'description', 'description_localizations', f'{ option.name }.description', cmd_locale)
 
+					# If using autocomplete, then localization is handled by autocomplete
+					choices = option.choices
+					if choices is not None:
+						choices = []
+					for choice in choices:
+						if not isinstance(choice, discord.OptionChoice):
+							continue
+						_replace_localization(choice, 'name', 'name_localizations', f'{ option.name }.choice.{ choice.name }', cmd_locale)
+
 		return cls
 
 class BaseCog(discord.Cog, metaclass = BaseCogMeta):
