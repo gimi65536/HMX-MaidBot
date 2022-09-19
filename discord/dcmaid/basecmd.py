@@ -12,13 +12,8 @@ perm_admin_only = discord.Permissions(administrator = True)
 
 # This cog (name = 'Base') defines the basic commands.
 class BasicCommands(BaseCog, name = 'Base'):
-	# Notice that we only accept the bot of '.basebot.Bot' class or its subclasses.
 	def __init__(self, bot: Bot):
-		if not isinstance(bot, Bot):
-			raise TypeError('Only accepts basebot.Bot type.')
-
-		super().__init__()
-		self.bot = bot
+		super().__init__(bot)
 		self.db = bot.db
 		self.maids = bot.maids
 		self.state = bot.state

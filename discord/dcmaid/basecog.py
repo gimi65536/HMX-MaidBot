@@ -4,6 +4,7 @@ before a cog class is created.
 '''
 import discord
 from typing import Dict, List, Optional, Union
+from .basebot import Bot
 from .helper import get_help, set_help, update_help
 from .reader import load
 from .typing import Localeable
@@ -62,6 +63,14 @@ class BaseCogMeta(discord.CogMeta):
 		return cls
 
 class BaseCog(discord.Cog, metaclass = BaseCogMeta):
+	# Notice that we only accept the bot of '.basebot.Bot' class or its subclasses.
+	def __init__(self, bot: Bot):
+		if not isinstance(bot, Bot):
+			raise TypeError('Only accepts basebot.Bot type.')
+
+		super().__init__()
+		self.bot = bot
+
 	# Given a complex dictionary which every key is optional string and every element is either
 	# a string or a complex dictionary and given keys, return the string if any.
 	# If a key does not exist, the function tries to retrieve None key.
