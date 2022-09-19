@@ -167,8 +167,9 @@ __translation_table:
     ~: Command not found
     zh-TW: 找不到指令
   help-no-cmd-value:
-    ~: `/{cmd_name}` is not found! Please check the command name.
-    zh-TW: `/{cmd_name}` 不是正確的指令名稱！請檢查是否有拼字錯誤。
+    # A string cannot start with ` symbol...
+    ~: "`/{cmd_name}` is not found! Please check the command name."
+    zh-TW: "`/{cmd_name}` 不是正確的指令名稱！請檢查是否有拼字錯誤。"
   Help:
     ~: Help
     zh-TW: 幫助
@@ -188,5 +189,5 @@ __translation_table:
     ~: Maid not found
     zh-TW: 查無女僕
   speak-no-maid-value:
-    ~: `/{maid_name}` is not found! Please check the maid name.
-    zh-TW: `/{maid_name}` 不是正確的女僕代號！請檢查是否有拼字錯誤。
+    ~: "`/{maid_name}` is not found! Please check the maid name."
+    zh-TW: "`/{maid_name}` 不是正確的女僕代號！請檢查是否有拼字錯誤。"
