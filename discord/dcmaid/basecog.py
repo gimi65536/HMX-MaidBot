@@ -3,9 +3,10 @@ This module defines basic cogs class that will do some works \
 before a cog class is created.
 '''
 import discord
-from typing import List
+from typing import Dict, List, Optional, Union
 from .helper import get_help, set_help, update_help
 from .reader import load
+from .typing import Localeable
 
 def _replace_localization(obj, attr: str, attr_locale: str, key: str, cmd_locale: dict):
 	table = cmd_locale.get(key, {})
@@ -30,6 +31,8 @@ class BaseCogMeta(discord.CogMeta):
 
 		if d is None:
 			return cls
+
+		cls.__cog_translation_table__: Dict[Optional[str], Dict[Optional[str], str]] = d.get('__translation_table', {})
 
 		for cmd in commands:
 			cmd_locale = d.get(cmd.name, {})
@@ -56,9 +59,41 @@ class BaseCogMeta(discord.CogMeta):
 					_replace_localization(option, 'name', 'name_localizations', f'{ option.name }.name', cmd_locale)
 					_replace_localization(option, 'description', 'description_localizations', f'{ option.name }.description', cmd_locale)
 
-			... # Do embed localization??
-
 		return cls
+
+	# Given a complex dictionary which every key is optional string and every element is either
+	# a string or a complex dictionary and given keys, return the string if any.
+	# If a key does not exist, the function tries to retrieve None key.
+	@staticmethod
+	def _get_nested_str(d: dict, *args: str, default: Optional[str] = None, format: Dict[str, str] = {}) -> Optional[str]:
+		now = d
+		args = list(reversed(args))
+		while len(args) > 0:
+			key = args.pop()
+			if isinstance(now, dict):
+				# If the key does not exist, try to retrieve "None" key
+				now = now.get(key, now.get(None, {}))
+			else:
+				# Get too many keys
+				now = {}
+		if isinstance(now, dict):
+			# Not fully expanded
+			return default
+		else:
+			return now.format(**format)
+
+	@classmethod
+	def _trans(cls,
+		locale_or_localeable: Union[str, Localeable],
+		*args: str,
+		default: Optional[str] = None,
+		format: Dict[str, str] = {}) -> Optional[str]:
+
+		table = cls.__cog_translation_table__
+		if isinstance(locale_or_localeable, str):
+			return cls._get_nested_str(table, *args, locale, default = default, format = format)
+		else:
+			return cls._get_nested_str(table, *args, locale_or_localeable.locale, default = default, format = format)
 
 class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 	pass
