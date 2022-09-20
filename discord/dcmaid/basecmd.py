@@ -18,11 +18,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 		self.maids = bot.maids
 		self.state = bot.state
 
-	system = create_top_group(
+	system = discord.SlashCommandGroup(
 		name = "system",
 		description = "Bot system settings",
-		guild_only = True,
-		help = '''
+		guild_only = True
+	)
+	set_help(system,
+		'''
 		These commands are related to core settings of maids and the bot.
 		Can be only called in a server channel.
 		'''
