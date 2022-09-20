@@ -72,8 +72,7 @@ def create_top_group(help, *args, locale = None, **kwargs) -> discord.SlashComma
 	return group
 
 def walk_commands_and_groups(cmd):
-	if isinstance(cmd, discord.SlashCommand):
-		yield cmd
-	else:
+	yield cmd
+	if isinstance(cmd, discord.SlashCommandGroup):
 		for subcmd in cmd.subcommands:
 			yield from walk_commands_and_groups(subcmd)
