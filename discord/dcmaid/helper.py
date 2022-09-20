@@ -22,7 +22,10 @@ def get_help(cmd) -> Dict[Optional[str], str]:
 	if hasattr(cmd, _help_attr):
 		return getattr(cmd, _help_attr)
 
-	doc = {None: cleandoc(cmd.callback.__doc__)}
+	if hasattr(cmd, 'callback'):
+		doc = {None: cleandoc(cmd.callback.__doc__)}
+	else:
+		doc = {None: cleandoc(cmd.__doc__)}
 	setattr(cmd, _help_attr, doc)
 	return doc
 

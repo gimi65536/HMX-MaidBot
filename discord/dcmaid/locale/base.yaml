@@ -1,7 +1,18 @@
-initialize:
+system:
   help:
     zh-TW: >
-      `/initialze` 是讓使用者將女僕們加進頻道內的指令。
+      這些指令是與BOT和女僕相關的指令。
+
+      這些指令只能在伺服器頻道內使用。
+  name:
+    zh-TW: 系統
+  description:
+    zh-TW: 系統設定
+
+system initialize:
+  help:
+    zh-TW: >
+      `/{cmd_name}` 是讓使用者將女僕們加進頻道內的指令。
       如果伺服器的執行進程已經紀錄了這個頻道的資訊，那麼這個指令
       不會做任何事，也因為不會有重複的開銷，這條指令是每個人都能
       自由呼叫的。
@@ -16,10 +27,10 @@ initialize:
   description:
     zh-TW: 初始化或更新女僕
 
-update:
+system update:
   help:
     zh-TW: >
-      `/update` 是讓伺服器管理員強制同步此頻道的女僕的指令。
+      `/{cmd_name}` 是讓伺服器管理員強制同步此頻道的女僕的指令。
       通常這條指令是被拿來彌補一些過錯，比如管理員擅自操作頻道而把女僕剔除……
 
       這條指令僅限伺服器管理員使用。
@@ -32,10 +43,10 @@ update:
   description:
     zh-TW: 強制更新女僕資訊
 
-uninstall:
+system uninstall:
   help:
     zh-TW: >
-      `/uninstall` 指令將會刪除頻道內的女僕們。
+      `/{cmd_name}` 指令將會刪除頻道內的女僕們。
 
       這條指令會事先同步這個頻道的女僕資訊。
 
@@ -52,8 +63,8 @@ uninstall:
 introduce:
   help:
     zh-TW: >
-      `/introduce <?女僕代號>` 是讓BOT介紹女僕的指令。
-      這條指令也會先同步女僕資訊，如同`/initialze`指令做的那樣，所以
+      `/{cmd_name} <?女僕代號>` 是讓BOT介紹女僕的指令。
+      這條指令也會先同步女僕資訊，如同初始化指令做的那樣，所以
       每個使用者都能自由呼叫這個指令。
 
       這條指令只能在伺服器頻道內使用。
@@ -69,7 +80,7 @@ introduce:
 now:
   help:
     zh-TW: >
-      `/now` 回傳伺服器時間。
+      `/{cmd_name}` 回傳伺服器時間。
   name:
     zh-TW: 現在時間
   description:
@@ -78,7 +89,7 @@ now:
 cls:
   help:
     zh-TW: >
-      `/cls` 將會清空聊天室。
+      `/{cmd_name}` 將會清空聊天室。
       如果這條指令是在私訊被呼叫，BOT只會刪除自己發佈的訊息。
 
       這條指令僅限頻道管理員使用。
@@ -92,7 +103,7 @@ cls:
 help:
   help:
     zh-TW: >
-      `/help <?指令名稱>` 會給出指令作者對指令的說明。
+      `/{cmd_name} <?指令名稱>` 會給出指令作者對指令的說明。
       在內部執行時，這條指令會讀取指令的 `__commands_help__` 作為說明文，
       否則將會讀取這個指令給予Discord的說明文。
   name:
@@ -107,7 +118,7 @@ help:
 speak:
   help:
     zh-TW: >
-      `/speak <?女僕代號> <?文字>` 是用來以某位女僕的名義講出特定文字。
+      `/{cmd_name} <?女僕代號> <?文字>` 是用來以某位女僕的名義講出特定文字。
 
       如果沒有給女僕代號，則是讓BOT自身發言。
 

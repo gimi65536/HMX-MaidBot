@@ -18,6 +18,16 @@ class BasicCommands(BaseCog, name = 'Base'):
 		self.maids = bot.maids
 		self.state = bot.state
 
+	system = create_top_group(
+		name = "system",
+		description = "Bot system settings",
+		guild_only = True,
+		help = '''
+		These commands are related to core settings of maids and the bot.
+		Can be only called in a server channel.
+		'''
+	)
+
 	# After fetch, the state "installed_hooks" should match the maid mapping.
 	# Also, note that we don't store webhook tokens in our db but store the
 	# full webhooks (containing tokens) in the server state.
@@ -87,13 +97,12 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		await self._fetch_maids(ctx)
 
-	@discord.commands.slash_command(
-		description = 'Initialize or update the maids',
-		guild_only = True
+	@system.command(
+		description = 'Initialize or update the maids'
 	)
 	async def initialize(self, ctx):
 		'''
-		`/initialize` is a basic command that users can call first to add maids (webhooks).
+		`/{cmd_name}` is a basic command that users can call first to add maids (webhooks).
 		This command will not do anything if the server process already has the information \
 		of the channel, so this command is free to call by any user.
 		This command is not really needed to call as each command with maids ought to call \
@@ -107,14 +116,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 			ephemeral = True
 		)
 
-	@discord.commands.slash_command(
+	@system.command(
 		description = 'Force the channel to synchronize the maids information',
-		default_member_permissions = admin_only,
-		guild_only = True
+		default_member_permissions = admin_only
 	)
 	async def update(self, ctx):
 		'''
-		`/update` lets server OPs force to fetch the maid information stored on the process.
+		`/{cmd_name}` lets server OPs force to fetch the maid information stored on the process.
 		Usually users need this command if some maids are fired/deleted...
 		This command is for OPs only.
 		The response of the command is ephemeral.
@@ -146,14 +154,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 			content = self._trans(ctx, 'succ-uninst')
 		)
 
-	@discord.commands.slash_command(
+	@system.command(
 		description = 'Uninstall maids',
-		default_member_permissions = admin_only,
-		guild_only = True
+		default_member_permissions = admin_only
 	)
 	async def uninstall(self, ctx):
 		'''
-		`/uninstall` will delete the webhooks installed in this channel.
+		`/{cmd_name}` will delete the webhooks installed in this channel.
 		This command will fetch the maids information first.
 		This command is for OPs only.
 		The response of the command is ephemeral.
@@ -174,7 +181,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 			delete_after = 180.0
 		)
 
-	@discord.commands.slash_command(
+	@discord.slash_command(
 		description = 'Introduce the maids',
 		guild_only = True,
 		options = [
@@ -188,9 +195,9 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def introduce(self, ctx, maid_name):
 		'''
-		`/introduce <?maid name>` is a basic command to let the bot introduce maids we have.
+		`/{cmd_name} <?maid name>` is a basic command to let the bot introduce maids we have.
 		This command also attempt to add maids if the server process has not remembered the \
-		channel, just like what `/initialize` does, so this command is free to call by any user.
+		channel, just like what the initialize command does, so this command is free to call by any user.
 		Can be only called in a server channel.
 		'''
 		await self.fetch_maids(ctx)
@@ -206,12 +213,12 @@ class BasicCommands(BaseCog, name = 'Base'):
 			# Introduce a specific maid
 			await ctx.send_response(f"Here puts introduce of {maid_name}.")
 
-	@discord.commands.slash_command(
+	@discord.slash_command(
 		description = 'Retrieve the server time'
 	)
 	async def now(self, ctx):
 		'''
-		`/now` returns the server time.
+		`/{cmd_name}` returns the server time.
 		'''
 		t = int(discord.utils.utcnow().timestamp())
 		embed = discord.Embed(title = discord.Embed.Empty, color = discord.Color.blue())
@@ -239,13 +246,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 		else:
 			raise discord.InvalidArgument('Unknown channel type')
 
-	@discord.commands.slash_command(
+	@discord.slash_command(
 		description = 'Clear the chat room',
 		default_member_permissions = discord.Permissions(manage_messages = True)
 	)
 	async def cls(self, ctx):
 		'''
-		`/cls` will clear the chat room.
+		`/{cmd_name}` will clear the chat room.
 		If it is called in DM channels, only the messages sent by the bot get deleted.
 		This command is for channel managers only.
 		The response of the command is ephemeral.
@@ -265,7 +272,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 			delete_after = 180.0
 		)
 
-	@discord.commands.slash_command(
+	@discord.slash_command(
 		description = 'Get illustration of a command',
 		options = [
 			discord.Option(
@@ -277,7 +284,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def help(self, ctx, cmd_name):
 		'''
-		`/help` <?command name> gives the illustration of the command written by the author.
+		`/{cmd_name}` <?command name> gives the illustration of the command written by the author.
 		Internally, this command retrieves `__commands_help__` of every command as illustration \
 		by default, or the description will be returned.
 		'''
@@ -333,7 +340,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 			embed = discord.Embed(color = discord.Color.green(), title = self._trans(ctx, 'Help'))
 			embed.add_field(
 				name = f'/{cmd_name}',
-				value = doc.format(cog = self, bot = self.bot)
+				value = doc.format(cog = self, bot = self.bot, cmd_name = cmd_name)
 			)
 			await ctx.send_response(embed = embed)
 
@@ -370,7 +377,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 				else:
 					await self.webhook.send(text)
 
-	@discord.commands.slash_command(
+	@discord.slash_command(
 		description = 'Send a message as the bot or a maid',
 		default_member_permissions = admin_only,
 		guild_only = True,
@@ -392,7 +399,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def speak(self, ctx, maid_name, text):
 		'''
-		`/speak` <?maid_name> <?text> is a command to make a maid send a message.
+		`/{cmd_name}` <?maid_name> <?text> is a command to make a maid send a message.
 		If the name is not provided, then the bot itself will speak the text.
 		If the text is not provided, then a form is given to type a long article
 		(up to 1024 characters).

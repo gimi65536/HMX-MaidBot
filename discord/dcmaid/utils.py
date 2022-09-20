@@ -1,6 +1,7 @@
 import discord
 from pathlib import PurePath
 from typing import Any, Dict, List, Optional, Union
+from .helper import set_help
 
 # When creating commands, 'guild_only' does the same thing as what this fundtion does.
 # But for convenience, we preserve this function.
@@ -64,3 +65,8 @@ def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[Unio
 		if cmd.name == name:
 			return cmd
 	return None
+
+def create_top_group(help, *args, **kwargs, locale = None) -> discord.SlashCommandGroup:
+	group = discord.SlashCommandGroup(*args, **kwargs)
+	set_help(group, help, locale)
+	return group
