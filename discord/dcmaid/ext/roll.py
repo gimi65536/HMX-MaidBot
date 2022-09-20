@@ -12,6 +12,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 		self.state = bot.state
 		self._common_random = random.Random() # Used in DM
 
+	async def cog_before_invoke(self, ctx):
+		await self.bot.get_cog('Base').fetch_maids(ctx)
+
 	__state_random_key__ = 'random_generator_{}'
 
 	def _get_random_generator(self, ctx) -> random.Random:
@@ -26,6 +29,14 @@ class RollCommands(BaseCog, name = 'Roll'):
 			self.state.set(self.__state_random_key__.format(channel.id), generator)
 
 		return generator
+
+	_exec_time_option = discord.Option(
+		name = 'number',
+		description = 'How many numbers generated (Default 1, up to 100)',
+		input_type = int,
+		min_value = 1,
+		max_value = 100,
+		default = 1)
 
 	@discord.commands.slash_command(
 		description = 'Set or reset the seed of the random generator of the channel',
@@ -54,3 +65,46 @@ class RollCommands(BaseCog, name = 'Roll'):
 			content = self._trans(ctx, 'seed-set'),
 			ephemeral = True
 		)
+
+	distribution = discord.SlashCommandGroup(
+		name = "distribution",
+		description = "Random distribution generation"
+	)
+	set_help(distribution,
+		'''
+		These commands generates random number under a specific distribution.
+		'''
+	)
+
+	@distribution.command(
+		description = 'Uniform destribution',
+		options = [
+			discord.Option(
+				name = 'lower',
+				description = 'Lower bound (Default 0)',
+				input_type = float,
+				default = 0),
+			discord.Option(
+				name = 'upper',
+				description = 'Upper bound (Default 1)',
+				input_type = float,
+				default = 1),
+			_exec_time_option
+		]
+	)
+	async def uniform(self, ctx, a, b, n):
+		'''
+		`/{cmd_name} <?lower> <?upper> <?number>` generates `n` random numbers
+		with uniform distribution in `[lower, upper)`.
+
+		By default, `lower = 0`, `upper = 1`, `number = 1`.
+		'''
+		results = (self._get_random_generator(ctx).uniform(a, b) for _ in range(n))
+		await ctx.send_response("Uniform [{lower}, {upper}) for {n} times".format(lower = a, upper = b, n = n))
+		for result in results:
+			await ctx.send_followup(str(result))
+			... #followup
+		...
+
+def setup(bot):
+	bot.add_cog(RollCommands(bot))

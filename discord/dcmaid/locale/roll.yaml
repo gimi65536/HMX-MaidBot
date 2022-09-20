@@ -1,3 +1,9 @@
+__reference:
+  gen-time: &gen-time
+    zh-TW: 次數
+  gen-time-description: &gen-time-description
+    zh-TW: 要生成的次數（預設為1，最高100）
+
 seed:
   help:
     zh-TW: >
@@ -16,6 +22,37 @@ seed:
     zh-TW: 種子碼
   command.description:
     zh-TW: 隨機種子碼（可選）
+
+distribution:
+  help:
+    zh-TW: >
+      這些指令會基於特定的隨機分佈生成隨機數。
+  name:
+    zh-TW: 隨機分佈
+  description:
+    zh-TW: 隨機分佈生成
+
+distribution uniform:
+  help:
+    zh-TW: >
+      `/{cmd_name} <?下限a> <?上限b> <?次數n>` 會基於均勻分佈生成`n`個
+      介於`[a, b)`之間的浮點數。
+
+      預設值 `a = 0`、`b = 1`、`n = 1`。
+  name:
+    zh-TW: 均勻分佈
+  description:
+    zh-TW: 均勻分佈生成
+  lower.name:
+    zh-TW: 下限
+  lower.description:
+    zh-TW: 下限值（預設為0）
+  upper.name:
+    zh-TW: 上限
+  upper.description:
+    zh-TW: 上限值（預設為1）
+  number.name: *gen-time
+  number.description: *gen-time-description
 
 __translation_table:
   ~:
