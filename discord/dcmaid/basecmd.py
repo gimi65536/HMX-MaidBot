@@ -296,7 +296,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		cmd_name = re.sub(r'\s+', ' ', cmd_name)
 		cmd_names = cmd_name.split()
 		fail = False
-		if len(cmd_names) > 0 and (main_cmd := self.bot.get_application_command(cmd_names.pop(0))) is not None:
+		if len(cmd_names) > 0 and (main_cmd := self.bot.get_application_command(cmd_names.pop(0), type = discord.ApplicationCommand)) is not None:
 			parent_cmd = main_cmd
 			for n in cmd_names:
 				if isinstance(parent_cmd, discord.SlashCommand):
