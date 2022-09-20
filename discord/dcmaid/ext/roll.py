@@ -1,6 +1,7 @@
 import discord
 import random
 from typing import Optional
+from ..basebot import Bot
 from ..basecog import BaseCog
 from ..perm import admin_only
 
