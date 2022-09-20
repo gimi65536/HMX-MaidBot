@@ -22,7 +22,12 @@ class BaseCogMeta(discord.CogMeta):
 	def __new__(mcls, *args, **kwargs):
 		cls = super().__new__(mcls, *args, **kwargs)
 
-		commands: List[discord.ApplicationCommand] = cls.__cog_commands__
+		commands: List[discord.ApplicationCommand] = []
+		for cmd in cls.__cog_commands__:
+			if isinstance(cmd, discord.SlashCommandGroup):
+				commands.extend(cmd.walk_commands())
+			else:
+				commands.append(cmd)
 
 		for cmd in commands:
 			# Make help properties attach on commands
@@ -36,7 +41,7 @@ class BaseCogMeta(discord.CogMeta):
 		cls.__cog_translation_table__: Dict[Optional[str], Dict[Optional[str], str]] = d.get('__translation_table', {})
 
 		for cmd in commands:
-			cmd_locale = d.get(cmd.name, {})
+			cmd_locale = d.get(cmd.qualified_name, {})
 
 			# Do help localization here
 			help_table = cmd_locale.get('help', None)
