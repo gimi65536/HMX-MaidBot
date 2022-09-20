@@ -3,7 +3,9 @@ import random
 from typing import Optional
 from ..basebot import Bot
 from ..basecog import BaseCog
+from ..helper import set_help
 from ..perm import admin_only
+from ..utils import *
 
 class RollCommands(BaseCog, name = 'Roll'):
 	def __init__(self, bot: Bot):
