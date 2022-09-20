@@ -8,6 +8,7 @@ from .basebot import Bot
 from .helper import get_help, set_help, update_help
 from .reader import load
 from .typing import Localeable
+from .utils import walk_commands_and_groups
 
 def _replace_localization(obj, attr: str, attr_locale: str, key: str, cmd_locale: dict):
 	table = cmd_locale.get(key, {})
@@ -24,10 +25,7 @@ class BaseCogMeta(discord.CogMeta):
 
 		commands: List[discord.ApplicationCommand] = []
 		for cmd in cls.__cog_commands__:
-			if isinstance(cmd, discord.SlashCommandGroup):
-				commands.extend(cmd.walk_commands())
-			else:
-				commands.append(cmd)
+			commands.extend(walk_commands_and_groups(cmd))
 
 		for cmd in commands:
 			# Make help properties attach on commands
