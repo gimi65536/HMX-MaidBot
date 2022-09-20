@@ -16,7 +16,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 	def _get_random_generator(self, ctx) -> random.Random:
 		channel = ctx.channel
-		if isinstance(channel, discord.PartialMessageable) or isinstance(channel, discord.DMChannel):
+		if isinstance(channel, (discord.PartialMessageable, discord.DMChannel)):
 			return self._common_random
 
 		channel = get_guild_channel(channel)

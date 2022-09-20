@@ -43,7 +43,7 @@ class BaseCogMeta(discord.CogMeta):
 			update_help(cmd, help_table)
 
 			# Do localization (name_localication, etc.) here
-			if isinstance(cmd, discord.SlashCommand) or isinstance(cmd, discord.SlashCommandGroup):
+			if isinstance(cmd, (discord.SlashCommand, discord.SlashCommandGroup)):
 				''' # The original code for reference
 				name_table = cmd_locale.get('name', {})
 				if None in name_table: # Get the overriden default
