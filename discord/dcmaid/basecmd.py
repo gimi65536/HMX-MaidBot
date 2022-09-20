@@ -189,10 +189,9 @@ class BasicCommands(BaseCog, name = 'Base'):
 		description = 'Introduce the maids',
 		guild_only = True,
 		options = [
-			discord.Option(
+			discord.Option(str,
 				name = 'maid',
 				description = 'What maid to introduce? (Optional)',
-				input_type = str,
 				autocomplete = autocomplete_get_maid_names,
 				default = None)
 		]
@@ -279,10 +278,9 @@ class BasicCommands(BaseCog, name = 'Base'):
 	@discord.slash_command(
 		description = 'Get illustration of a command',
 		options = [
-			discord.Option(
+			discord.Option(str,
 				name = 'command',
 				description = 'What command to illustrate (Optional)',
-				input_type = str,
 				default = 'help')
 		]
 	)
@@ -386,17 +384,15 @@ class BasicCommands(BaseCog, name = 'Base'):
 		default_member_permissions = admin_only,
 		guild_only = True,
 		options = [
-			discord.Option(
+			discord.Option(str,
 				name = 'maid',
 				description = 'What maid?',
-				input_type = str,
 				autocomplete = autocomplete_get_maid_names,
 				default = ''
 			),
-			discord.Option(
+			discord.Option(str,
 				name = 'text',
 				description = 'What to say? (Empty to call a modal)',
-				input_type = str,
 				default = ''
 			)
 		]

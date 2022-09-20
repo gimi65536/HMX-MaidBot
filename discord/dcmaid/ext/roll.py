@@ -31,10 +31,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 		return generator
 
-	_exec_time_option = discord.Option(
+	_exec_time_option = discord.Option(int,
 		name = 'number',
 		description = 'How many numbers generated (Default 1, up to 100)',
-		input_type = int,
 		min_value = 1,
 		max_value = 100,
 		default = 1)
@@ -44,10 +43,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 		default_member_permissions = admin_only,
 		guild_only = True,
 		options = [
-			discord.Option(
+			discord.Option(str,
 				name = 'seed',
 				description = 'Random seed (Optional)',
-				input_type = str,
 				default = None)
 		]
 	)
@@ -80,15 +78,13 @@ class RollCommands(BaseCog, name = 'Roll'):
 	@distribution.command(
 		description = 'Uniform destribution',
 		options = [
-			discord.Option(
+			discord.Option(float,
 				name = 'lower',
 				description = 'Lower bound (Default 0)',
-				input_type = float,
 				default = 0),
-			discord.Option(
+			discord.Option(float,
 				name = 'upper',
 				description = 'Upper bound (Default 1)',
-				input_type = float,
 				default = 1),
 			_exec_time_option
 		]
