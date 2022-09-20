@@ -66,7 +66,7 @@ def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[Unio
 			return cmd
 	return None
 
-def create_top_group(help, *args, **kwargs, locale = None) -> discord.SlashCommandGroup:
+def create_top_group(help, *args, locale = None, **kwargs) -> discord.SlashCommandGroup:
 	group = discord.SlashCommandGroup(*args, **kwargs)
 	set_help(group, help, locale)
 	return group
