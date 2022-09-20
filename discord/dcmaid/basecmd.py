@@ -92,12 +92,14 @@ class BasicCommands(BaseCog, name = 'Base'):
 				MappingProxyType({maid_name: installed_hooks_dict[maid_name] for maid_name in self.maids.keys()})
 			self.state.set_installed_hooks(channel_id, installed_hooks)
 
+		return installed_hooks
+
 	async def fetch_maids(self, ctx):
 		'''
 		This method should be called in every command if the command uses maids.
 		An extension will call this method with `bot.get_cog('Base').fetch_maids(ctx)`.
 		'''
-		await self._fetch_maids(ctx)
+		return await self._fetch_maids(ctx)
 
 	@system.command(
 		description = 'Initialize or update the maids'
