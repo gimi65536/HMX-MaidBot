@@ -1,4 +1,5 @@
 import discord
+import re
 from functools import partial
 from types import MappingProxyType
 from typing import Dict
@@ -285,8 +286,31 @@ class BasicCommands(BaseCog, name = 'Base'):
 			# None, '', etc.
 			cmd_name = 'help'
 
-		cmd = self.bot.get_application_command(cmd_name)
-		if cmd is None:
+		cmd_name = re.sub(r'\s+', ' ', cmd_name)
+		cmd_names = cmd_name.split()
+		fail = False
+		if len(cmd_names) > 0 and (main_cmd := self.bot.get_application_command(cmd_names.pop(0))) is not None:
+			parent_cmd = main_cmd
+			for n in cmd_names:
+				if isinstance(parent_cmd, discord.SlashCommand):
+					# No subcommand
+					fail = True
+					break
+
+				# parent is a group
+				cmd = get_subcommand(parent_cmd, n)
+				if cmd is None:
+					fail = True
+					break
+
+				parent_cmd = cmd
+
+			if not fail:
+				cmd = parent_cmd
+		else:
+			fail = True
+
+		if fail:
 			await send_error_embed(ctx,
 				name = self._trans(ctx, 'help-no-cmd'),
 				value = self._trans(ctx, 'help-no-cmd-value', format = {'cmd_name': cmd_name})
