@@ -35,8 +35,11 @@ class RollCommands(BaseCog, name = 'Roll'):
 		l = list(l)
 		max_digit = len(str(len(l)))
 		l = [f"{i:{max_digit}}: {e}" for i, e in enumerate(l, 1)]
-		new_line = '\n'
-		return f"```{new_line.join(l)}```"
+		return '\n'.join(l)
+
+	@classmethod
+	def _build_box_message(cls, tran_key, l, /, *args, **kwargs):
+		return f'```\n{cls._trans(ctx, tran_key).format(*args, **kwargs)}\n{cls._list_message(l)}```'
 
 	__state_random_key__ = 'random_generator_{}'
 
@@ -119,8 +122,10 @@ class RollCommands(BaseCog, name = 'Roll'):
 		By default, `lower = 0`, `upper = 1`, `number = 1`.
 		'''
 		results = (self._get_random_generator(ctx).uniform(a, b) for _ in range(n))
-		await ctx.send_response("Uniform [{lower}, {upper}) for {n} times".format(lower = a, upper = b, n = n))
-		await self._send_followup(ctx, '', self._list_message(results)) # Test as bot
+		await remove_thinking(ctx)
+		await self._send_followup(ctx, '',
+			self._build_box_message('dist-uniform', results, lower = a, upper = b, n = n)
+		) # Test as bot
 
 def setup(bot):
 	bot.add_cog(RollCommands(bot))

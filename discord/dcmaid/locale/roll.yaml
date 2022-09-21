@@ -61,3 +61,6 @@ __translation_table:
   seed-set:
     ~: Seed has been set.
     zh-TW: 種子碼設定完成。
+  dist-uniform:
+    ~: Uniform [{lower}, {upper}) for {n} times
+    zh-TW: 均勻分佈 [{lower}, {upper}) （{n}次）
