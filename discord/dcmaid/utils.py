@@ -91,7 +91,8 @@ def proxy(f_or_attr, /):
 		def decorator(f):
 			@wraps(f)
 			def wrapper(self, *args, **kwargs):
-				self = getattr(self, attr)
+				if hasattr(self, attr):
+					self = getattr(self, attr)
 				return self.f(*args, **kwargs)
 			return wrapper
 		return decorator
@@ -99,6 +100,7 @@ def proxy(f_or_attr, /):
 		f = f_or_attr
 		@wraps(f)
 		def wrapper(self, *args, **kwargs):
-			self = self._proxy
+			if hasattr(self, '_proxy'):
+				self = self._proxy
 			return self.f(*args, **kwargs)
 		return wrapper
