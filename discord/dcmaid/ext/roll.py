@@ -4,6 +4,7 @@ from typing import Optional
 from ..basebot import Bot
 from ..basecog import BaseCog
 from ..perm import admin_only
+from ..utils import send_as
 
 class RollCommands(BaseCog, name = 'Roll'):
 	def __init__(self, bot: Bot):
@@ -14,7 +15,26 @@ class RollCommands(BaseCog, name = 'Roll'):
 		self._common_random = random.Random() # Used in DM
 
 	async def cog_before_invoke(self, ctx):
-		await self.bot.get_cog('Base').fetch_maids(ctx)
+		maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
+		setattr(ctx, 'maid_webhook', maid_webhook)
+
+	# Since webhooks cannot really reply or followup messages as a bot,
+	# here we simulate those with plain messages whoever the sender is.
+	async def _send_followup(self, ctx, maid, *args, **kwargs):
+		if hasattr(ctx, 'maid_webhook'):
+			maid_webhook = ctx.maid_webhook
+		else:
+			maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
+
+		webhook = maid_webhook.get(maid, None)
+		await send_as(ctx, webhook, *args, **kwargs)
+
+	@staticmethod
+	def _list_message(l):
+		l = list(l)
+		max_digit = len(str(len(l)))
+		l = ["{i:{max_digit}}: e" for i, e in enumerate(l, 1)]
+		return f"`{'\n'.join(l)}`"
 
 	__state_random_key__ = 'random_generator_{}'
 
@@ -98,10 +118,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		'''
 		results = (self._get_random_generator(ctx).uniform(a, b) for _ in range(n))
 		await ctx.send_response("Uniform [{lower}, {upper}) for {n} times".format(lower = a, upper = b, n = n))
-		for result in results:
-			await ctx.send_followup(str(result))
-			... #followup
-		...
+		await ctx._send_followup(ctx, '', self._list_message(results)) # Test as bot
 
 def setup(bot):
 	bot.add_cog(RollCommands(bot))
