@@ -1,4 +1,5 @@
 import discord
+from functools import wraps
 from pathlib import PurePath
 from typing import Any, Dict, List, Optional, Union
 from .helper import set_help
@@ -83,3 +84,21 @@ async def send_as(ctx: Union[discord.ApplicationContext, discord.Interaction], w
 			await self.webhook.send(*args, **kwargs, thread = channel)
 		else:
 			await self.webhook.send(*args, **kwargs)
+
+def proxy(f_or_attr, /):
+	if isinstance(f_or_attr, str):
+		attr = f_or_attr
+		def decorator(f):
+			@wraps(f)
+			def wrapper(self, *args, **kwargs):
+				self = getattr(self, attr)
+				return self.f(*args, **kwargs)
+			return wrapper
+		return decorator
+	else:
+		f = f_or_attr
+		@wraps(f)
+		def wrapper(self, *args, **kwargs):
+			self = self._proxy
+			return self.f(*args, **kwargs)
+		return wrapper
