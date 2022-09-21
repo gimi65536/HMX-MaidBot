@@ -34,8 +34,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 	def _list_message(l):
 		l = list(l)
 		max_digit = len(str(len(l)))
-		l = ["{i:{max_digit}}: e" for i, e in enumerate(l, 1)]
-		return f"`{'\n'.join(l)}`"
+		l = [f"{i:{max_digit}}: {e}" for i, e in enumerate(l, 1)]
+		new_line = '\n'
+		return f"```{new_line.join(l)}```"
 
 	__state_random_key__ = 'random_generator_{}'
 
@@ -119,7 +120,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		'''
 		results = (self._get_random_generator(ctx).uniform(a, b) for _ in range(n))
 		await ctx.send_response("Uniform [{lower}, {upper}) for {n} times".format(lower = a, upper = b, n = n))
-		await ctx._send_followup(ctx, '', self._list_message(results)) # Test as bot
+		await self._send_followup(ctx, '', self._list_message(results)) # Test as bot
 
 def setup(bot):
 	bot.add_cog(RollCommands(bot))
