@@ -78,11 +78,11 @@ class Weight:
 			self._proxy: 'Weight' = d[(bot, channel)]
 
 	@proxy
-	def get_maid_weight(self, maid_name: str):
+	def get_maid_weight(self, maid_name: str) -> int:
 		return self._weights[maid_name]
 
 	@proxy
-	def get_bot_weight(self):
+	def get_bot_weight(self) -> int:
 		return self._weights[self.bot_key]
 
 	def _update(self, key: str, i: int):
