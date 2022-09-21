@@ -2,7 +2,7 @@ __reference:
   gen-time: &gen-time
     zh-TW: 次數
   gen-time-description: &gen-time-description
-    zh-TW: 要生成的次數（預設為1，最高100）
+    zh-TW: 要生成的次數（預設為1，最高50）
 
 seed:
   help:

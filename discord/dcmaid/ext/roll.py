@@ -58,9 +58,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 	_exec_time_option = discord.Option(int,
 		name = 'number',
-		description = 'How many numbers generated (Default 1, up to 100)',
+		description = 'How many numbers generated (Default 1, up to 50)',
 		min_value = 1,
-		max_value = 100,
+		max_value = 50,
 		default = 1)
 
 	@discord.commands.slash_command(

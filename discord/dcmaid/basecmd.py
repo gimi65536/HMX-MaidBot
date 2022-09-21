@@ -205,7 +205,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	def fetch_weight(self, channel: discord.abc.GuildChannel):
 		return Weight(self.bot, channel)
 
-	@maid_setting.slash_command(
+	@maid_setting.command(
 		name = 'get',
 		description = 'Get the weight of appearances of the maids.',
 		options = [
@@ -234,7 +234,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 		await ctx.send_response(embed = embed)
 
-	@maid_setting.slash_command(
+	@maid_setting.command(
 		name = 'get-bot',
 		description = 'Get the weight of appearances of the bot.'
 	)
@@ -249,7 +249,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 		await ctx.send_response(embed = embed)
 
-	@maid_setting.slash_command(
+	@maid_setting.command(
 		name = 'set',
 		description = 'Set the weight of appearances of the maids.',
 		options = [
@@ -278,7 +278,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 		await ctx.send_response(embed = embed)
 
-	@maid_setting.slash_command(
+	@maid_setting.command(
 		name = 'set-bot',
 		description = 'Set the weight of appearances of the bot.',
 		options = [

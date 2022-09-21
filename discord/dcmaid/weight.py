@@ -1,7 +1,7 @@
 import discord
 import random
 from threading import Lock
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 from .basebot import Bot
 from .utils import proxy
 
