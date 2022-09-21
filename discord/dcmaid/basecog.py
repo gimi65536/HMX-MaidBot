@@ -42,7 +42,7 @@ class BaseCogMeta(discord.CogMeta):
 			cmd_locale = d.get(cmd.qualified_name, {})
 
 			# Do help localization here
-			help_table = cmd_locale.get('help', None)
+			help_table = cmd_locale.get('help', {})
 			update_help(cmd, help_table)
 
 			# Do localization (name_localication, etc.) here
