@@ -9,6 +9,7 @@ from .helper import get_help
 from .perm import admin_only
 from .utils import *
 from .views import YesNoView
+from .weight import Weight
 
 # This cog (name = 'Base') defines the basic commands.
 class BasicCommands(BaseCog, name = 'Base'):
@@ -201,6 +202,9 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 	)
 
+	def fetch_weight(self, channel: discord.abc.GuildChannel):
+		return Weight(self.bot, channel)
+
 	@maid_setting.slash_command(
 		name = 'get',
 		description = 'Get the weight of appearances of the maids.',
@@ -218,7 +222,17 @@ class BasicCommands(BaseCog, name = 'Base'):
 		If maid is not given, returns the appearance weights of all the maids and the bot.
 		Can be only called in a server channel.
 		'''
-		...
+		w = self.fetch_weight(get_guild_channel(ctx))
+		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
+		if maid_name is None:
+			# All character
+			embed.add_field(name = self._trans(ctx, 'myself'), value = str(w.get_bot_weight()), inline = True)
+			for maid in self.maids:
+				embed.add_field(name = maid, value = str(w.get_maid_weight(maid)), inline = True)
+		else:
+			embed.add_field(name = maid_name, value = str(w.get_maid_weight(maid_name)), inline = True)
+
+		await ctx.send_response(embed = embed)
 
 	@maid_setting.slash_command(
 		name = 'get-bot',
@@ -229,7 +243,11 @@ class BasicCommands(BaseCog, name = 'Base'):
 		`/{cmd_name}` returns the weight of appearances of the bot in this channel.
 		Can be only called in a server channel.
 		'''
-		...
+		w = self.fetch_weight(get_guild_channel(ctx))
+		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
+		embed.add_field(name = self._trans(ctx, 'myself'), value = str(w.get_bot_weight()), inline = True)
+
+		await ctx.send_response(embed = embed)
 
 	@maid_setting.slash_command(
 		name = 'set',
@@ -250,7 +268,15 @@ class BasicCommands(BaseCog, name = 'Base'):
 		`/{cmd_name} <maid name> <weight>` sets the weight of appearances of a maid in this channel.
 		Can be only called in a server channel.
 		'''
-		...
+		w = self.fetch_weight(get_guild_channel(ctx))
+		w.set_maid_weight(maid_name, weight)
+
+		embed = discord.Embed(title = self._trans(ctx, 'weight-set'), color = discord.Color.green())
+		embed.add_field(name = self._trans(ctx, 'succ-weight-set'),
+			value = self._trans(ctx, 'succ-weight-set-value', format = {'name': maid_name, 'weight': weight})
+		)
+
+		await ctx.send_response(embed = embed)
 
 	@maid_setting.slash_command(
 		name = 'set-bot',
@@ -267,7 +293,15 @@ class BasicCommands(BaseCog, name = 'Base'):
 		`/{cmd_name} <weight>` sets the weight of appearances of the bot in this channel.
 		Can be only called in a server channel.
 		'''
-		...
+		w = self.fetch_weight(get_guild_channel(ctx))
+		w.set_bot_weight(weight)
+
+		embed = discord.Embed(title = self._trans(ctx, 'weight-set'), color = discord.Color.green())
+		embed.add_field(name = self._trans(ctx, 'succ-weight-set'),
+			value = self._trans(ctx, 'succ-weight-set-bot-value', format = {'weight': weight})
+		)
+
+		await ctx.send_response(embed = embed)
 
 	@discord.slash_command(
 		description = 'Introduce the maids',

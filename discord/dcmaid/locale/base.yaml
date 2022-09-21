@@ -223,6 +223,24 @@ __translation_table:
   succ-uninst:
     ~: Successfully Uninstalled.
     zh-TW: 解除安裝完成。
+  weight:
+    ~: Weight
+    zh-TW: 權重
+  myself:
+    ~: Me (bot)
+    zh-TW: 我自己（bot）
+  weight-set:
+    ~: Weight Setting
+    zh-TW: 權重設定
+  succ-weight-set:
+    ~: Successful
+    zh-TW: 成功
+  succ-weight-set-value:
+    ~: The appearance weight of {name} is set to `{weight}`.
+    zh-TW: {name} 的隨機權重已被設定為`{weight}`。
+  succ-weight-set-bot-value:
+    ~: The appearance weight of me (bot) is set to `{weight}`.
+    zh-TW: 我自己（bot）的隨機權重已被設定為`{weight}`。
   ensure-uninst:
     ~: Are you sure to uninstall? (Press `Yes` in 3 minutes)
     zh-TW: 確定要解除安裝嗎？（請在三分鐘內按下Yes）
