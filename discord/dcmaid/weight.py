@@ -25,6 +25,7 @@ class Weight:
 		self.bot = bot
 		self.channel = channel
 		key = self._get_key(bot, channel)
+		d = self.d
 		if key not in d:
 			with self.creation_lock:
 				# Ensure that each instabce of the same channel shares the same table.
@@ -34,7 +35,7 @@ class Weight:
 				else:
 					# Create a real instance
 					assigned = True
-					self.d[key] = self
+					d[key] = self
 
 					self._individual_lock = Lock()
 					col = self._col = bot.db[self.col_name]
@@ -56,7 +57,7 @@ class Weight:
 					if self.bot_key not in weights:
 						# Bot field
 						modified = True
-						weights[bot_key] = 1 # Default
+						weights[self.bot_key] = 1 # Default
 
 					for maid in maids:
 						if maid not in weights:

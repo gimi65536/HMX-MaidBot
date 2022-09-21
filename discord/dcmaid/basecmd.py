@@ -222,7 +222,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		If maid is not given, returns the appearance weights of all the maids and the bot.
 		Can be only called in a server channel.
 		'''
-		w = self.fetch_weight(get_guild_channel(ctx))
+		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
 		if maid_name is None:
 			# All character
@@ -243,7 +243,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		`/{cmd_name}` returns the weight of appearances of the bot in this channel.
 		Can be only called in a server channel.
 		'''
-		w = self.fetch_weight(get_guild_channel(ctx))
+		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
 		embed.add_field(name = self._trans(ctx, 'myself'), value = str(w.get_bot_weight()), inline = True)
 
@@ -268,7 +268,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		`/{cmd_name} <maid name> <weight>` sets the weight of appearances of a maid in this channel.
 		Can be only called in a server channel.
 		'''
-		w = self.fetch_weight(get_guild_channel(ctx))
+		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		w.set_maid_weight(maid_name, weight)
 
 		embed = discord.Embed(title = self._trans(ctx, 'weight-set'), color = discord.Color.green())
@@ -293,7 +293,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		`/{cmd_name} <weight>` sets the weight of appearances of the bot in this channel.
 		Can be only called in a server channel.
 		'''
-		w = self.fetch_weight(get_guild_channel(ctx))
+		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		w.set_bot_weight(weight)
 
 		embed = discord.Embed(title = self._trans(ctx, 'weight-set'), color = discord.Color.green())
