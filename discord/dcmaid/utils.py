@@ -71,3 +71,15 @@ def walk_commands_and_groups(cmd):
 	if isinstance(cmd, discord.SlashCommandGroup):
 		for subcmd in cmd.subcommands:
 			yield from walk_commands_and_groups(subcmd)
+
+async def send_as(ctx: Union[discord.ApplicationContext, discord.Interaction], webhook = None, *args, **kwargs):
+	channel = ctx.channel
+	if webhook is None:
+		# Use bot
+		await channel.send(*args, **kwargs)
+	else:
+		# Use webhook
+		if isinstance(channel, discord.Thread):
+			await self.webhook.send(*args, **kwargs, thread = channel)
+		else:
+			await self.webhook.send(*args, **kwargs)

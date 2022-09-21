@@ -367,17 +367,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 				return
 
 			await interaction.response.defer()
-			channel = interaction.channel
-
-			if self.webhook is None:
-				# Use bot
-				await channel.send(text)
-			else:
-				# Use webhook
-				if isinstance(interaction.channel, discord.Thread):
-					await self.webhook.send(text, thread = channel)
-				else:
-					await self.webhook.send(text)
+			await send_as(interaction, self.webhook, text)
 
 	@discord.slash_command(
 		description = 'Send a message as the bot or a maid',
@@ -416,23 +406,13 @@ class BasicCommands(BaseCog, name = 'Base'):
 				ephemeral = True
 			)
 		else:
-			if maid_name == '':
-				if len(text) == 0:
-					await ctx.send_modal(self._SpeakModal(self, ctx.locale))
-				else:
-					await remove_thinking(ctx)
-					await ctx.channel.send(text)
+			webhook = self.state.get_installed_hooks(ctx.channel_id).get(maid_name, None)
+
+			if len(text) == 0:
+				await ctx.send_modal(self._SpeakModal(self, ctx.locale, webhook))
 			else:
-				installed_hooks = self.state.get_installed_hooks(ctx.channel_id)
-				webhook = installed_hooks[maid_name]
-				if len(text) == 0:
-					await ctx.send_modal(self._SpeakModal(self, ctx.locale, webhook))
-				else:
-					await remove_thinking(ctx)
-					if isinstance(ctx.channel, discord.Thread):
-						await webhook.send(text, thread = ctx.channel)
-					else:
-						await webhook.send(text)
+				await remove_thinking(ctx)
+				await send_as(ctx, webhook, text)
 
 __all__ = ['BasicCommands']
 
