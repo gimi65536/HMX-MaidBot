@@ -38,8 +38,8 @@ class RollCommands(BaseCog, name = 'Roll'):
 		return '\n'.join(l)
 
 	@classmethod
-	def _build_box_message(cls, tran_key, l, /, *args, **kwargs):
-		return f'```\n{cls._trans(ctx, tran_key).format(*args, **kwargs)}\n{cls._list_message(l)}```'
+	def _build_box_message(cls, ctx, tran_key, l, /, **kwargs):
+		return f'```\n{cls._trans(ctx, tran_key, format = kwargs)}\n{cls._list_message(l)}```'
 
 	__state_random_key__ = 'random_generator_{}'
 
@@ -124,7 +124,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		results = (self._get_random_generator(ctx).uniform(a, b) for _ in range(n))
 		await remove_thinking(ctx)
 		await self._send_followup(ctx, '',
-			self._build_box_message('dist-uniform', results, lower = a, upper = b, n = n)
+			self._build_box_message(ctx, 'dist-uniform', results, lower = a, upper = b, n = n)
 		) # Test as bot
 
 def setup(bot):
