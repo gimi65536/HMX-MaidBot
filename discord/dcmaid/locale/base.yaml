@@ -134,7 +134,7 @@ speak:
   maid.name:
     zh-TW: 女僕
   maid.description:
-    zh-TW: 哪位女僕？（可選）
+    zh-TW: 哪位女僕？（可選，留空則由BOT發言）
   text.name:
     zh-TW: 句子
   text.description:

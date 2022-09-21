@@ -376,7 +376,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		options = [
 			discord.Option(str,
 				name = 'maid',
-				description = 'What maid?',
+				description = 'What maid? (Empty to use the bot)',
 				autocomplete = autocomplete_get_maid_names,
 				default = ''
 			),
