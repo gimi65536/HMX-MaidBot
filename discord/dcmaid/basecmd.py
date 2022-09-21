@@ -255,7 +255,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		options = [
 			discord.Option(str,
 				name = 'maid',
-				description = 'Choose maid (Optional)',
+				description = 'Choose maid',
 				autocomplete = autocomplete_get_maid_names),
 			discord.Option(int,
 				name = 'weight',
