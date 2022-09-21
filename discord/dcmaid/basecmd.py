@@ -185,6 +185,90 @@ class BasicCommands(BaseCog, name = 'Base'):
 			delete_after = 180.0
 		)
 
+	maid_setting = system.create_subgroup(
+		name = 'weight',
+		description = 'About the weight of appearances of the bot and the maids'
+	)
+	set_help(maid_setting,
+		'''
+		Some commands are designed to respond as a character chosen randomly, \
+		and these setting commands are here to manipulate the weight of appearances (in this channel) \
+		of the bot and the maids.
+		Note that by default, the weight is 1 to all characters.
+		Also, DM channels does not have maids (webhooks) and those commands \
+		using maids only responds as the bot herself.
+		Can be only called in a server channel.
+		'''
+	)
+
+	@maid_setting.slash_command(
+		name = 'get',
+		description = 'Get the weight of appearances of the maids.',
+		options = [
+			discord.Option(str,
+				name = 'maid',
+				description = 'Choose maid (Optional)',
+				autocomplete = autocomplete_get_maid_names,
+				default = None)
+		]
+	)
+	async def weight_get(self, ctx, maid_name):
+		'''
+		`/{cmd_name} <?maid name>` returns the weight of appearances of a maid in this channel.
+		If maid is not given, returns the appearance weights of all the maids and the bot.
+		Can be only called in a server channel.
+		'''
+		...
+
+	@maid_setting.slash_command(
+		name = 'get-bot',
+		description = 'Get the weight of appearances of the bot.'
+	)
+	async def weight_get_bot(self, ctx):
+		'''
+		`/{cmd_name}` returns the weight of appearances of the bot in this channel.
+		Can be only called in a server channel.
+		'''
+		...
+
+	@maid_setting.slash_command(
+		name = 'set',
+		description = 'Set the weight of appearances of the maids.',
+		options = [
+			discord.Option(str,
+				name = 'maid',
+				description = 'Choose maid (Optional)',
+				autocomplete = autocomplete_get_maid_names),
+			discord.Option(int,
+				name = 'weight',
+				description = 'Input the weight of appearances (a non-negative integer)',
+				min_value = 0)
+		]
+	)
+	async def weight_set(self, ctx, maid_name, weight):
+		'''
+		`/{cmd_name} <maid name> <weight>` sets the weight of appearances of a maid in this channel.
+		Can be only called in a server channel.
+		'''
+		...
+
+	@maid_setting.slash_command(
+		name = 'set-bot',
+		description = 'Set the weight of appearances of the bot.',
+		options = [
+			discord.Option(int,
+				name = 'weight',
+				description = 'Input the weight of appearances (a non-negative integer)',
+				min_value = 0)
+		]
+	)
+	async def weight_set_bot(self, ctx, weight):
+		'''
+		`/{cmd_name} <weight>` sets the weight of appearances of the bot in this channel.
+		Can be only called in a server channel.
+		'''
+		...
+
 	@discord.slash_command(
 		description = 'Introduce the maids',
 		guild_only = True,

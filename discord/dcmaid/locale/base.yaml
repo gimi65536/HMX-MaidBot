@@ -1,3 +1,9 @@
+__reference:
+  weight.name: &weight
+    zh-TW: 權重
+  weight.description: &weight-description
+    zh-TW: 輸入出現率權重（非負整數）
+
 system:
   help:
     zh-TW: >
@@ -59,6 +65,64 @@ system uninstall:
     zh-TW: 解除安裝
   description:
     zh-TW: 解僱女僕
+
+system weight:
+  help:
+    zh-TW: >
+      有一些指令會使用某位隨機角色（女僕或BOT）的名義進行回覆，
+      而這邊的指令就是用來操縱（在這個頻道內）隨機角色出現的權重。
+
+      需要注意的是，每個角色的初始權重都被設定為1。
+
+      另外，由於私訊頻道並不存在女僕，必然是使用BOT進行回覆，
+      所以也不會有權重可供設定。
+
+      這些指令只能在伺服器頻道內使用。
+  name:
+    zh-TW: 權重
+  description:
+    zh-TW: 權重設定
+
+system weight get:
+  help:
+    zh-TW:
+      `/{cmd_name} <?女僕代號>` 回傳某位女僕在這個頻道的隨機出現權重。
+      如果沒有給女僕代號，則回傳所有角色（女僕與BOT）的權重。
+
+      這條指令只能在伺服器頻道內使用。
+  maid.name:
+    zh-TW: 女僕
+  maid.description:
+    zh-TW: 哪位女僕？（可選）
+
+system weight get-bot:
+  help:
+    zh-TW:
+      `/{cmd_name}` 回傳BOT在這個頻道的隨機出現權重。
+
+      這條指令只能在伺服器頻道內使用。
+
+system weight set:
+  help:
+    zh-TW:
+      `/{cmd_name} <女僕代號> <權重>` 設定某位女僕在這個頻道的隨機出現權重。
+
+      這條指令只能在伺服器頻道內使用。
+  maid.name:
+    zh-TW: 女僕
+  maid.description:
+    zh-TW: 哪位女僕？（可選）
+  weight.name: *weight
+  weight.description: *weight-description
+
+system weight set-bot:
+  help:
+    zh-TW:
+      `/{cmd_name} <權重>` 設定BOT在這個頻道的隨機出現權重。
+
+      這條指令只能在伺服器頻道內使用。
+  weight.name: *weight
+  weight.description: *weight-description
 
 introduce:
   help:
