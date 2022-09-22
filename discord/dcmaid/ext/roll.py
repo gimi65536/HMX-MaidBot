@@ -16,6 +16,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 		self._common_random = random.Random() # Used in DM
 
 	async def cog_before_invoke(self, ctx):
+		if is_DM(ctx.channel):
+			return
+
 		maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
 		maid_weights = await self.bot.get_cog('Base').fetch_weight(ctx)
 		setattr(ctx, 'maid_webhook', maid_webhook)
@@ -24,12 +27,16 @@ class RollCommands(BaseCog, name = 'Roll'):
 	# Since webhooks cannot really reply or followup messages as a bot,
 	# here we simulate those with plain messages whoever the sender is.
 	async def _send_followup(self, ctx, maid, *args, **kwargs):
-		if hasattr(ctx, 'maid_webhook'):
-			maid_webhook = ctx.maid_webhook
+		if is_DM(ctx.channel):
+			webhook = None
 		else:
-			maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
+			if hasattr(ctx, 'maid_webhook'):
+				maid_webhook = ctx.maid_webhook
+			else:
+				maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
 
-		webhook = maid_webhook.get(maid, None)
+			webhook = maid_webhook.get(maid, None)
+
 		await send_as(ctx, webhook, *args, **kwargs)
 
 	@staticmethod
@@ -41,13 +48,13 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 	@classmethod
 	def _build_box_message(cls, ctx, tran_key, l, /, **kwargs):
-		return f'```\n{cls._trans(ctx, tran_key, format = kwargs)}\n{cls._list_message(l)}```'
+		return f'<@{ctx.author.id}>\n```\n{cls._trans(ctx, tran_key, format = kwargs)}\n{cls._list_message(l)}```'
 
 	__state_random_key__ = 'random_generator_{}'
 
 	def _get_random_generator(self, ctx) -> random.Random:
 		channel = ctx.channel
-		if isinstance(channel, (discord.PartialMessageable, discord.DMChannel)):
+		if is_DM(channel):
 			return self._common_random
 
 		channel = get_guild_channel(channel)

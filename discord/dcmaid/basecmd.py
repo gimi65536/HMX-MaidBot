@@ -365,8 +365,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		if (isinstance(channel, discord.abc.GuildChannel) and hasattr(channel, 'purge')) or isinstance(channel, discord.Thread):
 			# TextChannel, VoiceChannel, ForumChannel, and Thread
 			await channel.purge(limit = None, reason = 'Clear all messages in the channel')
-		elif isinstance(channel, (discord.PartialMessageable, discord.DMChannel)):
-			# So far, the DMChannel case won't be triggered at all.
+		elif is_DM(channel):
 			messages = []
 			async for m in channel.history(limit = None):
 				if m.author == self.bot.user:

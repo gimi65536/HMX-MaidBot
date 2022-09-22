@@ -104,3 +104,7 @@ def proxy(f_or_attr, /):
 				self = self._proxy
 			return f(self, *args, **kwargs)
 		return wrapper
+
+def is_DM(channel):
+	# So far, the DMChannel case won't be triggered at all.
+	return isinstance(channel, (discord.PartialMessageable, discord.DMChannel))
