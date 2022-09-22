@@ -36,7 +36,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	# Also, note that we don't store webhook tokens in our db but store the
 	# full webhooks (containing tokens) in the server state.
 	async def _fetch_maids(self, channel, force = False):
-		channel_id = ctx.channel_id
+		channel_id = channel.id
 
 		col = self.db['channel-installed-maids']
 

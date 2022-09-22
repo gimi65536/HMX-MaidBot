@@ -81,9 +81,9 @@ async def send_as(ctx: Union[discord.ApplicationContext, discord.Interaction], w
 	else:
 		# Use webhook
 		if isinstance(channel, discord.Thread):
-			await self.webhook.send(*args, **kwargs, thread = channel)
+			await webhook.send(*args, **kwargs, thread = channel)
 		else:
-			await self.webhook.send(*args, **kwargs)
+			await webhook.send(*args, **kwargs)
 
 def proxy(f_or_attr, /):
 	if isinstance(f_or_attr, str):

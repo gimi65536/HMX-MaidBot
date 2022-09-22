@@ -20,7 +20,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 			return
 
 		maid_webhook = await self.bot.get_cog('Base').fetch_maids(get_guild_channel(ctx.channel))
-		maid_weights = await self.bot.get_cog('Base').fetch_weight(get_guild_channel(ctx.channel))
+		maid_weights = self.bot.get_cog('Base').fetch_weight(get_guild_channel(ctx.channel))
 		setattr(ctx, 'maid_webhook', maid_webhook)
 		setattr(ctx, 'maid_weights', maid_weights)
 
