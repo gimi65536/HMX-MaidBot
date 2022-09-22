@@ -17,7 +17,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 	async def cog_before_invoke(self, ctx):
 		maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
+		maid_weights = await self.bot.get_cog('Base').fetch_weight(ctx)
 		setattr(ctx, 'maid_webhook', maid_webhook)
+		setattr(ctx, 'maid_weights', maid_weights)
 
 	# Since webhooks cannot really reply or followup messages as a bot,
 	# here we simulate those with plain messages whoever the sender is.
@@ -123,7 +125,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		'''
 		results = (self._get_random_generator(ctx).uniform(a, b) for _ in range(n))
 		await remove_thinking(ctx)
-		await self._send_followup(ctx, '',
+		await self._send_followup(ctx, ctx.maid_weights.random_get(self._get_random_generator(ctx)),
 			self._build_box_message(ctx, 'dist-uniform', results, lower = a, upper = b, n = n)
 		) # Test as bot
 
