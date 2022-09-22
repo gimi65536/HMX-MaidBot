@@ -9,7 +9,7 @@ from .exception import MaidNotFound
 from .helper import get_help, set_help, update_help
 from .reader import load
 from .typing import Localeable
-from .utils import walk_commands_and_groups
+from .utils import send_error_embed, walk_commands_and_groups
 
 def _replace_localization(obj, attr: str, attr_locale: str, key: str, cmd_locale: dict):
 	table = cmd_locale.get(key, {})
@@ -107,7 +107,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 			)
 		else:
 			# Propagate
-			await super().cog_command_error(ctx, exception)
+			raise exception
 
 	# Given a complex dictionary which every key is optional string and every element is either
 	# a string or a complex dictionary and given keys, return the string if any.
