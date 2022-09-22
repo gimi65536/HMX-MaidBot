@@ -213,7 +213,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 				name = 'maid',
 				description = 'Choose maid (Optional)',
 				autocomplete = autocomplete_get_maid_names,
-				default = None)
+				default = '')
 		]
 	)
 	async def weight_get(self, ctx, maid_name):
@@ -222,6 +222,14 @@ class BasicCommands(BaseCog, name = 'Base'):
 		If maid is not given, returns the appearance weights of all the maids and the bot.
 		Can be only called in a server channel.
 		'''
+		maid_name = trim(maid_name)
+		if maid_name != '' and maid_name not in self.maids:
+			await send_error_embed(ctx,
+				name = self._trans(ctx, 'no-maid'),
+				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
+				ephemeral = True
+			)
+
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
 		if maid_name is None:
@@ -268,6 +276,14 @@ class BasicCommands(BaseCog, name = 'Base'):
 		`/{cmd_name} <maid name> <weight>` sets the weight of appearances of a maid in this channel.
 		Can be only called in a server channel.
 		'''
+		maid_name = trim(maid_name)
+		if maid_name != '' and maid_name not in self.maids:
+			await send_error_embed(ctx,
+				name = self._trans(ctx, 'no-maid'),
+				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
+				ephemeral = True
+			)
+
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		w.set_maid_weight(maid_name, weight)
 
@@ -519,8 +535,8 @@ class BasicCommands(BaseCog, name = 'Base'):
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
 			await send_error_embed(ctx,
-				name = self._trans(ctx, 'speak-no-maid'),
-				value = self._trans(ctx, 'speak-no-maid-value', format = {'maid_name': maid_name}),
+				name = self._trans(ctx, 'no-maid'),
+				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
 				ephemeral = True
 			)
 		else:

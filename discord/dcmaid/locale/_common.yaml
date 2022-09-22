@@ -1,0 +1,7 @@
+__translation_table:
+  ~:
+    ~: Please check the translation key.
+    zh-TW: 請檢查翻譯代碼是否正確。
+  example:
+    ~: example
+    zh-TW: 範例

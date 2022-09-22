@@ -55,9 +55,6 @@ distribution uniform:
   number.description: *gen-time-description
 
 __translation_table:
-  ~:
-    ~: Please check the translation key.
-    zh-TW: 請檢查翻譯代碼是否正確。
   seed-set:
     ~: Seed has been set.
     zh-TW: 種子碼設定完成。

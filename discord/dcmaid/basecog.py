@@ -20,6 +20,9 @@ class BaseCogMeta(discord.CogMeta):
 	'''
 	Define a cog that automatically supports our help structure and localization.
 	'''
+
+	_common_table: Dict[Optional[str], Dict[Optional[str], str]] = None
+
 	def __new__(mcls, *args, **kwargs):
 		cls = super().__new__(mcls, *args, **kwargs)
 
@@ -31,12 +34,23 @@ class BaseCogMeta(discord.CogMeta):
 			# Make help properties attach on commands
 			get_help(cmd)
 
+		# Load common table
+		if mcls._common_table is None:
+			common_d = load('_common')
+			if common_d is None:
+				mcls._common_table = {}
+			else:
+				mcls._common_table = common_d.get('__translation_table', {})
+
+		cls.__cog_translation_table__: Dict[Optional[str], Dict[Optional[str], str]] = mcls._common_table.copy()
+
+		# Load specific table
 		d = load(f'{ cls.__cog_name__.lower() }')
 
 		if d is None:
 			return cls
 
-		cls.__cog_translation_table__: Dict[Optional[str], Dict[Optional[str], str]] = d.get('__translation_table', {})
+		cls.__cog_translation_table__.update(d.get('__translation_table', {}))
 
 		for cmd in commands:
 			cmd_locale = d.get(cmd.qualified_name, {})
