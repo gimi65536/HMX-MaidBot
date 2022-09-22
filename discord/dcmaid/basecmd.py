@@ -27,7 +27,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	set_help(system,
 		'''
-		These commands are related to core settings of maids and the bot.
+		These commands are related to core settings of maids and {bot}.
 		Can be only called in a server channel.
 		'''
 	)
@@ -194,10 +194,10 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		Some commands are designed to respond as a character chosen randomly, \
 		and these setting commands are here to manipulate the weight of appearances (in this channel) \
-		of the bot and the maids.
+		of {bot} and the maids.
 		Note that by default, the weight is 1 to all characters.
 		Also, DM channels does not have maids (webhooks) and those commands \
-		using maids only responds as the bot herself.
+		using maids only responds as {bot} herself.
 		Can be only called in a server channel.
 		'''
 	)
@@ -219,7 +219,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	async def weight_get(self, ctx, maid_name):
 		'''
 		`/{cmd_name} <?maid name>` returns the weight of appearances of a maid in this channel.
-		If maid is not given, returns the appearance weights of all the maids and the bot.
+		If maid is not given, returns the appearance weights of all the maids and {bot}.
 		Can be only called in a server channel.
 		'''
 		maid_name = trim(maid_name)
@@ -230,7 +230,11 @@ class BasicCommands(BaseCog, name = 'Base'):
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
 		if maid_name == '':
 			# All character
-			embed.add_field(name = self._trans(ctx, 'myself'), value = str(w.get_bot_weight()), inline = True)
+			embed.add_field(
+				name = self._trans(ctx, 'myself', format = {'bot': get_bot_name_in_ctx(ctx)}),
+				value = str(w.get_bot_weight()),
+				inline = True
+			)
 			for maid in self.maids:
 				embed.add_field(name = maid, value = str(w.get_maid_weight(maid)), inline = True)
 		else:
@@ -244,12 +248,16 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def weight_get_bot(self, ctx):
 		'''
-		`/{cmd_name}` returns the weight of appearances of the bot in this channel.
+		`/{cmd_name}` returns the weight of appearances of {bot} in this channel.
 		Can be only called in a server channel.
 		'''
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
-		embed.add_field(name = self._trans(ctx, 'myself'), value = str(w.get_bot_weight()), inline = True)
+		embed.add_field(
+			name = self._trans(ctx, 'myself', format = {'bot': get_bot_name_in_ctx(ctx)}),
+			value = str(w.get_bot_weight()),
+			inline = True
+		)
 
 		await ctx.send_response(embed = embed)
 
@@ -298,7 +306,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def weight_set_bot(self, ctx, weight):
 		'''
-		`/{cmd_name} <weight>` sets the weight of appearances of the bot in this channel.
+		`/{cmd_name} <weight>` sets the weight of appearances of {bot} in this channel.
 		Can be only called in a server channel.
 		'''
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
@@ -306,7 +314,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 		embed = discord.Embed(title = self._trans(ctx, 'weight-set'), color = discord.Color.green())
 		embed.add_field(name = self._trans(ctx, 'succ-weight-set'),
-			value = self._trans(ctx, 'succ-weight-set-bot-value', format = {'weight': weight})
+			value = self._trans(ctx, 'succ-weight-set-bot-value', format = {'bot': get_bot_name_in_ctx(ctx), 'weight': weight})
 		)
 
 		await ctx.send_response(embed = embed)
@@ -324,7 +332,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	)
 	async def introduce(self, ctx, maid_name):
 		'''
-		`/{cmd_name} <?maid name>` is a basic command to let the bot introduce maids we have.
+		`/{cmd_name} <?maid name>` is a basic command to let {bot} introduce maids we have.
 		This command also attempt to add maids if the server process has not remembered the \
 		channel, just like what the initialize command does, so this command is free to call by any user.
 		Can be only called in a server channel.
@@ -381,7 +389,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	async def cls(self, ctx):
 		'''
 		`/{cmd_name}` will clear the chat room.
-		If it is called in DM channels, only the messages sent by the bot get deleted.
+		If it is called in DM channels, only the messages sent by {bot} get deleted.
 		This command is for channel managers only.
 		The response of the command is ephemeral.
 		'''
@@ -467,7 +475,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 			embed = discord.Embed(color = discord.Color.green(), title = self._trans(ctx, 'Help'))
 			embed.add_field(
 				name = f'/{cmd_name}',
-				value = doc.format(cog = self, bot = self.bot, cmd_name = cmd_name)
+				value = doc.format(cog = self, bot = get_bot_name_in_ctx(ctx), cmd_name = cmd_name)
 			)
 			await ctx.send_response(embed = embed)
 
@@ -515,7 +523,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	async def speak(self, ctx, maid_name, text):
 		'''
 		`/{cmd_name}` <?maid_name> <?text> is a command to make a maid send a message.
-		If the name is not provided, then the bot itself will speak the text.
+		If the name is not provided, then {bot} herself will speak the text.
 		If the text is not provided, then a form is given to type a long article
 		(up to 1024 characters).
 		This command is for OPs only.
