@@ -229,6 +229,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
 				ephemeral = True
 			)
+			return
 
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
@@ -283,6 +284,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
 				ephemeral = True
 			)
+			return
 
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		w.set_maid_weight(maid_name, weight)
@@ -539,14 +541,15 @@ class BasicCommands(BaseCog, name = 'Base'):
 				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
 				ephemeral = True
 			)
-		else:
-			webhook = self.state.get_installed_hooks(ctx.channel_id).get(maid_name, None)
+			return
 
-			if len(text) == 0:
-				await ctx.send_modal(self._SpeakModal(self, ctx.locale, webhook))
-			else:
-				await remove_thinking(ctx)
-				await send_as(ctx, webhook, text)
+		webhook = self.state.get_installed_hooks(ctx.channel_id).get(maid_name, None)
+
+		if len(text) == 0:
+			await ctx.send_modal(self._SpeakModal(self, ctx.locale, webhook))
+		else:
+			await remove_thinking(ctx)
+			await send_as(ctx, webhook, text)
 
 __all__ = ['BasicCommands']
 
