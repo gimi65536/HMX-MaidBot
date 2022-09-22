@@ -19,8 +19,8 @@ class RollCommands(BaseCog, name = 'Roll'):
 		if is_DM(ctx.channel):
 			return
 
-		maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
-		maid_weights = await self.bot.get_cog('Base').fetch_weight(ctx)
+		maid_webhook = await self.bot.get_cog('Base').fetch_maids(get_guild_channel(ctx.channel))
+		maid_weights = await self.bot.get_cog('Base').fetch_weight(get_guild_channel(ctx.channel))
 		setattr(ctx, 'maid_webhook', maid_webhook)
 		setattr(ctx, 'maid_weights', maid_weights)
 
@@ -33,7 +33,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 			if hasattr(ctx, 'maid_webhook'):
 				maid_webhook = ctx.maid_webhook
 			else:
-				maid_webhook = await self.bot.get_cog('Base').fetch_maids(ctx)
+				maid_webhook = await self.bot.get_cog('Base').fetch_maids(get_guild_channel(ctx.channel))
 
 			webhook = maid_webhook.get(maid, None)
 

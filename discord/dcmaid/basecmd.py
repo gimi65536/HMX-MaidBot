@@ -35,8 +35,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 	# After fetch, the state "installed_hooks" should match the maid mapping.
 	# Also, note that we don't store webhook tokens in our db but store the
 	# full webhooks (containing tokens) in the server state.
-	async def _fetch_maids(self, ctx, force = False):
-		channel = get_guild_channel(ctx.channel)
+	async def _fetch_maids(self, channel, force = False):
 		channel_id = ctx.channel_id
 
 		col = self.db['channel-installed-maids']
@@ -96,12 +95,12 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 		return installed_hooks
 
-	async def fetch_maids(self, ctx):
+	async def fetch_maids(self, channel: discord.abc.GuildChannel):
 		'''
 		This method should be called in every command if the command uses maids.
-		An extension will call this method with `bot.get_cog('Base').fetch_maids(ctx)`.
+		An extension will call this method with `bot.get_cog('Base').fetch_maids(channel)`.
 		'''
-		return await self._fetch_maids(ctx)
+		return await self._fetch_maids(channel)
 
 	@system.command(
 		description = 'Initialize or update the maids'
@@ -116,7 +115,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
 		'''
-		await self.fetch_maids(ctx)
+		await self.fetch_maids(get_guild_channel(ctx.channel))
 		await ctx.send_response(
 			content = self._trans(ctx, 'succ-init'),
 			ephemeral = True
@@ -330,7 +329,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		channel, just like what the initialize command does, so this command is free to call by any user.
 		Can be only called in a server channel.
 		'''
-		await self.fetch_maids(ctx)
+		await self.fetch_maids(get_guild_channel(ctx.channel))
 
 		maid_name = trim(maid_name)
 
@@ -522,7 +521,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		This command is for OPs only.
 		Can be only called in a server channel.
 		'''
-		await self.fetch_maids(ctx)
+		await self.fetch_maids(get_guild_channel(ctx.channel))
 
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
