@@ -5,6 +5,7 @@ from types import MappingProxyType
 from typing import Dict
 from .basebot import Bot
 from .basecog import BaseCog
+from .exception import MaidNotFound
 from .helper import get_help
 from .perm import admin_only
 from .utils import *
@@ -224,12 +225,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
-			await send_error_embed(ctx,
-				name = self._trans(ctx, 'no-maid'),
-				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
-				ephemeral = True
-			)
-			return
+			raise MaidNotFound(maid_name)
 
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
@@ -279,12 +275,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		maid_name = trim(maid_name)
 		if maid_name not in self.maids:
-			await send_error_embed(ctx,
-				name = self._trans(ctx, 'no-maid'),
-				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
-				ephemeral = True
-			)
-			return
+			raise MaidNotFound(maid_name)
 
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		w.set_maid_weight(maid_name, weight)
@@ -536,12 +527,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
-			await send_error_embed(ctx,
-				name = self._trans(ctx, 'no-maid'),
-				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),
-				ephemeral = True
-			)
-			return
+			raise MaidNotFound(maid_name)
 
 		webhook = self.state.get_installed_hooks(ctx.channel_id).get(maid_name, None)
 

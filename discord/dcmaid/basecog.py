@@ -5,6 +5,7 @@ before a cog class is created.
 import discord
 from typing import Dict, List, Optional, Union
 from .basebot import Bot
+from .exception import MaidNotFound
 from .helper import get_help, set_help, update_help
 from .reader import load
 from .typing import Localeable
@@ -96,6 +97,17 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 
 		super().__init__()
 		self.bot = bot
+
+	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
+		if isinstance(exception, MaidNotFound):
+			await send_error_embed(ctx,
+				name = self._trans(ctx, 'no-maid'),
+				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': exception.falsy_maid_name}),
+				ephemeral = True
+			)
+		else:
+			# Propagate
+			await super().cog_command_error(ctx, exception)
 
 	# Given a complex dictionary which every key is optional string and every element is either
 	# a string or a complex dictionary and given keys, return the string if any.
