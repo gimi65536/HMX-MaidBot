@@ -5,3 +5,9 @@ __translation_table:
   example:
     ~: example
     zh-TW: 範例
+  no-maid:
+    ~: Maid not found
+    zh-TW: 查無女僕
+  no-maid-value:
+    ~: "`{maid_name}` is not found! Please check the maid name."
+    zh-TW: "`{maid_name}` 不是正確的女僕代號！請檢查是否有拼字錯誤。"

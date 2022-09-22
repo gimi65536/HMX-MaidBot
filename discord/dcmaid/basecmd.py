@@ -232,7 +232,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
-		if maid_name is None:
+		if maid_name == '':
 			# All character
 			embed.add_field(name = self._trans(ctx, 'myself'), value = str(w.get_bot_weight()), inline = True)
 			for maid in self.maids:
@@ -277,7 +277,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		Can be only called in a server channel.
 		'''
 		maid_name = trim(maid_name)
-		if maid_name != '' and maid_name not in self.maids:
+		if maid_name not in self.maids:
 			await send_error_embed(ctx,
 				name = self._trans(ctx, 'no-maid'),
 				value = self._trans(ctx, 'no-maid-value', format = {'maid_name': maid_name}),

@@ -288,9 +288,3 @@ __translation_table:
   speak-modal-empty-value:
     ~: The text cannot be empty.
     zh-TW: 句子不得為空。
-  no-maid:
-    ~: Maid not found
-    zh-TW: 查無女僕
-  no-maid-value:
-    ~: "`{maid_name}` is not found! Please check the maid name."
-    zh-TW: "`{maid_name}` 不是正確的女僕代號！請檢查是否有拼字錯誤。"
