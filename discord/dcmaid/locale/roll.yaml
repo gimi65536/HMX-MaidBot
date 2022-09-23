@@ -36,7 +36,7 @@ distribution uniform:
   help:
     zh-TW: >
       `/{cmd_name} <?下限a> <?上限b> <?次數n>` 會基於均勻分佈生成`n`個
-      介於`[a, b)`之間的浮點數。
+      介於`[a, b]`之間的浮點數。
 
       預設值 `a = 0`、`b = 1`、`n = 1`。
   name:
@@ -81,8 +81,8 @@ __translation_table:
     ~: Seed has been set.
     zh-TW: 種子碼設定完成。
   dist-uniform:
-    ~: Uniform [{lower}, {upper}) for {n} times
-    zh-TW: 均勻分佈 [{lower}, {upper}) （{n}次）
+    ~: Uniform [{lower}, {upper}] for {n} times
+    zh-TW: 均勻分佈 [{lower}, {upper}] （{n}次）
   dist-randint:
     ~: Random integer [{lower}, {upper}] for {n} times
     zh-TW: 隨機整數 [{lower}, {upper}] （{n}次）

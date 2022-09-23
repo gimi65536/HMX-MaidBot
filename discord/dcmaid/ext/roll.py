@@ -134,7 +134,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 	async def uniform(self, ctx, a, b, n):
 		'''
 		`/{cmd_name} <?lower> <?upper> <?number>` generates `n` random numbers
-		with uniform distribution in `[lower, upper)`.
+		with uniform distribution in `[lower, upper]`.
 
 		By default, `lower = 0`, `upper = 1`, `number = 1`.
 		'''
