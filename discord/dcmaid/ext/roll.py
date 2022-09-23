@@ -193,5 +193,29 @@ class RollCommands(BaseCog, name = 'Roll'):
 		results = (self._get_random_generator(ctx).triangular(a, b, m) for _ in range(n))
 		await self._dist(ctx, results, 'dist-triangular', lower = a, mode = m, upper = b, n = n)
 
+	async def beta(self, ctx, a, b, n):
+		NotImplemented
+
+	async def exponential(self, ctx, l, n):
+		NotImplemented
+
+	async def gamma(self, ctx, a, b, n):
+		NotImplemented
+
+	async def lognormal(self, ctx, m, s, n):
+		NotImplemented
+
+	async def normal(self, ctx, m, s, n):
+		NotImplemented
+
+	async def vonmises(self, ctx, m, s, n):
+		NotImplemented
+
+	async def pareto(self, ctx, a, n):
+		NotImplemented
+
+	async def weibull(self, ctx, a, b, n):
+		NotImplemented
+
 def setup(bot):
 	bot.add_cog(RollCommands(bot))
