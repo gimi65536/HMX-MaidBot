@@ -1,5 +1,5 @@
 import json
-from importlib_resources import files, as_file
+from importlib_resources import as_file
 from pathlib import PurePath
 from typing import TextIO, Tuple
 from .utils import add_suffix
@@ -64,8 +64,7 @@ class CUEReader(BaseReader):
 
 _readers = (JSONReader, YAMLReader, JSON5Reader, TOMLReader)
 
-def load(filename):
-	path = files(__package__).joinpath('locale').joinpath(filename)
+def load(path):
 	for reader in _readers:
 		obj = reader.load(path)
 		if obj is not None:

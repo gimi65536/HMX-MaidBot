@@ -3,6 +3,7 @@ This module defines basic cogs class that will do some works \
 before a cog class is created.
 '''
 import discord
+from importlib_resources import files
 from typing import Dict, List, Optional, Union
 from .basebot import Bot
 from .exception import MaidNotFound
@@ -36,8 +37,10 @@ class BaseCogMeta(discord.CogMeta):
 			get_help(cmd)
 
 		# Load common table
+		base_path = files(__package__).joinpath('locale')
+
 		if mcls._common_table is None:
-			common_d = load('_common')
+			common_d = load(base_path / '_common')
 			if common_d is None:
 				mcls._common_table = {}
 			else:
@@ -46,7 +49,7 @@ class BaseCogMeta(discord.CogMeta):
 		cls.__cog_translation_table__: Dict[Optional[str], Dict[Optional[str], str]] = mcls._common_table.copy()
 
 		# Load specific table
-		d = load(f'{ cls.__cog_name__.lower() }')
+		d = load(base_path / f'{ cls.__cog_name__.lower() }')
 
 		if d is None:
 			return cls
