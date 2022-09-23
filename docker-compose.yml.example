@@ -1,7 +1,8 @@
 services:
   dcbot:
     build:
-      context: ./discord
+      context: .
+      dockerfile: discord/Dockerfile
       args:
         production: #"Production if given any value"
     environment:
