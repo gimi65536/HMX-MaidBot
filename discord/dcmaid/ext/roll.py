@@ -109,6 +109,14 @@ class RollCommands(BaseCog, name = 'Roll'):
 		'''
 	)
 
+	async def _dist(self, ctx, results, tran_key, /, **kwargs):
+		await remove_thinking(ctx)
+		message = self._build_box_message(ctx, tran_key, results, **kwargs)
+		maid = None
+		if hasattr(ctx, 'maid_weights'):
+			maid = ctx.maid_weights.random_get(self._get_random_generator(ctx))
+		await self._send_followup(ctx, maid, message)
+
 	@distribution.command(
 		description = 'Uniform destribution',
 		options = [
@@ -131,10 +139,31 @@ class RollCommands(BaseCog, name = 'Roll'):
 		By default, `lower = 0`, `upper = 1`, `number = 1`.
 		'''
 		results = (self._get_random_generator(ctx).uniform(a, b) for _ in range(n))
-		await remove_thinking(ctx)
-		await self._send_followup(ctx, ctx.maid_weights.random_get(self._get_random_generator(ctx)),
-			self._build_box_message(ctx, 'dist-uniform', results, lower = a, upper = b, n = n)
-		) # Test as bot
+		await self._dist(ctx, results, 'dist-uniform', lower = a, upper = b, n = n)
+
+	@distribution.command(
+		description = 'Random integer',
+		options = [
+			discord.Option(int,
+				name = 'lower',
+				description = 'Lower bound (Default 0)',
+				default = 0),
+			discord.Option(int,
+				name = 'upper',
+				description = 'Upper bound (Default 1)',
+				default = 1),
+			_exec_time_option
+		]
+	)
+	async def randint(self, ctx, a, b, n):
+		'''
+		`/{cmd_name} <?lower> <?upper> <?number>` generates `n` random integers
+		fairly in `[lower, upper]`.
+
+		By default, `lower = 0`, `upper = 1`, `number = 1`.
+		'''
+		results = (self._get_random_generator(ctx).randint(a, b) for _ in range(n))
+		await self._dist(ctx, results, 'dist-randint', lower = a, upper = b, n = n)
 
 def setup(bot):
 	bot.add_cog(RollCommands(bot))

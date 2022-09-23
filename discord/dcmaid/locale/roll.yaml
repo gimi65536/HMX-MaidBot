@@ -54,6 +54,28 @@ distribution uniform:
   number.name: *gen-time
   number.description: *gen-time-description
 
+distribution randint:
+  help:
+    zh-TW: >
+      `/{cmd_name} <?下限a> <?上限b> <?次數n>` 會均勻生成`n`個
+      介於`[a, b]`之間的整數。
+
+      預設值 `a = 0`、`b = 1`、`n = 1`。
+  name:
+    zh-TW: 隨機整數
+  description:
+    zh-TW: 隨機整數生成
+  lower.name:
+    zh-TW: 下限
+  lower.description:
+    zh-TW: 下限值（預設為0）
+  upper.name:
+    zh-TW: 上限
+  upper.description:
+    zh-TW: 上限值（預設為1）
+  number.name: *gen-time
+  number.description: *gen-time-description
+
 __translation_table:
   seed-set:
     ~: Seed has been set.
@@ -61,3 +83,6 @@ __translation_table:
   dist-uniform:
     ~: Uniform [{lower}, {upper}) for {n} times
     zh-TW: 均勻分佈 [{lower}, {upper}) （{n}次）
+  dist-randint:
+    ~: Random integer [{lower}, {upper}] for {n} times
+    zh-TW: 隨機整數 [{lower}, {upper}] （{n}次）
