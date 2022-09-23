@@ -165,5 +165,33 @@ class RollCommands(BaseCog, name = 'Roll'):
 		results = (self._get_random_generator(ctx).randint(a, b) for _ in range(n))
 		await self._dist(ctx, results, 'dist-randint', lower = a, upper = b, n = n)
 
+	@distribution.command(
+		description = 'Triangular distribution',
+		options = [
+			discord.Option(float,
+				name = 'lower',
+				description = 'Lower bound (Default 0)',
+				default = 0),
+			discord.Option(float,
+				name = 'mode',
+				description = 'Mode (Default 0.5)',
+				default = 0.5),
+			discord.Option(float,
+				name = 'upper',
+				description = 'Upper bound (Default 1)',
+				default = 1),
+			_exec_time_option
+		]
+	)
+	async def triangular(self, ctx, a, m, b, n):
+		'''
+		`/{cmd_name} <?lower> <?upper> <?number>` generates `n` random numbers
+		with triangular distribution in `[lower, upper]`.
+
+		By default, `lower = 0`, `mode = 0.5`, `upper = 1`, `number = 1`.
+		'''
+		results = (self._get_random_generator(ctx).triangular(a, b, m) for _ in range(n))
+		await self._dist(ctx, results, 'dist-triangular', lower = a, mode = m, upper = b, n = n)
+
 def setup(bot):
 	bot.add_cog(RollCommands(bot))
