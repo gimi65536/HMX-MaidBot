@@ -115,3 +115,31 @@ def get_bot_name_in_ctx(ctx: discord.ApplicationContext) -> str:
 		return ctx.bot.user.display_name
 	else:
 		return guild.me.display_name
+
+def int_to_emoji(i: int) -> str:
+	s = str(i)
+	l = []
+	for c in s:
+		match c:
+			case '0':
+				l.append(':zero:')
+			case '1':
+				l.append(':one:')
+			case '2':
+				l.append(':two:')
+			case '3':
+				l.append(':three:')
+			case '4':
+				l.append(':four:')
+			case '5':
+				l.append(':five:')
+			case '6':
+				l.append(':six:')
+			case '7':
+				l.append(':seven:')
+			case '8':
+				l.append(':eight:')
+			case '9':
+				l.append(':nine:')
+
+	return ''.join(l)
