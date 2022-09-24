@@ -17,3 +17,7 @@ class DiscordRollGame(BaseRollGame):
 		if self.initial is not None:
 			content = f'{self.initial}\n{content}'
 		await send_as(self.ctx, self.webhook, content, **self.options)
+
+class DiscordDigitRollGame(DiscordRollGame):
+	async def _process(self, i: int):
+		return int_to_emoji(i)
