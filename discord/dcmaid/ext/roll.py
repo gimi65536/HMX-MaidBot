@@ -1,5 +1,6 @@
 import discord
 import random
+from rollgames import ArgumentLengthError as ALE, ArgumentTypeError as ATE
 from typing import List, Optional
 from ..basebot import Bot
 from ..basecog import BaseCog
@@ -293,16 +294,11 @@ class RollCommands(BaseCog, name = 'Roll'):
 		'''
 		...
 
-class ArgumentLengthError(discord.ApplicationCommandError):
-	def __init__(self, expect: List[int], got: int):
-		self.expect = expect
-		self.got = got
+class ArgumentLengthError(ALE, discord.ApplicationCommandError):
+	pass
 
-class ArgumentTypeError(discord.ApplicationCommandError):
-	def __init__(self, order: int, t: type, got: str):
-		self.order = order
-		self.t = t
-		self.got = got
+class ArgumentTypeError(ATE, discord.ApplicationCommandError):
+	pass
 
 def setup(bot):
 	bot.add_cog(RollCommands(bot))
