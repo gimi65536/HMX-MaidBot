@@ -1,46 +1,34 @@
-from . import DiscordRollGame
+from . import DiscordDigitRollGame
 from ...utils import int_to_emoji
-from rollgames import DiceGame
+from rollgames.dice import *
 
-class DiscordDiceGame(DiscordRollGame, DiceGame):
-	options = {
-		1: [('faces', int)]
-	}
-
+class DiscordDiceGame(DiscordDigitRollGame, DiceGame):
 	def __init__(self, ctx, webhook, arguments, random, initial_text = None, **kwargs):
-		DiscordRollGame.__init__(ctx, webhook, arguments, initial_text, kwargs)
-		DiceGame.__init__(self.processed_kwargs['faces'], random)
+		DiscordDigitRollGame.__init__(self, ctx, webhook, arguments, initial_text, kwargs)
+		DiceGame.__init__(self, self.processed_kwargs['faces'], random)
 
-	async def _process(self, i: int):
-		return int_to_emoji(i)
-
-class DiscordDiceNGame(DiscordRollGame, DiceGame):
-	options = {
-		0: []
-	}
-	N: int
-
+class DiscordDiceNGame(DiscordDigitRollGame):
 	def __init__(self, ctx, webhook, arguments, random, initial_text = None, **kwargs):
-		DiscordRollGame.__init__(ctx, webhook, arguments, initial_text, kwargs)
-		DiceGame.__init__(self.N, random)
+		DiscordDigitRollGame.__init__(self, ctx, webhook, arguments, initial_text, kwargs)
+		for base in type(self).__bases__:
+			if issubclass(base, DiceNGame):
+				base.__init__(self, random)
+				return
 
-	async def _process(self, i: int):
-		return int_to_emoji(i)
+class DiscordDice4Game(DiscordDiceNGame, Dice4Game):
+	pass
 
-class DiscordDice4Game(DiscordDiceNGame):
-	N = 4
+class DiscordDice6Game(DiscordDiceNGame, Dice6Game):
+	pass
 
-class DiscordDice6Game(DiscordDiceNGame):
-	N = 6
+class DiscordDice8Game(DiscordDiceNGame, Dice8Game):
+	pass
 
-class DiscordDice8Game(DiscordDiceNGame):
-	N = 8
+class DiscordDice10Game(DiscordDiceNGame, Dice10Game):
+	pass
 
-class DiscordDice10Game(DiscordDiceNGame):
-	N = 10
+class DiscordDice12Game(DiscordDiceNGame, Dice12Game):
+	pass
 
-class DiscordDice12Game(DiscordDiceNGame):
-	N = 12
-
-class DiscordDice20Game(DiscordDiceNGame):
-	N = 20
+class DiscordDice20Game(DiscordDiceNGame, Dice20Game):
+	pass

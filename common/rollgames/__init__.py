@@ -3,22 +3,21 @@ from abc import ABC, abstractmethod
 class BaseRollGame(ABC):
 	options: Dict[int, List[Tuple[str, type]]]
 	'''
-	"options" is here in an actual game to activate the preprocessor.
+	"options" is here in an abstract game to activate the preprocessor.
 	However, you still need to call __init__ of abstract games after you get the processed arguments.
 	For example, you define:
 	```
 	... in AbstractGame
-	def __init__(self, foo, bar): ...
-	```
-	in your abstract games, and you need to use:
-	```
-	... in ActualGame
 	options = {
 		0: [],
 		1: [('example', str)],
 		2: [('foo', int), ('bar', str)]
 	}
-	...
+	def __init__(self, foo, bar): ...
+	```
+	in your abstract games, and you need to use:
+	```
+	... in ActualGame
 	self.processed_kwargs = self._preprocess_args(arguments)
 	AbstractGame.__init__(self.processed_kwargs['foo'], self.processed_kwargs['bar'])
 	```
@@ -26,8 +25,8 @@ class BaseRollGame(ABC):
 
 	This design is to make the abstract games "keep pure" by not touching `self.processed_kwargs`
 	and let the actual games have more power to decide how to pass arguments to their parents.
-	For example, we can have "Dice4" "Dice6" that don't use arguments or "DiceN" that receives
-	one argument based on the same abstract "Dice" game.
+	However, it is recommended to make actual games correspond to specific abstract games, i.e.,
+	one-to-one to share the metadata (e.g. help) in different platforms.
 	'''
 
 	# The necessary arguments are passed in __init__
