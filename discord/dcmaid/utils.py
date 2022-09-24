@@ -58,9 +58,6 @@ async def remove_thinking(ctx: Union[discord.ApplicationContext, discord.Interac
 		await ctx.response.defer()
 		await ctx.delete_original_message()
 
-def add_suffix(path: PurePath, suffix: str):
-	return path.with_suffix(path.suffix + suffix)
-
 def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[Union[discord.SlashCommand, discord.SlashCommandGroup]]:
 	for cmd in group.subcommands:
 		if cmd.name == name:

@@ -4,11 +4,11 @@ before a cog class is created.
 '''
 import discord
 from importlib_resources import files
+from reader import load
 from typing import Dict, List, Optional, Union
 from .basebot import Bot
 from .exception import MaidNotFound
 from .helper import get_help, set_help, update_help
-from .reader import load
 from .typing import Localeable
 from .utils import send_error_embed, walk_commands_and_groups
 

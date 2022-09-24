@@ -2,7 +2,9 @@ import json
 from importlib_resources import as_file
 from pathlib import PurePath
 from typing import TextIO, Tuple
-from .utils import add_suffix
+
+def add_suffix(path: PurePath, suffix: str):
+	return path.with_suffix(path.suffix + suffix)
 
 class BaseReader:
 	support_suffices: Tuple[str, ...] = ()
