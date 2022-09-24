@@ -24,9 +24,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		setattr(ctx, 'maid_webhook', maid_webhook)
 		setattr(ctx, 'maid_weights', maid_weights)
 
-	# Since webhooks cannot really reply or followup messages as a bot,
-	# here we simulate those with plain messages whoever the sender is.
-	async def _send_followup(self, ctx, maid, *args, **kwargs):
+	async def _get_webhook_by_name(self, ctx, maid_name):
 		if is_DM(ctx.channel):
 			webhook = None
 		else:
@@ -37,6 +35,12 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 			webhook = maid_webhook.get(maid, None)
 
+		return webhook
+
+	# Since webhooks cannot really reply or followup messages as a bot,
+	# here we simulate those with plain messages whoever the sender is.
+	async def _send_followup(self, ctx, maid, *args, **kwargs):
+		webhook = await self._get_webhook_by_name(ctx, maid)
 		await send_as(ctx, webhook, *args, **kwargs)
 
 	@staticmethod
@@ -99,6 +103,12 @@ class RollCommands(BaseCog, name = 'Roll'):
 			ephemeral = True
 		)
 
+	def _random_maid(self, ctx):
+		maid = None
+		if hasattr(ctx, 'maid_weights'):
+			maid = ctx.maid_weights.random_get(self._get_random_generator(ctx))
+		return maid
+
 	distribution = discord.SlashCommandGroup(
 		name = "distribution",
 		description = "Random distribution generation"
@@ -112,9 +122,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 	async def _dist(self, ctx, results, tran_key, /, **kwargs):
 		await remove_thinking(ctx)
 		message = self._build_box_message(ctx, tran_key, results, **kwargs)
-		maid = None
-		if hasattr(ctx, 'maid_weights'):
-			maid = ctx.maid_weights.random_get(self._get_random_generator(ctx))
+		maid = self._random_maid(ctx)
 		await self._send_followup(ctx, maid, message)
 
 	@distribution.command(
