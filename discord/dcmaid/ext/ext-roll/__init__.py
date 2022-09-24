@@ -24,11 +24,11 @@ class DiscordRollGame(BaseRollGame):
 			raise ArgumentLengthError(expect = list(self.options.keys()), got = len_args)
 		args_option = options[len_args]
 
-		for (attr, t), arg in zip(args_option, args):
+		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):
 			try:
 				setattr(self, attr) = t(arg)
 			except:
-				raise ArgumentTypeError(t, arg)
+				raise ArgumentTypeError(i, t, arg)
 
 	async def _send(self, content):
 		if self.initial is not None:

@@ -225,13 +225,33 @@ class RollCommands(BaseCog, name = 'Roll'):
 	async def weibull(self, ctx, a, b, n):
 		NotImplemented
 
+	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
+		match exception:
+			case ArgumentLengthError():
+				lens = ', '.join([str(i) for i in exception.expect])
+				await send_error_embed(ctx,
+					name = self._trans(ctx, 'argument-length-error'),
+					value = self._trans(ctx, 'argument-length-error-value', format = {'lens': lens, 'len': exception.got}),
+					ephemeral = True
+				)
+			case ArgumentTypeError():
+				await send_error_embed(ctx,
+					name = self._trans(ctx, 'argument-type-error'),
+					value = self._trans(ctx, 'argument-type-error-value', format = {'order': exception.order, 't': exception.t, 'got': exception.got}),
+					ephemeral = True
+				)
+			case _:
+				# Propagate
+				super().cog_command_error(ctx, exception)
+
 class ArgumentLengthError(discord.ApplicationCommandError):
 	def __init__(self, expect: List[int], got: int):
 		self.expect = expect
 		self.got = got
 
 class ArgumentTypeError(discord.ApplicationCommandError):
-	def __init__(self, t: type, got: str):
+	def __init__(self, order: int, t: type, got: str):
+		self.order = order
 		self.t = t
 		self.got = got
 

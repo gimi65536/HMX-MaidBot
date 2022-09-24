@@ -115,3 +115,15 @@ __translation_table:
   dist-triangular:
     ~: Triangular [{lower}, {upper}] for {n} times
     zh-TW: 三角形分佈 [{lower}, {upper}] 眾數={mode} （{n}次）
+  argument-length-error:
+    ~: Wrong argument length
+    zh-TW: 參數長度錯誤
+  argument-length-error-value:
+    ~: Expected argument length {lens}, got {len}.
+    zh-TW: 預期參數長度為{lens}個，實際拿到{len}個參數。
+  argument-type-error:
+    ~: Wrong argument type
+    zh-TW: 參數類型錯誤
+  argument-type-error-value:
+    ~: The No.{order} argument is expected to be {t}, got {got}.
+    zh-TW: 第{order}個參數應該為{t}型態，但接收到的是{got}。
