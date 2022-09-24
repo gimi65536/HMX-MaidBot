@@ -125,5 +125,5 @@ __translation_table:
     ~: Wrong argument type
     zh-TW: 參數類型錯誤
   argument-type-error-value:
-    ~: The No.{order} argument is expected to be {t}, got {got}.
-    zh-TW: 第{order}個參數應該為{t}型態，但接收到的是{got}。
+    ~: The No.{order} argument is expected to be `{t}`, got {got}.
+    zh-TW: 第{order}個參數應該為`{t}`型態，但接收到的是{got}。

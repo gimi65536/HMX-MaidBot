@@ -237,7 +237,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 			case ArgumentTypeError():
 				await send_error_embed(ctx,
 					name = self._trans(ctx, 'argument-type-error'),
-					value = self._trans(ctx, 'argument-type-error-value', format = {'order': exception.order, 't': exception.t, 'got': exception.got}),
+					value = self._trans(ctx, 'argument-type-error-value', format = {'order': exception.order, 't': exception.t.__name__, 'got': exception.got}),
 					ephemeral = True
 				)
 			case _:
