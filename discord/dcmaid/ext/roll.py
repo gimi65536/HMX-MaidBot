@@ -1,6 +1,6 @@
 import discord
 import random
-from typing import Optional
+from typing import List, Optional
 from ..basebot import Bot
 from ..basecog import BaseCog
 from ..helper import set_help
@@ -224,6 +224,16 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 	async def weibull(self, ctx, a, b, n):
 		NotImplemented
+
+class ArgumentLengthError(discord.ApplicationCommandError):
+	def __init__(self, expect: List[int], got: int):
+		self.expect = expect
+		self.got = got
+
+class ArgumentTypeError(discord.ApplicationCommandError):
+	def __init__(self, t: type, got: str):
+		self.t = t
+		self.got = got
 
 def setup(bot):
 	bot.add_cog(RollCommands(bot))
