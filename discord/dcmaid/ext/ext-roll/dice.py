@@ -9,7 +9,7 @@ class DiscordDiceGame(DiscordRollGame, DiceGame):
 
 	def __init__(self, ctx, webhook, arguments, random, initial_text = None, **kwargs):
 		DiscordRollGame.__init__(ctx, webhook, arguments, initial_text, kwargs)
-		DiceGame.__init__(self.faces, random)
+		DiceGame.__init__(self.processed_kwargs['faces'], random)
 
 	async def _process(self, i: int):
 		return int_to_emoji(i)

@@ -1,6 +1,6 @@
 import discord
 from rollgames import BaseRollGame
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 from .roll import ArgumentLengthError
 from ...utils import send_as
 
@@ -15,20 +15,24 @@ class DiscordRollGame(BaseRollGame):
 		self.webhook = webhook
 		self.initial = initial_text
 		self.options = send_options
-		self._preprocess_args(arguments)
+		self.processed_kwargs = self._preprocess_args(arguments)
 
-	def _preprocess_args(self, arguments):
+	@classmethod
+	def _preprocess_args(cls, arguments) -> Dict[str, Any]:
 		args = arguments.split()
 		len_args = len(args)
-		if len_args not in self.options:
-			raise ArgumentLengthError(expect = list(self.options.keys()), got = len_args)
+		if len_args not in cls.options:
+			raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
 		args_option = options[len_args]
+		processed = {}
 
 		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):
 			try:
-				setattr(self, attr) = t(arg)
+				processed[attr] = t(arg)
 			except:
 				raise ArgumentTypeError(i, t, arg)
+
+		return processed
 
 	async def _send(self, content):
 		if self.initial is not None:
