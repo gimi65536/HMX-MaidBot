@@ -20,6 +20,9 @@ class DiscordRollGame(BaseRollGame):
 
 	@classmethod
 	def _preprocess_args(cls, arguments) -> Dict[str, Any]:
+		if arguments is None:
+			arguments = ''
+
 		args = StringArgumentParser.pick(arguments)
 		len_args = len(args)
 		if len_args not in cls.options:

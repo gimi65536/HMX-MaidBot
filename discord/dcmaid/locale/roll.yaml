@@ -102,6 +102,58 @@ distribution triangular:
   number.name: *gen-time
   number.description: *gen-time-description
 
+distribution beta:
+distribution exponential:
+distribution gamma:
+distribution lognormal:
+distribution normal:
+distribution vonmises:
+distribution pareto:
+distribution weibull:
+
+game:
+  help:
+    zh-TW: >
+      使用這些指令來與女僕們玩遊戲。
+  name:
+    zh-TW: 遊戲
+  description:
+    zh-TW: 來與女僕們玩各種隨機數遊戲吧！
+
+game help:
+  help:
+    zh-TW: >
+      `/{cmd_name} <?遊戲名稱>` 給出指定遊戲的說明書，如果沒有指定遊戲，
+      則會給出所有遊戲的列表。
+  name:
+    zh-TW: 遊戲幫助
+  description:
+    zh-TW: 三角形分佈生成
+  game.name:
+    zh-TW: 遊戲
+  game.description:
+    zh-TW: 遊戲名稱（可選）
+
+game play:
+  help:
+    zh-TW: >
+      `/{cmd_name} <遊戲名稱> <?遊戲參數>` 以給定的參數執行遊戲。
+      各個參數用空白分隔。如果想表達空字串，使用`""`。
+      如果想要使用包含空格與雙引號的字串，將字串包進`""`裡頭，並且
+      使用`\"`來表達雙引號這一個字。
+  name:
+    zh-TW: 遊玩
+  description:
+    zh-TW: 玩遊戲
+  game.name:
+    zh-TW: 遊戲
+  game.description:
+    zh-TW: 遊戲名稱
+  arguments.name:
+    zh-TW: 參數
+  arguments.description:
+    zh-TW: 傳送參數（端看遊戲，可能可選）
+
 __translation_table:
   seed-set:
     ~: Seed has been set.

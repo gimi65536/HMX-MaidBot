@@ -244,6 +244,55 @@ class RollCommands(BaseCog, name = 'Roll'):
 				# Propagate
 				super().cog_command_error(ctx, exception)
 
+	game_group = discord.SlashCommandGroup(
+		name = "game",
+		description = "Play a randomness game with maids!"
+	)
+	set_help(game_group,
+		'''
+		Use these commands to play games.
+		'''
+	)
+
+	@game_group.command(
+		name = 'help',
+		description = 'Get the help of games we have',
+		options = [
+			discord.Option(str,
+				name = 'game',
+				description = 'Name of the game (Optional)',
+				default = None)
+		]
+	)
+	async def game_help(self, ctx, game_name):
+		'''
+		`/{cmd_name} <?game name>` gives the help of the specific game,
+		or lists all the games we have if the game name is not given.
+		'''
+		...
+
+	@game_group.command(
+		description = 'Play the game',
+		options = [
+			discord.Option(str,
+				name = 'game',
+				description = 'Name of the game'),
+			discord.Option(str,
+				name = 'arguments',
+				description = "Pass argument (May be optional)",
+				default = None)
+		]
+	)
+	async def play(self, ctx, game_name, arguments):
+		'''
+		`/{cmd_name} <game name> <args>` play a game with given arguments.
+		The arguments are separated by whitespaces.
+		If you want to pass an empty string, use `""`; if you want to pass
+		an argument containing spaces or double-quotes, put them into `""`s
+		and use `\\"` to indicate a double-quote.
+		'''
+		...
+
 class ArgumentLengthError(discord.ApplicationCommandError):
 	def __init__(self, expect: List[int], got: int):
 		self.expect = expect
