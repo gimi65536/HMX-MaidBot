@@ -4,3 +4,4 @@ python-decouple
 importlib-resources
 pyyaml
 pyjson5
+pyparsing

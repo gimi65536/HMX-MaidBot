@@ -1,5 +1,6 @@
 import discord
 from rollgames import BaseRollGame
+from simple_parsers.string_argument_parser import StringArgumentParser
 from typing import Any, Dict, List, Tuple
 from .roll import ArgumentLengthError
 from ...utils import send_as
@@ -19,7 +20,7 @@ class DiscordRollGame(BaseRollGame):
 
 	@classmethod
 	def _preprocess_args(cls, arguments) -> Dict[str, Any]:
-		args = arguments.split()
+		args = StringArgumentParser.pick(arguments)
 		len_args = len(args)
 		if len_args not in cls.options:
 			raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
