@@ -4,6 +4,7 @@ class DiceGame(BaseRollGame):
 	options = {
 		1: [('faces', int)]
 	}
+	game_name = 'dice'
 
 	def __init__(self, faces: int, random):
 		self.faces = faces
@@ -20,9 +21,11 @@ class DiceNGame(DiceGame):
 		0: []
 	}
 	N: int
+	game_name = 'dice{N}'
 
 	def __init__(self, random):
 		super().__init__(self.N, random)
+		self.game_name = self.game_name.format(N = self.N)
 
 class Dice4Game(DiceGame):
 	N = 4

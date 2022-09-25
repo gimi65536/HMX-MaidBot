@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 class BaseRollGame(ABC):
 	options: Dict[int, List[Tuple[str, type]]]
 	'''
-	"options" is here in an abstract game to activate the preprocessor.
+	The class property "options" is here in an abstract game to activate the preprocessor.
 	However, you still need to call __init__ of abstract games after you get the processed arguments.
 	For example, you define:
 	```
@@ -28,6 +28,12 @@ class BaseRollGame(ABC):
 	and let the actual games have more power to decide how to pass arguments to their parents.
 	However, it is recommended to make actual games correspond to specific abstract games, i.e.,
 	one-to-one to share the metadata (e.g. help) in different platforms.
+	'''
+
+	game_name: str
+	'''
+	game_name is assumed to be a variable of an instance.
+	Please do not assume it to be a class property.
 	'''
 
 	# The necessary arguments are passed in __init__
