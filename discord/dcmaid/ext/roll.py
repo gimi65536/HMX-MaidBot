@@ -1,5 +1,6 @@
 import discord
 import random
+from importlib import import_module
 from rollgames import ArgumentLengthError as ALE, ArgumentTypeError as ATE
 from typing import List, Optional
 from ..basebot import Bot
@@ -293,6 +294,13 @@ class RollCommands(BaseCog, name = 'Roll'):
 		and use `\\"` to indicate a double-quote.
 		'''
 		...
+
+	def load_game_ext(self, ext):
+		import_module(f'ext-roll.{ext}')
+
+	def load_game_exts(self, exts):
+		for ext in exts:
+			import_module(f'ext-roll.{ext}')
 
 class ArgumentLengthError(ALE, discord.ApplicationCommandError):
 	pass
