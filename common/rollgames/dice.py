@@ -1,10 +1,9 @@
 from . import BaseRollGame
 
-class DiceGame(BaseRollGame):
+class DiceGame(BaseRollGame, name = 'dice'):
 	options = {
 		1: [('faces', int)]
 	}
-	game_name = 'dice'
 
 	def __init__(self, faces: int, random):
 		self.faces = faces
@@ -21,26 +20,24 @@ class DiceNGame(DiceGame):
 		0: []
 	}
 	N: int
-	game_name = 'dice{N}'
 
 	def __init__(self, random):
 		super().__init__(self.N, random)
-		self.game_name = self.game_name.format(N = self.N)
 
-class Dice4Game(DiceGame):
+class Dice4Game(DiceGame, name = 'dice4'):
 	N = 4
 
-class Dice6Game(DiceGame):
+class Dice6Game(DiceGame, name = 'dice6'):
 	N = 6
 
-class Dice8Game(DiceGame):
+class Dice8Game(DiceGame, name = 'dice8'):
 	N = 8
 
-class Dice10Game(DiceGame):
+class Dice10Game(DiceGame, name = 'dice10'):
 	N = 10
 
-class Dice12Game(DiceGame):
+class Dice12Game(DiceGame, name = 'dice12'):
 	N = 12
 
-class Dice20Game(DiceGame):
+class Dice20Game(DiceGame, name = 'dice20'):
 	N = 20

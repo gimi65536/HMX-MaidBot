@@ -1,7 +1,13 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, List, Tuple
 
-class BaseRollGame(ABC):
+class BaseRollGameMeta(ABCMeta):
+	def __new__(mcls, *args, name = None):
+		cls = super().__new__(mcls, *args)
+		if name is not None:
+			cls.game_name = name
+
+class BaseRollGame(metaclass = BaseRollGameMeta):
 	options: Dict[int, List[Tuple[str, type]]]
 	'''
 	The class property "options" is here in an abstract game to activate the preprocessor.
@@ -32,8 +38,7 @@ class BaseRollGame(ABC):
 
 	game_name: str
 	'''
-	game_name is assumed to be a variable of an instance.
-	Please do not assume it to be a class property.
+	game_name is a class property that assigned by "name" arguments when creating classes.
 	'''
 
 	# The necessary arguments are passed in __init__
