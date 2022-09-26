@@ -1,11 +1,22 @@
 from abc import ABCMeta, abstractmethod
+from importlib_resources import files
+from reader import load
 from typing import Any, Dict, List, Tuple
 
 class BaseRollGameMeta(ABCMeta):
+	base_game_data: dict = None
 	def __new__(mcls, *args, name = None):
+		if mcls.base_game_data is None:
+			d = load(files(__package__) / 'games')
+			if d is None:
+				mcls.base_game_data = {}
+			else:
+				mcls.base_game_data = d
+
 		cls = super().__new__(mcls, *args)
 		if name is not None:
 			cls.game_name = name
+			cls.game_data = mcls.base_game_data.get(name, {})
 
 class BaseRollGame(metaclass = BaseRollGameMeta):
 	options: Dict[int, List[Tuple[str, type]]]
@@ -39,6 +50,10 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 	game_name: str
 	'''
 	game_name is a class property that assigned by "name" arguments when creating classes.
+	'''
+	game_data: dict
+	'''
+	game_data is a dictionary storing some information.
 	'''
 
 	# The necessary arguments are passed in __init__

@@ -1,0 +1,83 @@
+dice:
+  name:
+    - Dice
+    - 骰子
+  description:
+    ~: Roll a dice
+    zh-TW: 擲骰子
+  help:
+    1:
+      ~: Given `<n:int>` roll a dice with `n` faces.
+      zh-TW: 給定骰子的面數`<n:int>`並且投擲。
+
+dice4:
+  name:
+    - Dice4
+    - 四面骰
+  description:
+    ~: Roll a 4-face dice
+    zh-TW: 擲四面骰
+  help:
+    0:
+      ~: Roll a dice with 4 faces
+      zh-TW: 投擲四面骰
+
+dice6:
+  name:
+    - Dice6
+    - 六面骰
+  description:
+    ~: Roll a 6-face dice
+    zh-TW: 擲六面骰
+  help:
+    0:
+      ~: Roll a dice with 6 faces
+      zh-TW: 投擲六面骰
+
+dice8:
+  name:
+    - Dice8
+    - 八面骰
+  description:
+    ~: Roll a 8-face dice
+    zh-TW: 擲八面骰
+  help:
+    0:
+      ~: Roll a dice with 8 faces
+      zh-TW: 投擲八面骰
+
+dice10:
+  name:
+    - Dice10
+    - 十面骰
+  description:
+    ~: Roll a 10-face dice
+    zh-TW: 擲十面骰
+  help:
+    0:
+      ~: Roll a dice with 10 faces
+      zh-TW: 投擲十面骰
+
+dice12:
+  name:
+    - Dice12
+    - 十二面骰
+  description:
+    ~: Roll a 12-face dice
+    zh-TW: 擲十二面骰
+  help:
+    0:
+      ~: Roll a dice with 12 faces
+      zh-TW: 投擲十二面骰
+
+dice20:
+  name:
+    - Dice20
+    - 二十面骰
+  description:
+    ~: Roll a 20-face dice
+    zh-TW: 擲二十面骰
+  help:
+    0:
+      ~: Roll a dice with 20 faces
+      zh-TW: 投擲二十面骰

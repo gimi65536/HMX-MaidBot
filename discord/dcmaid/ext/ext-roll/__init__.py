@@ -1,11 +1,20 @@
 import discord
-from rollgames import BaseRollGame
+from rollgames import BaseRollGame, BaseRollGameMeta
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Type
 from .roll import ArgumentLengthError
 from ...utils import send_as
 
-class DiscordRollGame(BaseRollGame):
+registered_games: Dict[str, Type['DiscordRollGame']] = {}
+
+class DiscordRollGameMeta(BaseRollGameMeta):
+	def __new__(mcls, *args, reg = False, **kwargs):
+		cls = super().__new__(mcls, *args, **kwargs)
+		if reg:
+			registered_games[cls.game_name] = cls
+		return cls
+
+class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
 	def __init__(self, ctx, webhook, arguments: str, initial_text = None, send_options = {}):
 		self.ctx = ctx
 		self.webhook = webhook
