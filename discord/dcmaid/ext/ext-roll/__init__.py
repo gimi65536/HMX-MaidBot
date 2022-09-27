@@ -9,11 +9,21 @@ from ...utils import send_as
 _registered_games: Dict[str, Type['DiscordRollGame']] = {}
 registered_games = MappingProxyType(_registered_games)
 
+_all_mapping_table: Dict[str, Type['DiscordRollGame']] = {}
+all_mapping_table = MappingProxyType(_all_mapping_table)
+
 class DiscordRollGameMeta(BaseRollGameMeta):
 	def __new__(mcls, *args, reg = False, **kwargs):
 		cls = super().__new__(mcls, *args, **kwargs)
 		if reg:
 			_registered_games[cls.game_name] = cls
+
+			_all_mapping_table[cls.game_name] = cls
+			for name in cls.game_data.names.values():
+				_all_mapping_table[name] = cls
+			for alia in cls.game_data.alias:
+				_all_mapping_table[alia] = cls
+
 		return cls
 
 class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):

@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from importlib_resources import files
 from more_itertools import SequenceView
 from reader import load
+from types import MappingProxyType
 from typing import Any, Dict, List, Tuple
 
 class GameData:
@@ -15,9 +16,18 @@ class GameData:
 	def get_name(self, locale = None):
 		return self._get(self._d.get('name', {}), locale)
 
+	@property
+	def names(self):
+		return MappingProxyType(self._d.get('name', {}))
+
 	def get_description(self, locale = None):
 		return self._get(self._d.get('description', {}), locale)
 
+	@property
+	def descriptions(self):
+		return MappingProxyType(self._d.get('description', {}))
+
+	@property
 	def alias(self):
 		return SequenceView(self._d.get('alias', []))
 
