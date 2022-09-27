@@ -341,6 +341,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 			raise GameNotFound(game_name)
 
 		game_cls = ext_roll.all_mapping_table[game_name]
+		game_data = game_cls.game_data
 		maid = self._random_maid(ctx)
 		webhook = await self._get_webhook_by_name(maid)
 		try:
@@ -349,7 +350,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 				webhook,
 				arguments,
 				self._get_random_generator(ctx),
-				self._trans(ctx, 'game-play-initial-text', format = {'id': ctx.author.id, 'game': game_name})
+				self._trans(ctx, 'game-play-initial-text', format = {'id': ctx.author.id, 'game': game_data.get_name(ctx.locale)})
 			)
 		except ALE as e:
 			raise ArgumentLengthError(e.expect, e.got)
