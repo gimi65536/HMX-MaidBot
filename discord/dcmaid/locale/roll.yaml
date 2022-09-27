@@ -179,3 +179,12 @@ __translation_table:
   argument-type-error-value:
     ~: The No.{order} argument is expected to be `{t}`, got {got}.
     zh-TW: 第{order}個參數應該為`{t}`型態，但接收到的是{got}。
+  game-name-error:
+    ~: Wrong game name
+    zh-TW: 遊戲名稱錯誤
+  game-name-error-value:
+    ~: The game "{name}" is not found.
+    zh-TW: 找不到遊戲名稱「{game}」。
+  game-play-initial-text:
+    ~: <@{id}> plays "{game}" with me!
+    zh-TW: <@{id}> 跟我一起玩「{game}」！

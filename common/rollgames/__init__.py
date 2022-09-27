@@ -138,3 +138,7 @@ class ArgumentTypeError(TypeError):
 		self.order = order
 		self.t = t
 		self.got = got
+
+class GameNotFound(AttributeError):
+	def __init__(self, name: str):
+		self.name = name

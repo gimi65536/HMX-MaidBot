@@ -1,7 +1,11 @@
 import discord
 import random
 from importlib import import_module
-from rollgames import ArgumentLengthError as ALE, ArgumentTypeError as ATE
+from rollgames import (
+	ArgumentLengthError as ALE,
+	ArgumentTypeError as ATE,
+	GameNotFound as GNF
+)
 from typing import List, Optional
 from ..basebot import Bot
 from ..basecog import BaseCog
@@ -244,6 +248,12 @@ class RollCommands(BaseCog, name = 'Roll'):
 					value = self._trans(ctx, 'argument-type-error-value', format = {'order': exception.order, 't': exception.t.__name__, 'got': exception.got}),
 					ephemeral = True
 				)
+			case GameNotFound():
+				await send_error_embed(ctx,
+					name = self._trans(ctx, 'game-name-error'),
+					value = self._trans(ctx, 'game-name-error-value', format = {'name': exception.name}),
+					ephemeral = True
+				)
 			case _:
 				# Propagate
 				super().cog_command_error(ctx, exception)
@@ -295,7 +305,27 @@ class RollCommands(BaseCog, name = 'Roll'):
 		an argument containing spaces or double-quotes, put them into `""`s
 		and use `\\"` to indicate a double-quote.
 		'''
-		...
+		game_name = trim(game_name)
+		if game_name not in ext_roll.all_mapping_table:
+			raise GameNotFound(game_name)
+
+		game_cls = ext_roll.all_mapping_table[game_name]
+		maid = self._random_maid(ctx)
+		webhook = await self._get_webhook_by_name(maid)
+		try:
+			game = game_cls(
+				ctx,
+				webhook,
+				arguments,
+				self._get_random_generator(ctx),
+				self._trans(ctx, 'game-play-initial-text', format = {'id': ctx.author.id, 'game': game_name})
+			)
+		except ALE as e:
+			raise ArgumentLengthError(e.expect, e.got)
+		except ATE as e:
+			raise ArgumentTypeError(e.order, e.t, e.got)
+
+		await game.run()
 
 	def load_game_ext(self, ext):
 		import_module(ext, ext_roll.__name__)
@@ -308,6 +338,9 @@ class ArgumentLengthError(ALE, discord.ApplicationCommandError):
 	pass
 
 class ArgumentTypeError(ATE, discord.ApplicationCommandError):
+	pass
+
+class GameNotFound(GNF, discord.ApplicationCommandError):
 	pass
 
 def setup(bot):
