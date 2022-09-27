@@ -1,17 +1,19 @@
 import discord
 from rollgames import BaseRollGame, BaseRollGameMeta
 from simple_parsers.string_argument_parser import StringArgumentParser
+from types import MappingProxyType
 from typing import Any, Dict, List, Tuple, Type
 from .roll import ArgumentLengthError
 from ...utils import send_as
 
-registered_games: Dict[str, Type['DiscordRollGame']] = {}
+_registered_games: Dict[str, Type['DiscordRollGame']] = {}
+registered_games = MappingProxyType(_registered_games)
 
 class DiscordRollGameMeta(BaseRollGameMeta):
 	def __new__(mcls, *args, reg = False, **kwargs):
 		cls = super().__new__(mcls, *args, **kwargs)
 		if reg:
-			registered_games[cls.game_name] = cls
+			_registered_games[cls.game_name] = cls
 		return cls
 
 class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
