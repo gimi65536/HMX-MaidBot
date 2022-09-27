@@ -9,6 +9,8 @@ from ..helper import set_help
 from ..perm import admin_only
 from ..utils import *
 
+ext_roll = import_module('ext-roll')
+
 class RollCommands(BaseCog, name = 'Roll'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
@@ -296,11 +298,11 @@ class RollCommands(BaseCog, name = 'Roll'):
 		...
 
 	def load_game_ext(self, ext):
-		import_module(f'ext-roll.{ext}')
+		import_module(ext, ext_roll.__name__)
 
 	def load_game_exts(self, exts):
 		for ext in exts:
-			import_module(f'ext-roll.{ext}')
+			import_module(ext, ext_roll.__name__)
 
 class ArgumentLengthError(ALE, discord.ApplicationCommandError):
 	pass
