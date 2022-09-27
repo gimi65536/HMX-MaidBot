@@ -1,14 +1,17 @@
 import discord
 import random
+from discord.ext.pages import Page, Paginator
 from importlib import import_module
+from more_itertools import peekable, spy
 from rollgames import (
 	ArgumentLengthError as ALE,
 	ArgumentTypeError as ATE,
 	GameNotFound as GNF
 )
-from typing import List, Optional
+from typing import Dict, List, Optional
 from ..basebot import Bot
 from ..basecog import BaseCog
+from ..constants import MAX_FIELDS_IN_EMBED
 from ..helper import set_help
 from ..perm import admin_only
 from ..utils import *
@@ -22,6 +25,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		self.maids = bot.maids
 		self.state = bot.state
 		self._common_random = random.Random() # Used in DM
+		self._help_pages: Dict[str, Paginator] = {}
 
 	async def cog_before_invoke(self, ctx):
 		if is_DM(ctx.channel):
@@ -283,7 +287,34 @@ class RollCommands(BaseCog, name = 'Roll'):
 		`/{cmd_name} <?game name>` gives the help of the specific game,
 		or lists all the games we have if the game name is not given.
 		'''
-		...
+		if game_name is None:
+			game_name = ''
+		game_name = trim(game_name)
+		if game_name != '' and game_name not in ext_roll.all_mapping_table:
+			raise GameNotFound(game_name)
+
+		locale = ctx.locale
+		if game_name == '':
+			if locale in self._help_pages:
+				await self._help_pages[locale].respond(ctx.interaction)
+				return
+			pages = []
+			remains = peekable(ext_roll.registered_games.items())
+			while remains:
+				listed_items, remains = spy(remains, MAX_FIELDS_IN_EMBED)
+				remains = peekable(remains)
+				embed = discord.Embed(title = self._trans(ctx, 'game-list'), description = self._trans(ctx, 'game-list-description'))
+
+				for name, game_cls in listed_items:
+					game_data = game_cls.game_data
+					embed.add_field(name = name, value = f'`{game_data.get_name(locale)}` {game_data.get_description(locale)}')
+
+				pages.append(Page(embeds = [embed]))
+
+			self._help_pages[locale] = Paginator(pages = pages)
+			await self._help_pages[locale].respond(ctx.interaction)
+		else:
+			...
 
 	@game_group.command(
 		description = 'Play the game',
@@ -328,9 +359,11 @@ class RollCommands(BaseCog, name = 'Roll'):
 		await game.run()
 
 	def load_game_ext(self, ext):
+		self._help_pages = {}
 		import_module(ext, ext_roll.__name__)
 
 	def load_game_exts(self, exts):
+		self._help_pages = {}
 		for ext in exts:
 			import_module(ext, ext_roll.__name__)
 

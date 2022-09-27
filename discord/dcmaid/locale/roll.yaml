@@ -179,6 +179,12 @@ __translation_table:
   argument-type-error-value:
     ~: The No.{order} argument is expected to be `{t}`, got {got}.
     zh-TW: 第{order}個參數應該為`{t}`型態，但接收到的是{got}。
+  game-list:
+    ~: Installed games
+    zh-TW: 已安裝遊戲列表
+  game-list-description:
+    ~: Here are all games installed.
+    zh-TW: 這裡列出所有已經安裝的遊戲。
   game-name-error:
     ~: Wrong game name
     zh-TW: 遊戲名稱錯誤
