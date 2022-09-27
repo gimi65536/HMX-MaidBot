@@ -5,3 +5,4 @@ importlib-resources
 pyyaml
 pyjson5
 pyparsing
+more-itertools

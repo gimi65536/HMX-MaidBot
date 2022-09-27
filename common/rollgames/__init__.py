@@ -1,7 +1,25 @@
 from abc import ABCMeta, abstractmethod
 from importlib_resources import files
+from more_itertools import SequenceView
 from reader import load
 from typing import Any, Dict, List, Tuple
+
+class GameData:
+	def __init__(self, d):
+		self._d = d
+
+	@staticmethod
+	def _get(table, locale):
+		return table.get(locale, table.get(None, None))
+
+	def get_name(self, locale = None):
+		return self._get(self._d.get('name', {}), locale)
+
+	def get_description(self, locale = None):
+		return self._get(self._d.get('description', {}), locale)
+
+	def alias(self):
+		return SequenceView(self._d.get('alias', []))
 
 class BaseRollGameMeta(ABCMeta):
 	base_game_data: dict = None
@@ -16,7 +34,7 @@ class BaseRollGameMeta(ABCMeta):
 		cls = super().__new__(mcls, *args)
 		if name is not None:
 			cls.game_name = name
-			cls.game_data = mcls.base_game_data.get(name, {})
+			cls.game_data = GameData(mcls.base_game_data.get(name, {}))
 
 class BaseRollGame(metaclass = BaseRollGameMeta):
 	options: Dict[int, List[Tuple[str, type]]]

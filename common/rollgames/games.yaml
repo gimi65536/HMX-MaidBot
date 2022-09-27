@@ -1,7 +1,7 @@
 dice:
   name:
-    - Dice
-    - 骰子
+    ~: Dice
+    zh-TW: 骰子
   description:
     ~: Roll a dice
     zh-TW: 擲骰子
@@ -12,8 +12,8 @@ dice:
 
 dice4:
   name:
-    - Dice4
-    - 四面骰
+    ~: Dice4
+    zh-TW: 四面骰
   description:
     ~: Roll a 4-face dice
     zh-TW: 擲四面骰
@@ -24,8 +24,8 @@ dice4:
 
 dice6:
   name:
-    - Dice6
-    - 六面骰
+    ~: Dice6
+    zh-TW: 六面骰
   description:
     ~: Roll a 6-face dice
     zh-TW: 擲六面骰
@@ -36,8 +36,8 @@ dice6:
 
 dice8:
   name:
-    - Dice8
-    - 八面骰
+    ~: Dice8
+    zh-TW: 八面骰
   description:
     ~: Roll a 8-face dice
     zh-TW: 擲八面骰
@@ -48,8 +48,8 @@ dice8:
 
 dice10:
   name:
-    - Dice10
-    - 十面骰
+    ~: Dice10
+    zh-TW: 十面骰
   description:
     ~: Roll a 10-face dice
     zh-TW: 擲十面骰
@@ -60,8 +60,8 @@ dice10:
 
 dice12:
   name:
-    - Dice12
-    - 十二面骰
+    ~: Dice12
+    zh-TW: 十二面骰
   description:
     ~: Roll a 12-face dice
     zh-TW: 擲十二面骰
@@ -72,8 +72,8 @@ dice12:
 
 dice20:
   name:
-    - Dice20
-    - 二十面骰
+    ~: Dice20
+    zh-TW: 二十面骰
   description:
     ~: Roll a 20-face dice
     zh-TW: 擲二十面骰
