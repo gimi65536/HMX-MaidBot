@@ -27,6 +27,9 @@ class GameData:
 	def descriptions(self):
 		return MappingProxyType(self._d.get('description', {}))
 
+	def get_help(self):
+		return {i: MappingProxyType(d) for i, d in self._d.get('help', {}).items()}
+
 	@property
 	def alias(self):
 		return SequenceView(self._d.get('alias', []))

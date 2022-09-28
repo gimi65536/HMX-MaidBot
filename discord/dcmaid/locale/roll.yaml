@@ -185,6 +185,18 @@ __translation_table:
   game-list-description:
     ~: Here are all games installed.
     zh-TW: 這裡列出所有已經安裝的遊戲。
+  game-code-name:
+    ~: Code name
+    zh-TW: 遊戲代號
+  game-rule-on:
+    ~: Rule on {n} arguments
+    zh-TW: 規則（{n}個參數）
+  game-no-description:
+    ~: No description.
+    zh-TW: 沒有說明。
+  alias:
+    ~: Alias
+    zh-TW: 別名
   game-name-error:
     ~: Wrong game name
     zh-TW: 遊戲名稱錯誤
