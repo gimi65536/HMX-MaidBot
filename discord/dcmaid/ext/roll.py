@@ -258,7 +258,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 				)
 			case _:
 				# Propagate
-				super().cog_command_error(ctx, exception)
+				await super().cog_command_error(ctx, exception)
 
 	game_group = discord.SlashCommandGroup(
 		name = "game",
@@ -307,6 +307,10 @@ class RollCommands(BaseCog, name = 'Roll'):
 					game_data = game_cls.game_data
 					embed.add_field(name = name, value = f'`{game_data.get_name(locale)}` {game_data.get_description(locale)}')
 
+				pages.append(Page(embeds = [embed]))
+
+			if len(pages) == 0:
+				embed = discord.Embed(title = self._trans(ctx, 'game-list'), description = self._trans(ctx, 'game-list-description'))
 				pages.append(Page(embeds = [embed]))
 
 			self._help_pages[locale] = Paginator(pages = pages)
