@@ -3,7 +3,7 @@ from rollgames import BaseRollGame, BaseRollGameMeta
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import MappingProxyType
 from typing import Any, Dict, List, Tuple, Type
-from .roll import ArgumentLengthError
+from ..roll import ArgumentLengthError
 from ...utils import send_as
 
 _registered_games: Dict[str, Type['DiscordRollGame']] = {}

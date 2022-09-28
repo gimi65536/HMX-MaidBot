@@ -16,8 +16,6 @@ from ..helper import set_help
 from ..perm import admin_only
 from ..utils import *
 
-ext_roll = import_module('ext-roll')
-
 class RollCommands(BaseCog, name = 'Roll'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
@@ -376,6 +374,8 @@ class ArgumentTypeError(ATE, discord.ApplicationCommandError):
 
 class GameNotFound(GNF, discord.ApplicationCommandError):
 	pass
+
+ext_roll = import_module('.ext-roll', __package__)
 
 def setup(bot):
 	bot.add_cog(RollCommands(bot))

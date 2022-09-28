@@ -46,6 +46,8 @@ class BaseRollGameMeta(ABCMeta):
 			cls.game_name = name
 			cls.game_data = GameData(mcls.base_game_data.get(name, {}))
 
+		return cls
+
 class BaseRollGame(metaclass = BaseRollGameMeta):
 	options: Dict[int, List[Tuple[str, type]]]
 	'''
