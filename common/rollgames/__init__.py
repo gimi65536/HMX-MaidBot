@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from importlib_resources import files
 from more_itertools import SequenceView
 from reader import load
+from simple_parsers.string_argument_parser import StringArgumentParser
 from types import MappingProxyType
 from typing import Any, Dict, List, Tuple
 
@@ -117,7 +118,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		len_args = len(args)
 		if len_args not in cls.options:
 			raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
-		args_option = options[len_args]
+		args_option = cls.options[len_args]
 		processed = {}
 
 		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):

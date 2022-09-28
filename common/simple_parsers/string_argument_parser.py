@@ -9,6 +9,6 @@ class StringArgumentParser:
 
 	@classmethod
 	def pick(cls, s: str):
-		return sum(cls.parser.search_string(s))
+		return sum(cls.parser.search_string(s), ParseResults())
 
 __all__ = ('StringArgumentParser', )

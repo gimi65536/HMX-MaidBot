@@ -1,10 +1,9 @@
 import discord
 from rollgames import BaseRollGame, BaseRollGameMeta
-from simple_parsers.string_argument_parser import StringArgumentParser
 from types import MappingProxyType
 from typing import Any, Dict, List, Tuple, Type
 from ..roll import ArgumentLengthError
-from ...utils import send_as
+from ...utils import send_as, int_to_emoji
 
 _registered_games: Dict[str, Type['DiscordRollGame']] = {}
 registered_games = MappingProxyType(_registered_games)

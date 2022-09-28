@@ -43,7 +43,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 			else:
 				maid_webhook = await self.bot.get_cog('Base').fetch_maids(get_guild_channel(ctx.channel))
 
-			webhook = maid_webhook.get(maid, None)
+			webhook = maid_webhook.get(maid_name, None)
 
 		return webhook
 
@@ -356,7 +356,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		game_cls = ext_roll.all_mapping_table[game_name]
 		game_data = game_cls.game_data
 		maid = self._random_maid(ctx)
-		webhook = await self._get_webhook_by_name(maid)
+		webhook = await self._get_webhook_by_name(ctx, maid)
 		try:
 			game = game_cls(
 				ctx,
@@ -370,6 +370,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		except ATE as e:
 			raise ArgumentTypeError(e.order, e.t, e.got)
 
+		await remove_thinking(ctx)
 		await game.run()
 
 	def load_game_ext(self, ext):
