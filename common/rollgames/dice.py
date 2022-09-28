@@ -24,20 +24,20 @@ class DiceNGame(DiceGame):
 	def __init__(self, random):
 		super().__init__(self.N, random)
 
-class Dice4Game(DiceGame, name = 'dice4'):
+class Dice4Game(DiceNGame, name = 'dice4'):
 	N = 4
 
-class Dice6Game(DiceGame, name = 'dice6'):
+class Dice6Game(DiceNGame, name = 'dice6'):
 	N = 6
 
-class Dice8Game(DiceGame, name = 'dice8'):
+class Dice8Game(DiceNGame, name = 'dice8'):
 	N = 8
 
-class Dice10Game(DiceGame, name = 'dice10'):
+class Dice10Game(DiceNGame, name = 'dice10'):
 	N = 10
 
-class Dice12Game(DiceGame, name = 'dice12'):
+class Dice12Game(DiceNGame, name = 'dice12'):
 	N = 12
 
-class Dice20Game(DiceGame, name = 'dice20'):
+class Dice20Game(DiceNGame, name = 'dice20'):
 	N = 20
