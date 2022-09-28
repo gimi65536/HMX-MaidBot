@@ -312,7 +312,19 @@ class RollCommands(BaseCog, name = 'Roll'):
 			self._help_pages[locale] = Paginator(pages = pages)
 			await self._help_pages[locale].respond(ctx.interaction)
 		else:
-			...
+			game_cls = ext_roll.all_mapping_table[game_name]
+			game_data = game_cls.game_data
+			embed = discord.Embed(title = game_data.get_name(locale), description = game_data.get_description(locale))
+			embed.add_field(name = self._trans(ctx, 'game-code-name'), value = game_cls.game_name)
+			for n, table in game_data.get_help().items():
+				embed.add_field(
+					name = self._trans(ctx, 'game-rule-on', format = {'n': n}),
+					value = table.get(locale, table.get(None, self._trans(ctx, 'game-no-description')))
+				)
+			if len(game_data.alias) > 0:
+				l = [f'`{alia}`' for alia in game_data.alias]
+				embed.add_field(name = self._trans(ctx, 'alias'), value = ' '.join(l))
+			await ctx.send_response(embed = embed)
 
 	@game_group.command(
 		description = 'Play the game',
