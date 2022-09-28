@@ -1,8 +1,8 @@
 import discord
 import random
-from discord.ext.pages import Page, Paginator
+from discord.ext.pages import Paginator
 from importlib import import_module
-from more_itertools import peekable, spy
+from more_itertools import chunked, peekable
 from rollgames import (
 	ArgumentLengthError as ALE,
 	ArgumentTypeError as ATE,
@@ -297,21 +297,19 @@ class RollCommands(BaseCog, name = 'Roll'):
 				await self._help_pages[locale].respond(ctx.interaction)
 				return
 			pages = []
-			remains = peekable(ext_roll.registered_games.items())
-			while remains:
-				listed_items, remains = spy(remains, MAX_FIELDS_IN_EMBED)
-				remains = peekable(remains)
+			chunks = chunked(ext_roll.registered_games.items(), MAX_FIELDS_IN_EMBED)
+			for chunk in chunks:
 				embed = discord.Embed(title = self._trans(ctx, 'game-list'), description = self._trans(ctx, 'game-list-description'))
 
-				for name, game_cls in listed_items:
+				for name, game_cls in chunk:
 					game_data = game_cls.game_data
-					embed.add_field(name = name, value = f'`{game_data.get_name(locale)}` {game_data.get_description(locale)}')
+					embed.add_field(name = name, value = f'`{game_data.get_name(locale)}` {game_data.get_description(locale)}', inline = False)
 
-				pages.append(Page(embeds = [embed]))
+				pages.append(embed)
 
 			if len(pages) == 0:
 				embed = discord.Embed(title = self._trans(ctx, 'game-list'), description = self._trans(ctx, 'game-list-description'))
-				pages.append(Page(embeds = [embed]))
+				pages.append(embed)
 
 			self._help_pages[locale] = Paginator(pages = pages)
 			await self._help_pages[locale].respond(ctx.interaction)
@@ -319,11 +317,12 @@ class RollCommands(BaseCog, name = 'Roll'):
 			game_cls = ext_roll.all_mapping_table[game_name]
 			game_data = game_cls.game_data
 			embed = discord.Embed(title = game_data.get_name(locale), description = game_data.get_description(locale))
-			embed.add_field(name = self._trans(ctx, 'game-code-name'), value = game_cls.game_name)
+			embed.add_field(name = self._trans(ctx, 'game-code-name'), value = game_cls.game_name, inline = False)
 			for n, table in game_data.get_help().items():
 				embed.add_field(
 					name = self._trans(ctx, 'game-rule-on', format = {'n': n}),
-					value = table.get(locale, table.get(None, self._trans(ctx, 'game-no-description')))
+					value = table.get(locale, table.get(None, self._trans(ctx, 'game-no-description'))),
+					inline = False
 				)
 			if len(game_data.alias) > 0:
 				l = [f'`{alia}`' for alia in game_data.alias]
@@ -375,12 +374,12 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 	def load_game_ext(self, ext):
 		self._help_pages = {}
-		import_module(ext, ext_roll.__name__)
+		import_module(f'.{ext}', ext_roll.__package__)
 
 	def load_game_exts(self, exts):
 		self._help_pages = {}
 		for ext in exts:
-			import_module(ext, ext_roll.__name__)
+			import_module(f'.{ext}', ext_roll.__package__)
 
 class ArgumentLengthError(ALE, discord.ApplicationCommandError):
 	pass
