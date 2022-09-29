@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from importlib_resources import files
-from more_itertools import SequenceView
+from more_itertools import repeat_last, SequenceView
 from reader import load
 from simple_parsers.string_argument_parser import StringArgumentParser
-from types import MappingProxyType
-from typing import Any, Dict, List, Tuple
+from types import EllipsisType, MappingProxyType
+from typing import Any, Dict, Iterator, List, Tuple, Union
 
 class GameData:
 	def __init__(self, d):
@@ -41,6 +41,7 @@ class GameData:
 
 class BaseRollGameMeta(ABCMeta):
 	base_game_data: dict = None
+	processed_options: set = set()
 	def __new__(mcls, *args, name = None):
 		if mcls.base_game_data is None:
 			d = load(files(__package__) / 'games')
@@ -54,10 +55,36 @@ class BaseRollGameMeta(ABCMeta):
 			cls.game_name = name
 			cls.game_data = GameData(mcls.base_game_data.get(name, {}))
 
+		options = cls.options
+		if id(options) not in mcls.processed_options:
+			mcls.processed_options.add(id(options))
+			ellipsis_l = None
+			for n, l in list(options.items()): # Early expand to delete keys
+				if n is ...:
+					# Processed later
+					ellipsis_l = l
+					continue
+
+				if len(l) < n:
+					# Drop key
+					options.pop(n)
+				elif len(l) > n:
+					# Reduce list
+					options[n] = l[:n]
+
+			if ellipsis_l is not None:
+				length = len(ellipsis_l)
+				if length == 0:
+					# Invalid
+					options.pop(...)
+				elif any(n >= length - 1 for n in options.keys() if n is not ...):
+					# Drop ... due to ambiguity
+					options.pop(...)
+
 		return cls
 
 class BaseRollGame(metaclass = BaseRollGameMeta):
-	options: Dict[int, List[Tuple[str, type]]]
+	options: Dict[Union[int, EllipsisType], List[Tuple[str, type]]]
 	'''
 	The class property "options" is here in an abstract game to activate the preprocessor.
 	However, you still need to call __init__ of abstract games after you get the processed arguments.
@@ -120,9 +147,18 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 
 		args = StringArgumentParser.pick(arguments)
 		len_args = len(args)
+		ellipsis = False
 		if len_args not in cls.options:
-			raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
-		args_option = cls.options[len_args]
+			if ... in cls.options and len_args >= len(cls.options[...]) - 1:
+				ellipsis = True
+			else:
+				raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
+
+		args_option: Iterator[Tuple[str, type]]
+		if ellipsis:
+			args_option = repeat_last(cls.options[...])
+		else:
+			args_option = iter(cls.options[len_args])
 		processed = {}
 
 		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):
