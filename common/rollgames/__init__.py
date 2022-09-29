@@ -31,6 +31,10 @@ class GameData:
 	def get_help(self):
 		return {i: MappingProxyType(d) for i, d in self._d.get('help', {}).items()}
 
+	def get_verbose(self, n, locale = None):
+		table = self._d.get('verbose', {}).get(n, {})
+		return self._get(table, locale)
+
 	@property
 	def alias(self):
 		return SequenceView(self._d.get('alias', []))

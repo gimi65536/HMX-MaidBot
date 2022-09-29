@@ -35,7 +35,14 @@ class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
 
 	async def _send(self, content):
 		if self.initial is not None:
-			content = f'{self.initial}\n{content}'
+			# The verbose is enabled if initial is given
+			verbose = self.game_data.get_verbose(len(self.processed_kwargs), self.ctx.locale)
+			if verbose is not None:
+				# The python dict preserves insertion order, and we maintain the argument order the abstract game wants.
+				verbose = verbose.format(*self.processed_kwargs.values())
+				content = f'{self.initial} {verbose}\n{content}'
+			else:
+				content = f'{self.initial}\n{content}'
 		await send_as(self.ctx, self.webhook, content, **self.options)
 
 class DiscordDigitRollGame(DiscordRollGame):

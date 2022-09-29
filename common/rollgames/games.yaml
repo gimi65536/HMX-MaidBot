@@ -9,6 +9,10 @@ dice:
     1:
       ~: Given `<n:int>` roll a dice with `n` faces.
       zh-TW: 給定骰子的面數`<n:int>`並且投擲。
+  verbose:
+    1:
+      ~: "{0} faces"
+      zh-TW: "{0} 面"
 
 dice4:
   name:
