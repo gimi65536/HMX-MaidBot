@@ -1,7 +1,7 @@
 import discord
 from rollgames import BaseRollGame, BaseRollGameMeta
 from types import MappingProxyType
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, Iterable, List, Tuple, Type
 from ..roll import ArgumentLengthError
 from ...utils import send_as, int_to_emoji
 
@@ -33,13 +33,16 @@ class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
 		self.options = send_options
 		self.processed_kwargs = self._preprocess_args(arguments)
 
+	def _verbose_argiter(self) -> Iterable:
+		return self.processed_kwargs.values()
+
 	async def _send(self, content):
 		if self.initial is not None:
 			# The verbose is enabled if initial is given
 			verbose = self.game_data.get_verbose(len(self.processed_kwargs), self.ctx.locale)
 			if verbose is not None:
 				# The python dict preserves insertion order, and we maintain the argument order the abstract game wants.
-				verbose = verbose.format(*self.processed_kwargs.values())
+				verbose = verbose.format(*self._verbose_argiter())
 				content = f'{self.initial} {verbose}\n{content}'
 			else:
 				content = f'{self.initial}\n{content}'
