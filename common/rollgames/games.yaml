@@ -12,7 +12,7 @@ dice:
   verbose:
     1:
       ~: "{0} faces"
-      zh-TW: "{0} 面"
+      zh-TW: "{0}面"
 
 dice4:
   name:
