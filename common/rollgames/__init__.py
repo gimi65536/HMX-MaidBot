@@ -156,9 +156,11 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		args = StringArgumentParser.pick(arguments)
 		len_args = len(args)
 		ellipsis = False
+		start_ellipsis = -1
 		if len_args not in cls.options:
 			if ... in cls.options and len_args >= len(cls.options[...]) - 1:
 				ellipsis = True
+				start_ellipsis = len(cls.options[...])
 			else:
 				raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
 
@@ -168,10 +170,15 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		else:
 			args_option = iter(cls.options[len_args])
 		processed = {}
+		processed[cls.options[...][-1][0]] = [] # ellipsis arguments list
 
 		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):
 			try:
-				processed[attr] = t(arg)
+				value = t(arg)
+				if ellipsis and i >= start_ellipsis:
+					processed[attr].append(value)
+				else:
+					processed[attr] = value
 			except:
 				raise ArgumentTypeError(i, t, arg)
 
