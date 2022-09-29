@@ -318,9 +318,17 @@ class RollCommands(BaseCog, name = 'Roll'):
 			game_data = game_cls.game_data
 			embed = discord.Embed(title = game_data.get_name(locale), description = game_data.get_description(locale))
 			embed.add_field(name = self._trans(ctx, 'game-code-name'), value = game_cls.game_name, inline = False)
-			for n, table in game_data.get_help().items():
+			for n, table in game_data.get_help_dict().items(): # n may be ...
+				field_name: str
+				if n is not ...:
+					field_name = self._trans(ctx, 'game-rule-on', format = {'n': n})
+				else:
+					if ... in game_cls.options:
+						field_name = self._trans(ctx, 'game-rule-on-variant', format = {'atleast': len(game_cls.options[...]) - 1})
+					else:
+						field_name = self._trans(ctx, 'game-rule-on-variant-erroneous')
 				embed.add_field(
-					name = self._trans(ctx, 'game-rule-on', format = {'n': n}),
+					name = field_name,
 					value = table.get(locale, table.get(None, self._trans(ctx, 'game-no-description'))),
 					inline = False
 				)

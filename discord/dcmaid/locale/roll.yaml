@@ -191,6 +191,12 @@ __translation_table:
   game-rule-on:
     ~: Rule on {n} arguments
     zh-TW: 規則（{n}個參數）
+  game-rule-on-variant:
+    ~: Rule on variant arguments (at least {atleast})
+    zh-TW: 規則（可變參數長度，至少{atleast}個）
+  game-rule-on-variant-erroneous:
+    ~: Rule on variant arguments (with erroneous settings...)
+    zh-TW: 規則（可變參數長度，但內部設定似乎出了錯……）
   game-no-description:
     ~: No description.
     zh-TW: 沒有說明。
