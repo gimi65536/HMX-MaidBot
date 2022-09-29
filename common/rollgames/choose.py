@@ -17,3 +17,6 @@ class ChooseGame(BaseRollGame, name = 'choose'):
 
 	def _verbose_argiter(self):
 		return (' '.join(f'`{n}`' for n in self.choices), )
+
+	def _process(self, s: str):
+		return f'**{s}**'
