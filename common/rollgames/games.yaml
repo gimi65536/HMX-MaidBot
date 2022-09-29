@@ -85,3 +85,19 @@ dice20:
     0:
       ~: Roll a dice with 20 faces
       zh-TW: 投擲二十面骰
+
+choice:
+  name:
+    ~: Choice
+    zh-TW: 抽籤
+  description:
+    ~: Randomly choose one
+    zh-TW: 隨機抽籤
+  help:
+    variant:
+      ~: Given at least one arguments, get one of them randomly.
+      zh-TW: 給定至少一個選項，回傳其中的任何一個。
+  verbose:
+    variant:
+      ~: Choose in {0}
+      zh-TW: 從下列選一：{0}
