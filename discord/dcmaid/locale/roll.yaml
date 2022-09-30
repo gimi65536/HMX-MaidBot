@@ -209,6 +209,12 @@ __translation_table:
   game-name-error-value:
     ~: The game "{name}" is not found.
     zh-TW: 找不到遊戲名稱「{game}」。
+  arg-modal-title:
+    ~: Input arguments (one per line)
+    zh-TW: 輸入參數（一行一個）
+  arg-modal-label:
+    ~: Arguments
+    zh-TW: 參數
   game-play-initial-text:
     ~: <@{id}> plays "{game}" with me!
     zh-TW: <@{id}> 跟我一起玩「{game}」！
