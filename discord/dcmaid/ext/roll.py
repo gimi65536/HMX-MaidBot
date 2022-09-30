@@ -8,6 +8,7 @@ from rollgames import (
 	ArgumentTypeError as ATE,
 	GameNotFound as GNF
 )
+from simple_parsers.string_argument_parser import StringArgumentParser
 from typing import Dict, List, Optional
 from ..basebot import Bot
 from ..basecog import BaseCog
@@ -338,6 +339,19 @@ class RollCommands(BaseCog, name = 'Roll'):
 				embed.add_field(name = self._trans(ctx, 'alias'), value = ' '.join(l))
 			await ctx.send_response(embed = embed)
 
+	class _ArgumentModal(discord.ui.Modal):
+		def __init__(self, outer, game_cls, *args, **kwargs):
+			super().__init__(title = outer._trans(locale, 'arg-modal-title'), *args, **kwargs)
+			self.game_cls = game_cls
+
+			self.add_item(discord.ui.InputText(label = outer._trans(locale, 'arg-modal-label'), style = discord.InputTextStyle.long))
+
+		async def callback(self, interaction):
+			args = self.children[0].value.split('\n')
+			arguments = StringArgumentParser.rebuild(args)
+
+			await self.outer._play(interaction, self.game_cls, arguments)
+
 	@game_group.command(
 		description = 'Play the game',
 		options = [
@@ -363,6 +377,14 @@ class RollCommands(BaseCog, name = 'Roll'):
 			raise GameNotFound(game_name)
 
 		game_cls = ext_roll.all_mapping_table[game_name]
+
+		if arguments is None and ... in game_cls.options and 0 not in game_cls.options:
+			# Modal
+			await ctx.send_modal(self._ArgumentModal(self, game_cls))
+		else:
+			await self._play(ctx, game_cls, arguments)
+
+	async def _play(self, ctx: QuasiContext, game_cls, arguments):
 		game_data = game_cls.game_data
 		maid = self._random_maid(ctx)
 		webhook = await self._get_webhook_by_name(ctx, maid)

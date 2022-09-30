@@ -1,4 +1,5 @@
 from pyparsing import *
+from typing import Iterable
 
 class StringArgumentParser:
 	'''
@@ -10,5 +11,11 @@ class StringArgumentParser:
 	@classmethod
 	def pick(cls, s: str):
 		return sum(cls.parser.search_string(s), ParseResults())
+
+	@staticmethod
+	def rebuild(ss: Iterable[str]):
+		f = lambda s: s.replace('"', '\\\"')
+		l = [f'''"{f(i)}"''' for i in ss]
+		return ' '.join(l)
 
 __all__ = ('StringArgumentParser', )
