@@ -167,13 +167,14 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 			else:
 				raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
 
+		processed = {}
+
 		args_option: Iterator[Tuple[str, type]]
 		if ellipsis:
 			args_option = repeat_last(cls.options[...])
+			processed[cls.options[...][-1][0]] = [] # ellipsis arguments list
 		else:
 			args_option = iter(cls.options[len_args])
-		processed = {}
-		processed[cls.options[...][-1][0]] = [] # ellipsis arguments list
 
 		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):
 			try:

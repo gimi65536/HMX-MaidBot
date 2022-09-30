@@ -53,12 +53,10 @@ def trim(string: Optional[str]):
 async def remove_thinking(ctx: QuasiContext):
 	if isinstance(ctx, discord.ApplicationContext):
 		await ctx.defer()
-		if ctx.message is not None:
-			await ctx.delete()
+		await ctx.delete()
 	else:
 		await ctx.response.defer()
-		if ctx.message is not None:
-			await ctx.delete_original_message()
+		await ctx.delete_original_message()
 
 def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[Union[discord.SlashCommand, discord.SlashCommandGroup]]:
 	for cmd in group.subcommands:
