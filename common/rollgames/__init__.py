@@ -63,6 +63,10 @@ class BaseRollGameMeta(ABCMeta):
 			cls.game_name = name
 			cls.game_data = GameData(mcls.base_game_data.get(name, {}))
 
+		if not hasattr(cls, 'options'):
+			# The basic classes have not declared options yet.
+			return cls
+
 		options = cls.options
 		if id(options) not in mcls.processed_options:
 			mcls.processed_options.add(id(options))
@@ -94,7 +98,7 @@ class BaseRollGameMeta(ABCMeta):
 class BaseRollGame(metaclass = BaseRollGameMeta):
 	options: Dict[Union[int, EllipsisType], List[Tuple[str, type]]]
 	'''
-	The class property "options" is here in an abstract game to activate the preprocessor.
+	The class property "options" is to declare argument information and activate the preprocessor.
 	However, you still need to call __init__ of abstract games after you get the processed arguments.
 	For example, you define:
 	```
