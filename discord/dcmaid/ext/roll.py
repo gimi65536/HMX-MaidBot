@@ -14,6 +14,7 @@ from ..basecog import BaseCog
 from ..constants import MAX_FIELDS_IN_EMBED
 from ..helper import set_help
 from ..perm import admin_only
+from ..typing import QuasiContext
 from ..utils import *
 
 class RollCommands(BaseCog, name = 'Roll'):

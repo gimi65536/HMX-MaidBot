@@ -3,6 +3,7 @@ from rollgames import BaseRollGame, BaseRollGameMeta
 from types import MappingProxyType
 from typing import Any, Dict, Iterable, List, Tuple, Type
 from ..roll import ArgumentLengthError
+from ...typing import QuasiContext
 from ...utils import send_as, int_to_emoji
 
 _registered_games: Dict[str, Type['DiscordRollGame']] = {}
@@ -26,7 +27,7 @@ class DiscordRollGameMeta(BaseRollGameMeta):
 		return cls
 
 class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
-	def __init__(self, ctx, webhook, arguments: str, initial_text = None, send_options = {}):
+	def __init__(self, ctx: QuasiContext, webhook, arguments: str, initial_text = None, send_options = {}):
 		self.ctx = ctx
 		self.webhook = webhook
 		self.initial = initial_text
