@@ -136,10 +136,9 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		# _roll() is implemented in games
 		pass
 
-	@abstractmethod
 	async def _process(self, obj):
 		# _process() is specified in each actual class
-		pass
+		return str(obj)
 
 	@abstractmethod
 	async def _send(self, content):
