@@ -1,11 +1,14 @@
 from dcmaid.basebot import Bot
 from dcmaid.state import State
+from discord import Intents
 
 from load_secrets import secret
 from load_db import db
 
 state = State()
-bot = Bot(db, state, debug_guilds = [secret['debug_server_id']])
+intent = Intents.default()
+intent.message_content = True
+bot = Bot(db, state, intents = intent, debug_guilds = [secret['debug_server_id']])
 
 @bot.event
 async def on_ready():

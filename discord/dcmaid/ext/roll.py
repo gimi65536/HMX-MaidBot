@@ -433,7 +433,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		for ext in exts:
 			import_module(f'.{ext}', ext_roll.__package__)
 
-	@listener()
+	@discord.Cog.listener()
 	async def on_message(self, message):
 		'''
 		This provides a "message command" version of playing games.
