@@ -103,8 +103,7 @@ def proxy(f_or_attr, /):
 		return wrapper
 
 def is_DM(channel):
-	# So far, the DMChannel case won't be triggered at all.
-	return isinstance(channel, (discord.PartialMessageable, discord.DMChannel))
+	return isinstance(channel, (discord.PartialMessageable, discord.DMChannel, discord.GroupChannel))
 
 def get_bot_name_in_ctx(ctx: QuasiContext) -> str:
 	guild = ctx.guild
