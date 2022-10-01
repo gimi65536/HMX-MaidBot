@@ -127,6 +127,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 	game_name: str
 	'''
 	game_name is a class property that assigned by "name" arguments when creating classes.
+	The game name should NOT contain spaces.
 	'''
 	game_data: dict
 	'''

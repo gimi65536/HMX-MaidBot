@@ -1,7 +1,7 @@
 import discord
 from rollgames import BaseRollGame, BaseRollGameMeta
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, List, Tuple, Type
+from typing import Any, cast, Dict, Iterable, List, Tuple, Type, Union
 from ..roll import ArgumentLengthError
 from ...typing import QuasiContext
 from ...utils import send_as, int_to_emoji
@@ -27,12 +27,17 @@ class DiscordRollGameMeta(BaseRollGameMeta):
 		return cls
 
 class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
-	def __init__(self, ctx: QuasiContext, webhook, arguments: str, initial_text = None, send_options = {}):
+	def __init__(self, ctx: Union[discord.Message, QuasiContext], webhook, arguments: str, initial_text = None, send_options = {}):
 		self.ctx = ctx
 		self.webhook = webhook
 		self.initial = initial_text
 		self.options = send_options
 		self.processed_kwargs = self._preprocess_args(arguments)
+		self.for_text_cmd = False
+
+		if isinstance(self.ctx, discord.Message):
+			self.initial = None
+			self.for_text_cmd = True
 
 	def _verbose_argiter(self) -> Iterable:
 		return self.processed_kwargs.values()
@@ -47,6 +52,9 @@ class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
 				content = f'{self.initial} {verbose}\n{content}'
 			else:
 				content = f'{self.initial}\n{content}'
+		elif self.for_text_cmd:
+			self.for_text_cmd = cast(self.ctx, discord.Message)
+			content = f'<@{self.ctx.author.id}>\n{content}'
 		await send_as(self.ctx, self.webhook, content, **self.options)
 
 class DiscordDigitRollGame(DiscordRollGame):

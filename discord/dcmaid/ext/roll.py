@@ -18,6 +18,8 @@ from ..perm import admin_only
 from ..typing import Channelable, QuasiContext
 from ..utils import *
 
+_play_prefix = '~'
+
 class RollCommands(BaseCog, name = 'Roll'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
@@ -387,24 +389,39 @@ class RollCommands(BaseCog, name = 'Roll'):
 		else:
 			await self._play(ctx, game_cls, arguments)
 
-	async def _play(self, ctx: QuasiContext, game_cls, arguments):
+	async def _play(self, ctx: Union[discord.Message, QuasiContext], game_cls, arguments):
 		game_data = game_cls.game_data
 		maid = self._random_maid(ctx)
 		webhook = await self._get_webhook_by_name(ctx, maid)
-		try:
-			game = game_cls(
-				ctx,
-				webhook,
-				arguments,
-				self._get_random_generator(ctx),
-				self._trans(ctx, 'game-play-initial-text', format = {'id': ctx.author.id, 'game': game_data.get_name(ctx.locale)})
-			)
-		except ALE as e:
-			raise ArgumentLengthError(e.expect, e.got)
-		except ATE as e:
-			raise ArgumentTypeError(e.order, e.t, e.got)
+		if isinstance(ctx, discord.Message):
+			# Text command
+			try:
+				game = game_cls(
+					ctx,
+					webhook,
+					arguments,
+					self._get_random_generator(ctx)
+				)
+			except:
+				# Silence
+				return
+		else:
+			# Slash command
+			try:
+				game = game_cls(
+					ctx,
+					webhook,
+					arguments,
+					self._get_random_generator(ctx),
+					self._trans(ctx, 'game-play-initial-text', format = {'id': ctx.author.id, 'game': game_data.get_name(ctx.locale)})
+				)
+			except ALE as e:
+				raise ArgumentLengthError(e.expect, e.got)
+			except ATE as e:
+				raise ArgumentTypeError(e.order, e.t, e.got)
 
-		await remove_thinking(ctx)
+			await remove_thinking(ctx)
+
 		await game.run()
 
 	def load_game_ext(self, ext):
@@ -415,6 +432,27 @@ class RollCommands(BaseCog, name = 'Roll'):
 		self._help_pages = {}
 		for ext in exts:
 			import_module(f'.{ext}', ext_roll.__package__)
+
+	@listener()
+	async def on_message(self, message):
+		'''
+		This provides a "message command" version of playing games.
+		We don't use the ext.commands, though, because that will cause more problems.
+		The error is silent since we don't have interaction to send ephermeral notification.
+
+		NOTE: The performance is a neck since we need to parse arguments redundantly.
+		'''
+		if not message.author.bot and message.content.startswith(_play_prefix):
+			content = message.content[len(_play_prefix):]
+			args = StringArgumentParser.pick(content)
+			if len(args) == 0:
+				return
+			game_name = trim(args[0])
+			if game_name not in ext_roll.all_mapping_table:
+				return
+
+			game_cls = ext_roll.all_mapping_table[game_name]
+			await self._play(message, game_cls, StringArgumentParser.rebuild(args[1:]))
 
 class ArgumentLengthError(ALE, discord.ApplicationCommandError):
 	pass
