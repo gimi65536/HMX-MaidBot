@@ -86,9 +86,9 @@ dice20:
       ~: Roll a dice with 20 faces
       zh-TW: 投擲二十面骰
 
-choice:
+choose:
   name:
-    ~: Choice
+    ~: Choose
     zh-TW: 抽籤
   description:
     ~: Randomly choose one
@@ -101,3 +101,51 @@ choice:
     variant:
       ~: Choose in {0}
       zh-TW: 從下列選一：{0}
+  alias:
+    - 抽選
+    - 抽取
+    - Choice
+    - choice
+
+choose-multi:
+  name:
+    ~: Choose-multi
+    zh-TW: 多選
+  description:
+    ~: Randomly choose some
+    zh-TW: 隨機抽數個
+  help:
+    variant:
+      ~: Given `<n:int>` and at least one arguments, get `n` of them randomly.
+      zh-TW: 給定`<n:int>`與至少一個選項，回傳其中的任何`n`個。
+  verbose:
+    variant:
+      ~: Choose {0} elements in {1}
+      zh-TW: 從下列選{0}：{1}
+  alias:
+    - 樣本
+    - 抽取樣本
+    - 抽選樣本
+    - Sample
+    - sample
+
+repeat-choose:
+  name:
+    ~: Repeat-choose
+    zh-TW: 重複抽籤
+  description:
+    ~: Choose some repeatly
+    zh-TW: 重複抽籤數次
+  help:
+    variant:
+      ~: Given `<n:int>` and at least one arguments, pick someone of them for `n` times.
+      zh-TW: 給定`<n:int>`與至少一個選項，從其中抽選`n`次。
+  verbose:
+    variant:
+      ~: Choose elements in {1} for {0} times
+      zh-TW: 從下列隨機抽選{0}次：{1}
+  alias:
+    - 重複抽選
+    - 重複抽取
+    - Choices
+    - choices
