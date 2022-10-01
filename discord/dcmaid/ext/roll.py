@@ -9,13 +9,13 @@ from rollgames import (
 	GameNotFound as GNF
 )
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from ..basebot import Bot
 from ..basecog import BaseCog
 from ..constants import MAX_FIELDS_IN_EMBED
 from ..helper import set_help
 from ..perm import admin_only
-from ..typing import QuasiContext
+from ..typing import Channelable, QuasiContext
 from ..utils import *
 
 class RollCommands(BaseCog, name = 'Roll'):
@@ -36,7 +36,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		setattr(ctx, 'maid_webhook', maid_webhook)
 		setattr(ctx, 'maid_weights', maid_weights)
 
-	async def _get_webhook_by_name(self, ctx, maid_name):
+	async def _get_webhook_by_name(self, ctx: Channelable, maid_name):
 		if is_DM(ctx.channel):
 			webhook = None
 		else:
@@ -51,7 +51,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 	# Since webhooks cannot really reply or followup messages as a bot,
 	# here we simulate those with plain messages whoever the sender is.
-	async def _send_followup(self, ctx, maid, *args, **kwargs):
+	async def _send_followup(self, ctx: QuasiContext, maid, *args, **kwargs):
 		webhook = await self._get_webhook_by_name(ctx, maid)
 		await send_as(ctx, webhook, *args, **kwargs)
 
@@ -63,12 +63,12 @@ class RollCommands(BaseCog, name = 'Roll'):
 		return '\n'.join(l)
 
 	@classmethod
-	def _build_box_message(cls, ctx, tran_key, l, /, **kwargs):
+	def _build_box_message(cls, ctx: QuasiContext, tran_key, l, /, **kwargs):
 		return f'<@{ctx.author.id}>\n```\n{cls._trans(ctx, tran_key, format = kwargs)}\n{cls._list_message(l)}```'
 
 	__state_random_key__ = 'random_generator_{}'
 
-	def _get_random_generator(self, ctx) -> random.Random:
+	def _get_random_generator(self, ctx: Channelable) -> random.Random:
 		channel = ctx.channel
 		if is_DM(channel):
 			return self._common_random
@@ -115,10 +115,13 @@ class RollCommands(BaseCog, name = 'Roll'):
 			ephemeral = True
 		)
 
-	def _random_maid(self, ctx):
+	def _random_maid(self, ctx: Channelable):
 		maid = None
 		if hasattr(ctx, 'maid_weights'):
 			maid = ctx.maid_weights.random_get(self._get_random_generator(ctx))
+		else:
+			maid_weights = self.bot.get_cog('Base').fetch_weight(get_guild_channel(ctx.channel))
+			maid = maid_weights.random_get(self._get_random_generator(ctx))
 		return maid
 
 	distribution = discord.SlashCommandGroup(

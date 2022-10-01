@@ -3,7 +3,7 @@ from functools import wraps
 from pathlib import PurePath
 from typing import Any, Dict, List, Optional, Union
 from .helper import set_help
-from .typing import QuasiContext
+from .typing import Channelable, QuasiContext
 
 # When creating commands, 'guild_only' does the same thing as what this fundtion does.
 # But for convenience, we preserve this function.
@@ -70,7 +70,7 @@ def walk_commands_and_groups(cmd):
 		for subcmd in cmd.subcommands:
 			yield from walk_commands_and_groups(subcmd)
 
-async def send_as(ctx: QuasiContext, webhook = None, *args, **kwargs):
+async def send_as(ctx: Channelable, webhook = None, *args, **kwargs):
 	channel = ctx.channel
 	if webhook is None:
 		# Use bot
