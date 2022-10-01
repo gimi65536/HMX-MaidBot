@@ -440,6 +440,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 		We don't use the ext.commands, though, because that will cause more problems.
 		The error is silent since we don't have interaction to send ephermeral notification.
 
+		NOTE: Modal for variant number arguments is not supported since message command is not based on interactions.
 		NOTE: The performance is a neck since we need to parse arguments redundantly.
 		'''
 		if not message.author.bot and message.content.startswith(_play_prefix):
