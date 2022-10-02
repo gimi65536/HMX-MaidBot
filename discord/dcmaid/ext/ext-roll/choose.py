@@ -4,13 +4,13 @@ from rollgames.choose import *
 class DiscordChooseGame(DiscordRollGame, ChooseGame, reg = True):
 	def __init__(self, ctx, webhook, arguments, random, initial_text = None, **kwargs):
 		DiscordRollGame.__init__(self, ctx, webhook, arguments, initial_text, kwargs)
-		ChooseGame.__init__(self, *self.processed_kwargs, random)
+		ChooseGame.__init__(self, *self.processed_kwargs.values(), random)
 
 class _DiscordSampleNGame(DiscordRollGame):
 	# To activate this __init__, please make this class the first parent class
 	def __init__(self, ctx, webhook, arguments, random, initial_text = None, **kwargs):
 		DiscordRollGame.__init__(self, ctx, webhook, arguments, initial_text, kwargs)
-		type(self).__bases__[1].__init__(self, *self.processed_kwargs, random)
+		type(self).__bases__[1].__init__(self, *self.processed_kwargs.values(), random)
 
 class DiscordChooseMultiGame(_DiscordSampleNGame, ChooseMultiGame, reg = True):
 	pass
