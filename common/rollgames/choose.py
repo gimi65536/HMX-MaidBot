@@ -10,9 +10,6 @@ class AbstractSampleGame(BaseRollGame):
 		self.choices = l
 		self.random = random
 
-	def _verbose_argiter(self):
-		return (' '.join(f'`{c}`' for c in self.choices), )
-
 	async def _process(self, s: str):
 		return f'**{s}**'
 
