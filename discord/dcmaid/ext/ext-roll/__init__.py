@@ -33,7 +33,7 @@ class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
 		self.webhook = webhook
 		self.initial = initial_text
 		self.options = send_options
-		self.processed_kwargs = self._preprocess_args(arguments)
+		self.processed_kwargs, self.variant = self._preprocess_args(arguments)
 		self.for_text_cmd = False
 
 		if isinstance(self.ctx, discord.Message):
@@ -46,7 +46,8 @@ class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
 	async def _send(self, content):
 		if self.initial is not None:
 			# The verbose is enabled if initial is given
-			verbose = self.game_data.get_verbose(len(self.processed_kwargs), self.ctx.locale)
+			length = ... if self.variant else len(self.processed_kwargs)
+			verbose = self.game_data.get_verbose(length, self.ctx.locale)
 			if verbose is not None:
 				# The python dict preserves insertion order, and we maintain the argument order the abstract game wants.
 				verbose = verbose.format(*self._verbose_argiter())

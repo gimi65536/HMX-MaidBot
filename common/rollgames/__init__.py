@@ -154,7 +154,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		pass
 
 	@classmethod
-	def _preprocess_args(cls, arguments) -> Dict[str, Any]:
+	def _preprocess_args(cls, arguments) -> Tuple[Dict[str, Any], bool]:
 		if arguments is None:
 			arguments = ''
 
@@ -196,7 +196,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		if ellipsis and ellipsis_attr not in processed:
 			processed[ellipsis_attr] = []
 
-		return processed
+		return processed, ellipsis
 
 	async def run(self):
 		result = self._roll()
