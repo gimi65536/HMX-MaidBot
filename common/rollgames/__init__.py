@@ -132,7 +132,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 	'''
 	game_data: GameData
 	'''
-	game_data is a dictionary storing some information.
+	game_data stores some information.
 	'''
 
 	# The necessary arguments are passed in __init__

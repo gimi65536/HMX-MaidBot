@@ -108,7 +108,7 @@ choose:
 
 choose-multi:
   name:
-    ~: Choose-multi
+    ~: Choose multiple
     zh-TW: 多選
   description:
     ~: Randomly choose some
@@ -125,11 +125,12 @@ choose-multi:
     - 樣本
     - 抽取樣本
     - 抽選樣本
+    - Choose multi
     - Sample
 
 repeat-choose:
   name:
-    ~: Repeat-choose
+    ~: Repeatedly choose
     zh-TW: 重複抽籤
   description:
     ~: Choose some repeatly
@@ -145,4 +146,5 @@ repeat-choose:
   alias:
     - 重複抽選
     - 重複抽取
+    - Repeat choose
     - Choices
