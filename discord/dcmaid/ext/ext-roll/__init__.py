@@ -40,16 +40,12 @@ class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
 			self.initial = None
 			self.for_text_cmd = True
 
-	def _verbose_argiter(self) -> Iterable:
-		return self.processed_kwargs.values()
-
 	async def _send(self, content):
 		if self.initial is not None:
 			# The verbose is enabled if initial is given
 			length = ... if self.variant else len(self.processed_kwargs)
 			verbose = self.game_data.get_verbose(length, self.ctx.locale)
 			if verbose is not None:
-				# The python dict preserves insertion order, and we maintain the argument order the abstract game wants.
 				verbose = verbose.format(*self._verbose_argiter())
 				content = f'{self.initial} {verbose}\n{content}'
 			else:

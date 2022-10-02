@@ -146,6 +146,9 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		# _process() is specified in each actual class
 		return str(obj)
 
+	def _verbose_argiter(self) -> Iterable:
+		return []
+
 	@abstractmethod
 	async def _send(self, content):
 		# _send() is implemented in each platform

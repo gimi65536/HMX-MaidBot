@@ -9,6 +9,9 @@ class DiceGame(BaseRollGame, name = 'dice'):
 		self.faces = faces
 		self.random = random
 
+	def _verbose_argiter(self):
+		return (self.faces, )
+
 	def _roll(self) -> int:
 		return self.random.randint(1, self.faces)
 
@@ -23,6 +26,9 @@ class DiceNGame(DiceGame):
 
 	def __init__(self, random):
 		super().__init__(self.N, random)
+
+	def _verbose_argiter(self):
+		return []
 
 class Dice4Game(DiceNGame, name = 'dice4'):
 	N = 4

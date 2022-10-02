@@ -2,9 +2,6 @@ from . import DiscordRollGame
 from rollgames.choose import *
 
 class _DiscordSampleGame(DiscordRollGame):
-	def _verbose_argiter(self):
-		return (' '.join(f'`{c}`' for c in self.choices), )
-
 	async def _process(self, s: str):
 		return f'**{s}**'
 
@@ -18,9 +15,6 @@ class _DiscordSampleNGame(_DiscordSampleGame):
 	def __init__(self, ctx, webhook, arguments, random, initial_text = None, **kwargs):
 		_DiscordSampleGame.__init__(self, ctx, webhook, arguments, initial_text, kwargs)
 		type(self).__bases__[1].__init__(self, *self.processed_kwargs.values(), random)
-
-	def _verbose_argiter(self):
-		return (str(self.n), ' '.join(f'`{c}`' for c in self.choices))
 
 	async def _process(self, l):
 		return f"""**{' '.join(f'`{c}`' for c in l)}**"""
