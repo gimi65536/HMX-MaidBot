@@ -105,7 +105,6 @@ choose:
     - 抽選
     - 抽取
     - Choice
-    - choice
 
 choose-multi:
   name:
@@ -127,7 +126,6 @@ choose-multi:
     - 抽取樣本
     - 抽選樣本
     - Sample
-    - sample
 
 repeat-choose:
   name:
@@ -148,4 +146,3 @@ repeat-choose:
     - 重複抽選
     - 重複抽取
     - Choices
-    - choices

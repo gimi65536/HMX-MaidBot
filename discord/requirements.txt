@@ -6,3 +6,4 @@ pyyaml
 pyjson5
 pyparsing
 more-itertools
+case-insensitive-dictionary

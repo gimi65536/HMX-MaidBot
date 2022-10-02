@@ -1,16 +1,17 @@
 import discord
+from case_insensitive_dict import CaseInsensitiveDict
 from rollgames import BaseRollGame, BaseRollGameMeta
 from types import MappingProxyType
-from typing import Any, cast, Dict, Iterable, List, Tuple, Type, Union
+from typing import Any, cast, Iterable, List, Mapping, MutableMapping, Tuple, Type, Union
 from ..roll import ArgumentLengthError
 from ...typing import QuasiContext
 from ...utils import send_as, int_to_emoji
 
-_registered_games: Dict[str, Type['DiscordRollGame']] = {}
-registered_games = MappingProxyType(_registered_games)
+_registered_games: MutableMapping[str, Type['DiscordRollGame']] = CaseInsensitiveDict()
+registered_games: Mapping[str, Type['DiscordRollGame']] = MappingProxyType(_registered_games)
 
-_all_mapping_table: Dict[str, Type['DiscordRollGame']] = {}
-all_mapping_table = MappingProxyType(_all_mapping_table)
+_all_mapping_table: MutableMapping[str, Type['DiscordRollGame']] = CaseInsensitiveDict()
+all_mapping_table: Mapping[str, Type['DiscordRollGame']] = MappingProxyType(_all_mapping_table)
 
 class DiscordRollGameMeta(BaseRollGameMeta):
 	def __new__(mcls, *args, reg = False, **kwargs):
