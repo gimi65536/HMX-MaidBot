@@ -4,7 +4,7 @@ from more_itertools import repeat_last, SequenceView
 from reader import load
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import EllipsisType, MappingProxyType
-from typing import Any, Dict, Iterator, List, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, List, Tuple, Union
 
 class GameData:
 	def __init__(self, d):
