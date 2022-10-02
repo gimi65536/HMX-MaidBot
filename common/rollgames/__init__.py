@@ -174,19 +174,27 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		args_option: Iterator[Tuple[str, type]]
 		if ellipsis:
 			args_option = repeat_last(cls.options[...])
-			processed[cls.options[...][-1][0]] = [] # ellipsis arguments list
+			ellipsis_attr = cls.options[...][-1][0]
 		else:
 			args_option = iter(cls.options[len_args])
 
 		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):
 			try:
 				value = t(arg)
-				if ellipsis and i >= start_ellipsis:
-					processed[attr].append(value)
+				if ellipsis:
+					if i == start_ellipsis:
+						processed[attr] = []
+					if i >= start_ellipsis:
+						processed[attr].append(value)
+					else:
+						processed[attr] = value
 				else:
 					processed[attr] = value
 			except:
 				raise ArgumentTypeError(i, t, arg)
+
+		if ellipsis and ellipsis_attr not in processed:
+			processed[ellipsis_attr] = []
 
 		return processed
 
