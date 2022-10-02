@@ -345,8 +345,9 @@ class RollCommands(BaseCog, name = 'Roll'):
 			await ctx.send_response(embed = embed)
 
 	class _ArgumentModal(discord.ui.Modal):
-		def __init__(self, outer, game_cls, *args, **kwargs):
+		def __init__(self, outer, locale, game_cls, *args, **kwargs):
 			super().__init__(title = outer._trans(locale, 'arg-modal-title'), *args, **kwargs)
+			self.outer = outer
 			self.game_cls = game_cls
 
 			self.add_item(discord.ui.InputText(label = outer._trans(locale, 'arg-modal-label'), style = discord.InputTextStyle.long))
@@ -385,7 +386,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 
 		if arguments is None and ... in game_cls.options and 0 not in game_cls.options:
 			# Modal
-			await ctx.send_modal(self._ArgumentModal(self, game_cls))
+			await ctx.send_modal(self._ArgumentModal(self, ctx.locale, game_cls))
 		else:
 			await self._play(ctx, game_cls, arguments)
 
@@ -413,7 +414,7 @@ class RollCommands(BaseCog, name = 'Roll'):
 					webhook,
 					arguments,
 					self._get_random_generator(ctx),
-					self._trans(ctx, 'game-play-initial-text', format = {'id': ctx.author.id, 'game': game_data.get_name(ctx.locale)})
+					self._trans(ctx, 'game-play-initial-text', format = {'id': ctx.user.id, 'game': game_data.get_name(ctx.locale)})
 				)
 			except ALE as e:
 				raise ArgumentLengthError(e.expect, e.got)

@@ -51,12 +51,17 @@ def trim(string: Optional[str]):
 
 # This function removes the "thinking" mode without sending anything from the interaction.
 async def remove_thinking(ctx: QuasiContext):
-	if isinstance(ctx, discord.ApplicationContext):
-		await ctx.defer()
-		await ctx.delete()
-	else:
-		await ctx.response.defer()
-		await ctx.delete_original_message()
+	try:
+		if isinstance(ctx, discord.ApplicationContext):
+			await ctx.defer()
+			await ctx.delete()
+		else:
+			await ctx.response.defer()
+			await ctx.delete_original_message()
+	except discord.HTTPException:
+		# Defer error: There is no "thinking" to remove
+		# Delete error: No thinking message to delete
+		return
 
 def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[Union[discord.SlashCommand, discord.SlashCommandGroup]]:
 	for cmd in group.subcommands:
