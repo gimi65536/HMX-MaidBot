@@ -25,6 +25,9 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 		super().__init__(bot)
 		self._help_pages: Dict[str, Paginator] = {}
 
+	async def cog_before_invoke(self, ctx):
+		await self._cog_before_invoke(ctx)
+
 	@staticmethod
 	def _list_message(l):
 		l = list(l)

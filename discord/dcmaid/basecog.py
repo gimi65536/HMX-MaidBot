@@ -150,9 +150,9 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 		else:
 			return cls._get_nested_str(table, *args, locale_or_localeable.locale, default = default, format = format)
 
-class MaidMixin(BaseCog):
-	# To override cog_before_invoke, the mixin should be a subclass of Cog
-	async def cog_before_invoke(self, ctx):
+class MaidMixin:
+	# You need to override cog_before_invoke manually when inherit the mixin
+	async def _cog_before_invoke(self, ctx):
 		if is_DM(ctx.channel):
 			return
 
@@ -205,7 +205,7 @@ class RandomMixin:
 	def _get_random_generator(self, ctx: Channelable) -> random.Random:
 		channel = ctx.channel
 		if is_DM(channel):
-			if not hasattr(self.'_common_random'):
+			if not hasattr(self, '_common_random'):
 				setattr(self, '_common_random', random.Random()) # Used in DM
 
 			return self._common_random
