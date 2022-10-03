@@ -16,9 +16,6 @@ from .weight import Weight
 class BasicCommands(BaseCog, name = 'Base'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
-		self.db = bot.db
-		self.maids = bot.maids
-		self.state = bot.state
 
 	system = discord.SlashCommandGroup(
 		name = "system",
