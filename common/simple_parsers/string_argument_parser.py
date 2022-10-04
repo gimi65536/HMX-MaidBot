@@ -10,7 +10,7 @@ class StringArgumentParser:
 
 	@classmethod
 	def pick(cls, s: str):
-		return sum(cls.parser.search_string(s), ParseResults())
+		return sum(cls.parser.search_string(s), ParseResults()).as_list()
 
 	@staticmethod
 	def rebuild(ss: Iterable[str]):
