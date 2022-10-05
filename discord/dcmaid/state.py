@@ -21,6 +21,8 @@ class State:
 			lock = self._real_dict[key][0]
 			with lock:
 				self._real_dict[key] = (lock, obj)
+	def __contains__(self, key: str):
+		return key in self._real_dict
 	def remove(self, key: str):
 		if key in self._real_dict:
 			lock = self._real_dict[key][0]
