@@ -1,0 +1,180 @@
+__reference:
+
+poll:
+  help:
+    zh-TW: >
+      `/{cmd_name} <?期間> <?期間單位> <?即時顯示> <?顯示投票者> <?投票時顯示投票者>
+      <?結果發表時顯示投票者> <?投票數> <?最小票數> <?最大票數> <選項>` 建立一個新的投票。
+      各個選項之間用空格分開。
+
+      預設建立的投票將是一個一小時的單選問卷，不顯示任何詳細資訊。
+
+      這條指令只能在伺服器頻道內使用。
+  name:
+    zh-TW: 創建投票
+  description:
+    zh-TW: 創建投票
+  title.name:
+    zh-TW: 標題
+  title.description:
+    zh-TW: 投票標題
+  period.name:
+    zh-TW: 期間
+  period.description:
+    zh-TW: 這個投票將會維持多久（預設1單位）
+  period_unit.name:
+    zh-TW: 期間單位
+  period_unit.description:
+    zh-TW: 期間使用的時間單位（預設為小時）
+  period_unit.choices.second:
+    zh-TW: 秒鐘
+  period_unit.choices.minute:
+    zh-TW: 分鐘
+  period_unit.choices.hor:
+    zh-TW: 小時
+  period_unit.choices.day:
+    zh-TW: 日
+  period_unit.choices.week:
+    zh-TW: 周
+  period_unit.choices.forever:
+    # not in use for technical reasons
+    zh-TW: 永遠
+  realtime.name:
+    zh-TW: 即時顯示
+  realtime.description:
+    zh-TW: 投票中途即時顯示投票結果（預設不顯示）
+  show_name.name:
+    zh-TW: 顯示投票者
+  show_name.description:
+    zh-TW: 顯示投票結果時也顯示投票者（預設不顯示）
+  show_name_voting.name:
+    zh-TW: 投票時顯示投票者
+  show_name_voting.description:
+    zh-TW: 開啟即時顯示時也顯示投票者（優先於顯示投票者）
+  show_name_result.name:
+    zh-TW: 結果發表時顯示投票者
+  show_name_result.description:
+    zh-TW: 投票結束後顯示投票者（優先於顯示投票者）
+  num_votes.name:
+    zh-TW: 投票數
+  num_votes.description:
+    zh-TW: 規定投票者必須投幾票（預設為1票）
+  min_votes.name:
+    zh-TW: 最小票數
+  min_votes.description:
+    zh-TW: 規定投票者最少投幾票（優先於票數）
+  max_votes.name:
+    zh-TW: 最大票數
+  max_votes.description:
+    zh-TW: 規定投票者最多投幾票（優先於票數）
+  options.name:
+    zh-TW: 選項
+  options.description:
+    zh-TW: 投票選項
+
+__translation_table:
+  creating_poll_message:
+    ~: Creating your poll...
+    zh-TW: 正在創建投票……
+  too-short-period-error:
+    ~: Too short period
+    zh-TW: 時間太短
+  too-short-period-error-value:
+    ~: At least `{default}` seconds, got `{period}` seconds.
+    zh-TW: 只給了`{period}`秒，至少`{default}`秒。
+  too-many-options-error:
+    ~: Too many options
+    zh-TW: 太多選項
+  too-many-options-error-value:
+    ~: At most `{default}` options, got `{n}` options.
+    zh-TW: 接收到`{n}`個選項，但最多只能有`{default}`個。
+  invalid-period-error:
+    ~: Invalid period
+    zh-TW: 時間長度錯誤
+  invalid-period-error-value:
+    ~: Should be positive, got `{period}`.
+    zh-TW: 時間長度必須為正數，但得到的是`{period}`。
+  empry-choice-error:
+    ~: No options
+    zh-TW: 沒有選項
+  empry-choice-error-value:
+    ~: At least one option should be specified.
+    zh-TW: 必須至少給定一個選項。
+  min-max-error:
+    ~: Interval error
+    zh-TW: 票數區間錯誤
+  min-max-error-value:
+    ~: The min_votes `{min}` is larger than max_votes `{max}`.
+    zh-TW: 最小票數`{min}`大於最大票數`{max}`。
+  zero-vote-error:
+    ~: Zero vote error
+    zh-TW: 零票錯誤
+  zero-vote-error-value:
+    ~: The poll is invalid because users are only allowed to cast zero votes.
+    zh-TW: 這個投票只允許使用者投零票。
+  render-option-order:
+    ~: "#{n}: "
+    zh-TW: "選項{n}："
+  vote:
+    ~: Vote
+    zh-TW: 投票
+  lookup:
+    ~: Look up your choices
+    zh-TW: 查看你的投票
+  early:
+    ~: Stop
+    zh-TW: 停止
+  cancel:
+    ~: Cancel
+    zh-TW: 取消
+  not-vote-yet:
+    ~: You have not made your choices yet for *{title}*.
+    zh-TW: 你尚未對「{title}」做出選擇。
+  has-vote:
+    ~: "You have chosen this/these choice(s) for *{title}* before:"
+    zh-TW: 你曾經針對「{title}」投票給下列選項：
+  empty:
+    ~: Remove choices
+    zh-TW: 移除先前的投票
+  vote-success:
+    ~: Successfully received your choices!
+    zh-TW: 投票成功！
+  vote-failed:
+    ~: Failed to receive your choices.
+    zh-TW: 投票失敗。
+  empty-check:
+    ~: Do you really want to remove your choices?
+    zh-TW: 你確定要移除你的選擇嗎？
+  empty-success:
+    ~: Successfully removed your choices!
+    zh-TW: 投票成功！
+  empty-failed:
+    ~: Failed to remove your choices.
+    zh-TW: 投票失敗。
+  early-permission-denied:
+    ~: Only for the author
+    zh-TW: 僅限作者
+  early-permission-denied-value:
+    ~: Only the author of the poll can early stop the poll.
+    zh-TW: 只有投票發起人可以提前結束投票。
+  early-check:
+    ~: Do you really want to stop voting for *{title}* right now?
+    zh-TW: 你確定要立即結束「{title}」？
+  early-done:
+    ~: Done.
+    zh-TW: 操作完畢。
+  cancel-permission-denied:
+    ~: Permission denied
+    zh-TW: 權限不足
+  cancel-permission-denied-value:
+    ~: Only the channel managers and the author of the poll can cancel the poll.
+    zh-TW: 只有頻道管理者與投票發起人可以提前結束投票。
+  cancel-check:
+    ~: Do you really want to cancel voting for *{title}* right now?
+    zh-TW: 你確定要取消「{title}」？
+  cancel-done:
+    ~: Done.
+    zh-TW: 操作完畢。
+  canceled-poll:
+    ~: This poll has been cancelled.
+    zh-TW: 此投票已被取消。
