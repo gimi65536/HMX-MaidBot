@@ -1,12 +1,13 @@
 import discord
+from collections.abc import Mapping
 from threading import Lock
-from typing import Dict, Mapping, Optional, Tuple
+from typing import Optional
 
 class State:
 	def __init__(self):
 		# To ensure that each update is handled by mutex lock,
 		# the "object" part is recommended to be immutable.
-		self._real_dict: Dict[str, Tuple[Lock, object]] = {}
+		self._real_dict: dict[str, tuple[Lock, object]] = {}
 	def get(self, key: str, default: object = None):
 		try:
 			t = self._real_dict[key]

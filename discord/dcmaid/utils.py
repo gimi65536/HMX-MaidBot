@@ -1,7 +1,7 @@
 import discord
 from functools import wraps
 from pathlib import PurePath
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from .helper import set_help
 from .typing import Channelable, QuasiContext
 
@@ -14,10 +14,10 @@ def check_server_text_channel(ctx: QuasiContext):
 
 # Retrieve maid names from the cog within the ctx.
 # If the cog does not have "maids" dict, then an empty list is returned.
-def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> List[str]:
+def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 	cog = ctx.cog
 	try:
-		maids: Dict[str, Any] = cog.maids
+		maids: dict[str, Any] = cog.maids
 	except:
 		return []
 

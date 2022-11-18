@@ -9,7 +9,7 @@ from rollgames import (
 	GameNotFound as GNF
 )
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 from ..basebot import Bot
 from ..basecog import BaseCog, MaidMixin, RandomMixin
 from ..constants import MAX_FIELDS_IN_EMBED
@@ -23,7 +23,7 @@ _play_prefix = '~'
 class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
-		self._help_pages: Dict[str, Paginator] = {}
+		self._help_pages: dict[str, Paginator] = {}
 
 	async def cog_before_invoke(self, ctx):
 		await self._cog_before_invoke(ctx)

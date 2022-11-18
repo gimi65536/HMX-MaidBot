@@ -1,7 +1,7 @@
 import discord
 import random
 from threading import Lock
-from typing import Dict, Optional, Tuple
+from typing import Optional
 from .basebot import Bot
 from .utils import proxy
 
@@ -10,7 +10,7 @@ class Weight:
 	col_name = 'channel-maids-weight'
 	field_name = 'weights'
 	bot_key = '____bot'
-	d: Dict[Tuple[Bot, discord.abc.GuildChannel], 'Weight'] = {}
+	d: dict[tuple[Bot, discord.abc.GuildChannel], 'Weight'] = {}
 
 	@staticmethod
 	def _get_key(bot, channel):

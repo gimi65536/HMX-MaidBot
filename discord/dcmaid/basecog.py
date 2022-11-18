@@ -6,7 +6,7 @@ import discord
 import random
 from importlib_resources import files
 from reader import load
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 from .basebot import Bot
 from .exception import MaidNotFound
 from .helper import get_help, set_help, update_help
@@ -24,12 +24,12 @@ class BaseCogMeta(discord.CogMeta):
 	Define a cog that automatically supports our help structure and localization.
 	'''
 
-	_common_table: Dict[Optional[str], Dict[Optional[str], str]] = None
+	_common_table: dict[Optional[str], dict[Optional[str], str]] = None
 
 	def __new__(mcls, *args, **kwargs):
 		cls = super().__new__(mcls, *args, **kwargs)
 
-		commands: List[discord.ApplicationCommand] = []
+		commands: list[discord.ApplicationCommand] = []
 		for cmd in cls.__cog_commands__:
 			commands.extend(walk_commands_and_groups(cmd))
 
@@ -47,7 +47,7 @@ class BaseCogMeta(discord.CogMeta):
 			else:
 				mcls._common_table = common_d.get('__translation_table', {})
 
-		cls.__cog_translation_table__: Dict[Optional[str], Dict[Optional[str], str]] = mcls._common_table.copy()
+		cls.__cog_translation_table__: dict[Optional[str], dict[Optional[str], str]] = mcls._common_table.copy()
 
 		# Load specific table
 		d = load(base_path / f'{ cls.__cog_name__.lower() }')
@@ -77,7 +77,7 @@ class BaseCogMeta(discord.CogMeta):
 
 			# Do option localization here
 			if isinstance(cmd, discord.SlashCommand):
-				options: List[discord.Option] = cmd.options
+				options: list[discord.Option] = cmd.options
 				for option in options:
 					_replace_localization(option, 'name', 'name_localizations', f'{ option.name }.name', cmd_locale)
 					_replace_localization(option, 'description', 'description_localizations', f'{ option.name }.description', cmd_locale)
@@ -120,7 +120,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 	# a string or a complex dictionary and given keys, return the string if any.
 	# If a key does not exist, the function tries to retrieve None key.
 	@staticmethod
-	def _get_nested_str(d: dict, *args: str, default: Optional[str] = None, format: Dict[str, str] = {}) -> Optional[str]:
+	def _get_nested_str(d: dict, *args: str, default: Optional[str] = None, format: dict[str, str] = {}) -> Optional[str]:
 		now = d
 		args = list(reversed(args))
 		while len(args) > 0:
@@ -142,7 +142,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 		locale_or_localeable: Union[str, Localeable],
 		*args: str,
 		default: Optional[str] = None,
-		format: Dict[str, str] = {}) -> Optional[str]:
+		format: dict[str, str] = {}) -> Optional[str]:
 
 		table = cls.__cog_translation_table__
 		if isinstance(locale_or_localeable, str):

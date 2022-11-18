@@ -1,7 +1,7 @@
 import discord
 import inspect
 import re
-from typing import Dict, Optional
+from typing import Optional
 
 _help_attr = '__commands_help__'
 
@@ -18,7 +18,7 @@ def injure_help(text, locale = None):
 
 	return decorator
 
-def get_help(cmd) -> Dict[Optional[str], str]:
+def get_help(cmd) -> dict[Optional[str], str]:
 	if hasattr(cmd, _help_attr):
 		return getattr(cmd, _help_attr)
 
@@ -35,7 +35,7 @@ def set_help(cmd, text, locale = None):
 	else:
 		setattr(cmd, _help_attr, {locale: cleandoc(text)})
 
-def update_help(cmd, localization: Dict[str, str]):
+def update_help(cmd, localization: dict[str, str]):
 	if hasattr(cmd, _help_attr):
 		getattr(cmd, _help_attr).update(localization)
 	else:

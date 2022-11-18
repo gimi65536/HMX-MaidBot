@@ -1,10 +1,11 @@
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterable, Iterator
 from importlib_resources import files
 from more_itertools import repeat_last, SequenceView
 from reader import load
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import EllipsisType, MappingProxyType
-from typing import Any, Dict, Iterable, Iterator, List, Tuple, Union
+from typing import Any, Union
 
 class GameData:
 	def __init__(self, d):
@@ -96,7 +97,7 @@ class BaseRollGameMeta(ABCMeta):
 		return cls
 
 class BaseRollGame(metaclass = BaseRollGameMeta):
-	options: Dict[Union[int, EllipsisType], List[Tuple[str, type]]]
+	options: dict[Union[int, EllipsisType], list[tuple[str, type]]]
 	'''
 	The class property "options" is to declare argument information and activate the preprocessor.
 	However, you still need to call __init__ of abstract games after you get the processed arguments.
@@ -157,7 +158,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		pass
 
 	@classmethod
-	def _preprocess_args(cls, arguments) -> Tuple[Dict[str, Any], bool]:
+	def _preprocess_args(cls, arguments) -> tuple[dict[str, Any], bool]:
 		if arguments is None:
 			arguments = ''
 
@@ -174,7 +175,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 
 		processed = {}
 
-		args_option: Iterator[Tuple[str, type]]
+		args_option: Iterator[tuple[str, type]]
 		if ellipsis:
 			args_option = repeat_last(cls.options[...])
 			ellipsis_attr = cls.options[...][-1][0]
@@ -207,7 +208,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		await self._send(content)
 
 class ArgumentLengthError(ValueError):
-	def __init__(self, expect: List[int], got: int):
+	def __init__(self, expect: list[int], got: int):
 		self.expect = expect
 		self.got = got
 

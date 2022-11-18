@@ -1,5 +1,5 @@
+from collections.abc import Iterable
 from pyparsing import *
-from typing import Iterable
 
 class StringArgumentParser:
 	'''

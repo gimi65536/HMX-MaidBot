@@ -1,8 +1,8 @@
 from . import BaseRollGame
-from typing import Iterable, List
+from collections.abc import Iterable
 
 class AbstractSampleGame(BaseRollGame):
-	choices: List[str]
+	choices: list[str]
 
 	def __init__(self, first: str, choices: Iterable[str], random):
 		l = [first]

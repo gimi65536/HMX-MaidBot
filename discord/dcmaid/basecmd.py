@@ -2,7 +2,6 @@ import discord
 import re
 from functools import partial
 from types import MappingProxyType
-from typing import Dict
 from .basebot import Bot
 from .basecog import BaseCog
 from .exception import MaidNotFound
@@ -42,7 +41,7 @@ class BasicCommands(BaseCog, name = 'Base'):
 		installed_hooks = self.state.get_installed_hooks(channel_id)
 
 		if force or installed_hooks is None:
-			installed_hooks_dict: Dict[str, discord.Webhook] = {}
+			installed_hooks_dict: dict[str, discord.Webhook] = {}
 
 			# If the state already stores the information, we don't start a
 			# query again. We trust users not to delete the webhooks (maids).
