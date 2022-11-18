@@ -6,25 +6,13 @@ from ..utils import *
 from ..views import YesNoView
 from asyncio import get_running_loop, Lock, sleep, Task
 from collections import Counter
+from collections.abc import Awaitable, Mapping, MutableMapping
 from dataclasses import dataclass
 from decouple import config
 from datetime import datetime, timedelta, timezone
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import MappingProxyType
-from typing import (
-	Awaitable,
-	Counter as CounterType,
-	Dict,
-	Generic,
-	List,
-	Mapping,
-	MutableMapping,
-	Optional,
-	Set,
-	Tuple,
-	Type,
-	TypeVar
-)
+from typing import Generic, Optional, TypeVar
 
 time_units = [
 	('second', 's'),
@@ -60,18 +48,18 @@ class BasePoll:
 	author: discord.Member
 	channel: discord.abc.Messageable
 	title: str
-	options: List[str]
-	_option_set: Set[str] # Not in db
-	vote_receive: Mapping[str, CounterType[discord.Member]] # Not in db
-	vote_casted: Mapping[discord.Member, CounterType[str]]
-	_vote_receive: MutableMapping[str, CounterType[discord.Member]] # Not in db
-	_vote_casted: MutableMapping[discord.Member, CounterType[str]]
+	options: list[str]
+	_option_set: set[str] # Not in db
+	vote_receive: Mapping[str, Counter[discord.Member]] # Not in db
+	vote_casted: Mapping[discord.Member, Counter[str]]
+	_vote_receive: MutableMapping[str, Counter[discord.Member]] # Not in db
+	_vote_casted: MutableMapping[discord.Member, Counter[str]]
 	uuid: uuid.UUID
 	msg_id: Optional[int] = None # Inserted by the Cog
 	processed_order: int # Not in db. Used by the Cog to refresh information correctly.
 	mutex: Lock # Not in db, of course
 
-	def __init__(self, author: discord.Member, channel: discord.abc.Messageable, title: str, options: List[str], period: int, period_unit):
+	def __init__(self, author: discord.Member, channel: discord.abc.Messageable, title: str, options: list[str], period: int, period_unit):
 		if period <= 0:
 			raise NonPositivePeriodError(period)
 
@@ -127,7 +115,7 @@ class BasePoll:
 	def connect_to_msg(self, msg: discord.Message):
 		self.msg_id = msg.id
 
-	def get_votes_per_option(self) -> Dict[str, int]:
+	def get_votes_per_option(self) -> dict[str, int]:
 		# This method is unstable when the mutex is locked and the caller doesn't hold it.
 		result = {}
 		for o, d in self._vote_receive.items():
@@ -152,7 +140,7 @@ class Poll(BasePoll):
 		author: discord.User,
 		channel: discord.abc.Messageable,
 		title: str,
-		options: List[str],
+		options: list[str],
 		period: int,
 		period_unit,
 		realtime: bool,
@@ -211,7 +199,7 @@ class Event:
 	poll: BasePoll
 	member: discord.Member
 	option: str
-	modification: Tuple[int, int] # (From, To)
+	modification: tuple[int, int] # (From, To)
 	processed_order: int
 
 T = TypeVar('T', bound = BasePoll)
@@ -220,8 +208,8 @@ class BaseHoldSystem(Generic[T]):
 	'''
 	Use db column to restore or not...
 	'''
-	def __init__(self, name: str, type: Type[T], col = None):
-		self._on_process: Dict[uuid.UUID, Tuple[T, Task]] = {}
+	def __init__(self, name: str, type: type[T], col = None):
+		self._on_process: dict[uuid.UUID, tuple[T, Task]] = {}
 		self.name = name
 		self.type = type
 		self.col = col
@@ -305,42 +293,42 @@ class BaseHoldSystem(Generic[T]):
 			# awaitable is called after the processed order increased
 			await awaitable
 
-	async def add_votes(self, poll: T, member: discord.Member, options: List[str] | Counter[str]) -> Optional[List[Event]]:
+	async def add_votes(self, poll: T, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
 		if not self._contain(poll):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
 		return await self._add_votes(poll, member, options)
 
-	async def replace_votes(self, poll: T, member: discord.Member, options: List[str] | Counter[str]) -> Optional[List[Event]]:
+	async def replace_votes(self, poll: T, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
 		if not self._contain(poll):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
 		return await self._replace_votes(poll, member, options)
 
-	async def remove_votes(self, poll: T, member: discord.Member, options: Optional[List[str] | Counter[str]] = None) -> Optional[List[Event]]:
+	async def remove_votes(self, poll: T, member: discord.Member, options: Optional[list[str] | Counter[str]] = None) -> Optional[list[Event]]:
 		if not self._contain(poll):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
 		return await self._remove_votes(poll, member, options)
 
-	async def add_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: List[str] | Counter[str]) -> Optional[List[Event]]:
+	async def add_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
 		if not self._contain(poll):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
 		return await self._add_votes(self.retrieve(uuid), member, options)
 
-	async def replace_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: List[str] | Counter[str]) -> Optional[List[Event]]:
+	async def replace_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
 		if not self._contain(poll):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
 		return await self._replace_votes(self.retrieve(uuid), member, options)
 
-	async def remove_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: Optional[List[str] | Counter[str]] = None) -> Optional[List[Event]]:
+	async def remove_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: Optional[list[str] | Counter[str]] = None) -> Optional[list[Event]]:
 		if not self._contain(poll):
 			# Happen if timeout
 			return None
@@ -349,26 +337,26 @@ class BaseHoldSystem(Generic[T]):
 
 	# This implementation is default behaviors. Feel free to override this method.
 	# None options are only used in remove
-	def _process_options(self, options: Optional[List[str] | Counter[str]]) -> Optional[Counter[str]]:
+	def _process_options(self, options: Optional[list[str] | Counter[str]]) -> Optional[Counter[str]]:
 		if options is None:
 			return None
 
 		return Counter(options)
 
-	async def _add_votes(self, poll: T, member: discord.Member, options: Counter[str]) -> Optional[List[Event]]:
+	async def _add_votes(self, poll: T, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
 		raise NotImplementedError
 
-	async def _replace_votes(self, poll: T, member: discord.Member, options: Counter[str]) -> Optional[List[Event]]:
+	async def _replace_votes(self, poll: T, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
 		raise NotImplementedError
 
-	async def _remove_votes(self, poll: T, member: discord.Member, options: Optional[Counter[str]]) -> Optional[List[Event]]:
+	async def _remove_votes(self, poll: T, member: discord.Member, options: Optional[Counter[str]]) -> Optional[list[Event]]:
 		raise NotImplementedError
 
 class PollHoldSystem(HoldSystem[Poll]):
 	def __init__(self, col = None):
 		super().__init__('poll', Poll, col)
 
-	def _process_options(self, options: Optional[List[str] | Counter[str]]) -> Optional[Counter[str]]:
+	def _process_options(self, options: Optional[list[str] | Counter[str]]) -> Optional[Counter[str]]:
 		if options is None:
 			return None
 
@@ -377,7 +365,7 @@ class PollHoldSystem(HoldSystem[Poll]):
 		else:
 			return Counter(set(options))
 
-	async def _add_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[List[Event]]:
+	async def _add_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
 		events = []
 		async with poll.mutex:
 			if not self._contain(poll):
@@ -408,7 +396,7 @@ class PollHoldSystem(HoldSystem[Poll]):
 
 		return events
 
-	async def _replace_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[List[Event]]:
+	async def _replace_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
 		events = []
 		async with poll.mutex:
 			if not self._contain(poll):
@@ -444,7 +432,7 @@ class PollHoldSystem(HoldSystem[Poll]):
 
 		return events
 
-	async def _remove_votes(self, poll: Poll, member: discord.Member, options: Optional[Counter[str]]) -> Optional[List[Event]]:
+	async def _remove_votes(self, poll: Poll, member: discord.Member, options: Optional[Counter[str]]) -> Optional[list[Event]]:
 		events = []
 		async with poll.mutex:
 			if not self._contain(poll):
@@ -857,7 +845,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		super().__init__(bot)
 		self.poll_system = PollHoldSystem(db['poll_system'] if config('POLL_DB_BASED', default = False, cast = bool) else None)
 		# self.bet_system = BetHoldSystem(db['bet_system'] if config('BET_DB_BASED', default = False, cast = bool) else None)
-		self.restore_view: List[VoteOptionView] = []
+		self.restore_view: list[VoteOptionView] = []
 		for poll in self.poll_system.restore_poll():
 			NotImplemented
 
@@ -947,7 +935,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				ephemeral = True
 			)
 
-		options: List[str] = StringArgumentParser.pick(options)
+		options: list[str] = StringArgumentParser.pick(options)
 		max_options = config('POLL_MAXIMUM_OPTIONS', default = 20, cast = int)
 		if len(options) > max_options:
 			await send_error_embed(ctx,
