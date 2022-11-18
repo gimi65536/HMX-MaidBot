@@ -1,7 +1,7 @@
 import discord
 from functools import wraps
 from pathlib import PurePath
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from .helper import set_help
 from .typing import Channelable, QuasiContext
 
@@ -25,7 +25,7 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 
 # Given a messageable chat room in a guild, returns the parent channel if the chat room
 # is a thread, otherwise returns the argument itself.
-def get_guild_channel(ch: Union[discord.abc.GuildChannel, discord.Thread]):
+def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 	if isinstance(ch, discord.Thread):
 		return ch.parent
 
@@ -63,7 +63,7 @@ async def remove_thinking(ctx: QuasiContext):
 		# Delete error: No thinking message to delete
 		return
 
-def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[Union[discord.SlashCommand, discord.SlashCommandGroup]]:
+def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[discord.SlashCommand | discord.SlashCommandGroup]:
 	for cmd in group.subcommands:
 		if cmd.name == name:
 			return cmd

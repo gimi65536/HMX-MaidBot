@@ -3,7 +3,7 @@ from case_insensitive_dict import CaseInsensitiveDict
 from collections.abc import Mapping, MutableMapping
 from rollgames import BaseRollGame, BaseRollGameMeta
 from types import MappingProxyType
-from typing import Any, cast, Union
+from typing import Any, cast
 from ..roll import ArgumentLengthError
 from ...typing import QuasiContext
 from ...utils import send_as, int_to_emoji
@@ -29,7 +29,7 @@ class DiscordRollGameMeta(BaseRollGameMeta):
 		return cls
 
 class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
-	def __init__(self, ctx: Union[discord.Message, QuasiContext], webhook, arguments: str, initial_text = None, send_options = {}):
+	def __init__(self, ctx: discord.Message | QuasiContext, webhook, arguments: str, initial_text = None, send_options = {}):
 		self.ctx = ctx
 		self.webhook = webhook
 		self.initial = initial_text

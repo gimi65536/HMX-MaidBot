@@ -5,7 +5,7 @@ from more_itertools import repeat_last, SequenceView
 from reader import load
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import EllipsisType, MappingProxyType
-from typing import Any, Union
+from typing import Any
 
 class GameData:
 	def __init__(self, d):
@@ -97,7 +97,7 @@ class BaseRollGameMeta(ABCMeta):
 		return cls
 
 class BaseRollGame(metaclass = BaseRollGameMeta):
-	options: dict[Union[int, EllipsisType], list[tuple[str, type]]]
+	options: dict[(int | EllipsisType), list[tuple[str, type]]]
 	'''
 	The class property "options" is to declare argument information and activate the preprocessor.
 	However, you still need to call __init__ of abstract games after you get the processed arguments.

@@ -6,7 +6,7 @@ import discord
 import random
 from importlib_resources import files
 from reader import load
-from typing import Optional, Union
+from typing import Optional
 from .basebot import Bot
 from .exception import MaidNotFound
 from .helper import get_help, set_help, update_help
@@ -139,7 +139,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta):
 
 	@classmethod
 	def _trans(cls,
-		locale_or_localeable: Union[str, Localeable],
+		locale_or_localeable: str | Localeable,
 		*args: str,
 		default: Optional[str] = None,
 		format: dict[str, str] = {}) -> Optional[str]:

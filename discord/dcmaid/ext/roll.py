@@ -9,7 +9,7 @@ from rollgames import (
 	GameNotFound as GNF
 )
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Optional, Union
+from typing import Optional
 from ..basebot import Bot
 from ..basecog import BaseCog, MaidMixin, RandomMixin
 from ..constants import MAX_FIELDS_IN_EMBED
@@ -335,7 +335,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 		else:
 			await self._play(ctx, game_cls, arguments)
 
-	async def _play(self, ctx: Union[discord.Message, QuasiContext], game_cls, arguments):
+	async def _play(self, ctx: discord.Message | QuasiContext, game_cls, arguments):
 		game_data = game_cls.game_data
 		maid = self._random_maid(ctx)
 		webhook = await self._get_webhook_by_name(ctx, maid)
