@@ -1,4 +1,5 @@
 import json
+from collections.abc import Sequence
 from importlib_resources import as_file
 from pathlib import PurePath
 from typing import TextIO
@@ -7,7 +8,7 @@ def add_suffix(path: PurePath, suffix: str):
 	return path.with_suffix(path.suffix + suffix)
 
 class BaseReader:
-	support_suffices: tuple[str, ...] = ()
+	support_suffices: Sequence[str] = ()
 
 	@classmethod
 	def load(cls, path: PurePath):
