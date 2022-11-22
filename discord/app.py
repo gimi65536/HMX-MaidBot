@@ -14,6 +14,14 @@ bot = Bot(db, state, intents = intent, debug_guilds = [secret['debug_server_id']
 async def on_ready():
 	print(f'Successfully logged in as Bot {bot.user}.')
 
+try:
+	import uvloop
+except:
+	pass
+else:
+	import asyncio
+	asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
 # Install command groups here...
 bot.load_extension('dcmaid.basecmd')
 
