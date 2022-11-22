@@ -55,7 +55,7 @@ class BasePoll:
 	_vote_receive: MutableMapping[str, Counter[discord.Member]] # Not in db
 	_vote_casted: MutableMapping[discord.Member, Counter[str]]
 	uuid: uuid.UUID
-	msg_id: Optional[int] = None # Inserted by the Cog
+	msg: Optional[discord.Message] = None # Inserted by the Cog
 	processed_order: int # Not in db. Used by the Cog to refresh information correctly.
 	mutex: Lock # Not in db, of course
 
@@ -113,7 +113,7 @@ class BasePoll:
 				raise AttributeError("This poll has already belonged to a system.")
 
 	def connect_to_msg(self, msg: discord.Message):
-		self.msg_id = msg.id
+		self.msg = msg
 
 	def get_votes_per_option(self) -> dict[str, int]:
 		# This method is unstable when the mutex is locked and the caller doesn't hold it.
@@ -947,7 +947,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		poll = Poll(ctx.author, ctx.channel, title, options, period, period_unit, realtime, show_name, show_name_voting, show_name_result, num_votes, min_votes, max_votes)
 		interaction = await ctx.send_response(content = self._trans(ctx, 'creating_poll_message'))
 		message = await interaction.original_message() # NOT interaction.message!
-		poll.connect_to_msg(message)
+		poll.connect_to_msg(await ctx.channel.fetch_message(message.id)) # Require common messages instead of InteractionMessage
 		# If no errors, the poll is valid...
 		await self.poll_system.register(poll, self._timeout_process(poll))
 		# Build embed
@@ -963,11 +963,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		This method does not handle anything about processing order and mutex locks.
 		'''
 		if message is None:
-			try:
-				message = await poll.channel.fetch_message(poll.msg_id)
-			except discord.NotFound:
-				# Silent error
-				return
+			message = poll.msg
 
 		channel = poll.channel
 		assert isinstance(channel, (discord.abc.GuildChannel, discord.Thread))
