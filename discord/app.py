@@ -8,6 +8,7 @@ from load_db import db
 state = State()
 intent = Intents.default()
 intent.message_content = True
+# intent.member = True # Enable it to reduce API call
 bot = Bot(db, state, intents = intent, debug_guilds = [secret['debug_server_id']])
 
 @bot.event

@@ -12,7 +12,7 @@ from decouple import config
 from datetime import datetime, timedelta, timezone
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import MappingProxyType
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Optional, Self, TypeVar
 
 time_units = [
 	('second', 's'),
@@ -70,13 +70,14 @@ class BasePoll:
 		self.channel = channel
 		self.title = title
 
+		# To prevent redundant options
 		_o = {o: None for o in options}
 		self.options = list(_o.keys())
 		self._option_set = set(_o.keys())
 
 		self._vote_receive = {o: Counter() for o in self.options}
 		self._vote_casted = {}
-		self.vote_receive = {o: MappingProxyType(self._vote_receive[o]) for o in self.options}
+		self.vote_receive = {o: MappingProxyType(c) for o, c in self._vote_receive.items()}
 		self.vote_casted = {}
 
 		self.uuid = uuid.uuid4()
@@ -127,6 +128,59 @@ class BasePoll:
 
 	def __eq__(self, other):
 		return self.uuid == other.uuid
+
+	def to_dict(self) -> dict:
+		return {
+			'author': self.author.id,
+			'channel': self.channel.id,
+			'title': self.title,
+			'options': self.options,
+			'vote_casted': {member.id: c for member, c in self._vote_casted.items()},
+			'uuid': self.uuid,
+		}
+
+	@classmethod
+	def from_dict(cls, bot: Bot, d: dict) -> Self:
+		# Throw exceptions from fetch_* methods
+		poll = super().__new__(cls)
+
+		# In dict
+		poll.channel = bot.get_channel(d['channel'])
+		if poll.channel is None:
+			poll.channel = await bot.fetch_channel(d['channel'])
+		guild = poll.channel.guild
+
+		poll.author = guild.get_member(d['author'])
+		if poll.author is None:
+			poll.author = await guild.fetch_member(d['author'])
+
+		poll.title = d['title']
+
+		poll.options = d['options']
+
+		poll._vote_casted = {}
+		for m_id, c in d['vote_casted']:
+			member = guild.get_member(m_id)
+			if member is None:
+				member = await guild.fetch_member(m_id)
+
+			poll._vote_casted[member] = Counter(c)
+
+		poll.uuid = d['uuid']
+
+		# Out of dict
+		poll._option_set = set(poll.options)
+		poll.vote_casted = {member: MappingProxyType(c) for member, c in poll._vote_casted.items()}
+		poll.processed_order = 0
+		poll.mutex = Lock()
+
+		poll._vote_receive = {o: Counter() for o in poll.options}
+		poll.vote_receive = {o: MappingProxyType(c) for o, c in poll._vote_receive.items()}
+		for member, c in poll.vote_casted.items():
+			for option, i in c.items():
+				poll._vote_receive[option][member] = i
+
+		return poll
 
 class Poll(BasePoll):
 	#until: Optional[datetime]
@@ -193,6 +247,26 @@ class Poll(BasePoll):
 			self.min_votes = length
 		if self.max_votes > length:
 			self.max_votes = length
+
+	def to_dict(self) -> dict:
+		d = super().to_dict()
+		d.update({
+			'realtime': self.realtime,
+			'show_name_voting': self.show_name_voting,
+			'show_name_result': self.show_name_result,
+			'min_votes': self.min_votes,
+			'max_votes': self.max_votes
+		})
+		return d
+
+	@classmethod
+	def from_dict(cls, bot: Bot, d: dict) -> Self:
+		poll = super().from_dict(bot, d)
+		poll.realtime = d['realtime']
+		poll.show_name_voting = d['show_name_voting']
+		poll.show_name_result = d['show_name_result']
+		poll.min_votes = d['min_votes']
+		poll.max_votes = d['max_votes']
 
 @dataclass(init = True, repr = True, eq = False, frozen = True)
 class Event:
