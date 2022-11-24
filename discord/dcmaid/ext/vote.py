@@ -580,38 +580,39 @@ class VoteOptionView(discord.ui.View):
 	):
 		super().__init__(timeout = None)
 
-		vote_button = disord.Button(
-			callback = vote_callback,
+		vote_button = discord.ui.Button(
 			label = vote_label,
 			style = discord.ButtonStyle.primary,
 			custom_id = f'{self.prefix}:vote:{poll.uuid}',
 			emoji = '\u2611', #'\U0001F5F9'
 			row = 0
 		)
-		lookup_button = disord.Button(
-			callback = vote_callback,
+		lookup_button = discord.ui.Button(
 			label = lookup_label,
 			style = discord.ButtonStyle.secondary,
 			custom_id = f'{self.prefix}:lookup:{poll.uuid}',
 			emoji = '\U0001F50E',
 			row = 0
 		)
-		early_button = disord.Button(
-			callback = early_callback,
+		early_button = discord.ui.Button(
 			label = early_label,
 			style = discord.ButtonStyle.secondary,
 			custom_id = f'{self.prefix}:early:{poll.uuid}',
 			emoji = '\u23E9',
 			row = 0
 		)
-		cancel_button = disord.Button(
-			callback = cancel_callback,
+		cancel_button = discord.ui.Button(
 			label = cancel_label,
 			style = discord.ButtonStyle.danger,
 			custom_id = f'{self.prefix}:cancel:{poll.uuid}',
 			emoji = '\u274C',
 			row = 0
 		)
+
+		vote_button.callback = vote_callback
+		lookup_button.callback = lookup_callback
+		early_button.callback = early_callback
+		cancel_button.callback = cancel_callback
 
 		self.add_item(vote_button)
 		self.add_item(lookup_button)
@@ -624,14 +625,14 @@ class VoteView(discord.ui.View):
 
 		options = [discord.SelectOption(label = o) for o in poll.options]
 
-		select = discord.Select(
+		select = discord.ui.Select(
 			callback = select_callback,
 			options = options,
 			min_values = poll.min_votes,
 			max_values = poll.max_votes,
 			row = 0
 		)
-		button = discord.Button(
+		button = discord.ui.Button(
 			callback = empty_callback,
 			label = empty_label,
 			style = discord.ButtonStyle.danger,
@@ -1009,6 +1010,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 	)
 	async def poll(self, ctx,
 		title: str,
+		options: str,
 		period: int,
 		period_unit,
 		realtime: bool,
@@ -1017,8 +1019,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		show_name_result: Optional[bool],
 		num_votes: int,
 		min_votes: Optional[int],
-		max_votes: Optional[int],
-		options: str):
+		max_votes: Optional[int]):
 		'''
 		`/{cmd_name} <?period> <?period_unit> <?realtime> <?show_name> <?show_name_voting> <?show_name_result>
 		<?num_votes> <?min_votes> <?max_votes> <options>` creates a poll with specified options.
@@ -1087,14 +1088,16 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		if show_result:
 			votes = poll.get_votes_per_option()
 			total_votes = sum(votes.values())
+		else:
+			votes = {o: 0 for o in poll.options}
 
 		kwargs = {'content': None}
 
 		# The color is set to be randomly fixed according to the title
-		embed = discord.Embed(title = poll.title, color = discord.Color.random(hash(poll.title)))
-		for option, n in votes.items():
-			name = f'{self._trans(locale, "render-option-order")}{option}'
-			value = discord.Empty
+		embed = discord.Embed(title = poll.title, color = discord.Color.random(seed = hash(poll.title)))
+		for i, (option, n) in enumerate(votes.items(), 1):
+			name = f'{self._trans(locale, "render-option-order", format = {"n": i})}{option}'
+			value = discord.Embed.Empty
 			if show_result:
 				p = round(n * 10000 / total_votes)
 				result_text = f'{n}/{total_votes}({p // 100}.{p % 100}%)'
@@ -1112,13 +1115,13 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		if not end and len(message.components) == 0:
 			kwargs['view'] = VoteOptionView(poll,
 				self._trans(locale, 'vote'),
-				PollController.vote_action(self, poll_system, poll),
+				PollController.vote_action(self, self.poll_system, poll),
 				self._trans(locale, 'lookup'),
-				PollController.lookup_action(self, poll_system, poll),
+				PollController.lookup_action(self, self.poll_system, poll),
 				self._trans(locale, 'early'),
-				PollController.early_action(self, poll_system, poll),
+				PollController.early_action(self, self.poll_system, poll),
 				self._trans(locale, 'cancel'),
-				PollController.cancel_action(self, poll_system, poll)
+				PollController.cancel_action(self, self.poll_system, poll)
 			)
 		elif end:
 			kwargs['view'] = None
