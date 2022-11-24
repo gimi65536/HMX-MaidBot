@@ -1052,7 +1052,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				ephemeral = True
 			)
 
-		poll = Poll(ctx.author, ctx.channel, title, options, ctx.guild_locale, period, period_unit, realtime, show_name, show_name_voting, show_name_result, num_votes, min_votes, max_votes)
+		poll = Poll(ctx.author, ctx.channel, title, options, ctx.locale, period, period_unit, realtime, show_name, show_name_voting, show_name_result, num_votes, min_votes, max_votes)
 		interaction = await ctx.send_response(content = self._trans(ctx, 'creating_poll_message'))
 		message = await interaction.original_message() # NOT interaction.message!
 		poll.connect_to_msg(await ctx.channel.fetch_message(message.id)) # Require common messages instead of InteractionMessage
@@ -1107,7 +1107,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			name = f'{self._trans(locale, "render-option-order", format = {"n": i})}{option}'
 			value = discord.Embed.Empty
 			if show_result:
-				p = round(n * 10000 / total_votes)
+				p = round(n * 10000 / total_votes) if total_votes > 0 else 0
 				result_text = f'{n}/{total_votes}({p // 100}.{p % 100}%)'
 
 				if show_name and n > 0:
@@ -1117,7 +1117,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 					value = f'{result_text}\n{name_text}'
 				else:
 					value = result_text
-			embed.add_field(name = name, value = value)
+			embed.add_field(name = name, value = value, inline = False)
 		kwargs['embed'] = embed
 
 		if not end and len(message.components) == 0:
