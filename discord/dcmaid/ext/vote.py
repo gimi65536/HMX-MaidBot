@@ -140,7 +140,7 @@ class BasePoll:
 		}
 
 	@classmethod
-	def from_dict(cls, bot: Bot, d: dict) -> Self:
+	async def from_dict(cls, bot: Bot, d: dict) -> Self:
 		# Throw exceptions from fetch_* methods
 		poll = super().__new__(cls)
 
@@ -260,8 +260,8 @@ class Poll(BasePoll):
 		return d
 
 	@classmethod
-	def from_dict(cls, bot: Bot, d: dict) -> Self:
-		poll = super().from_dict(bot, d)
+	async def from_dict(cls, bot: Bot, d: dict) -> Self:
+		poll = await super().from_dict(bot, d)
 		poll.realtime = d['realtime']
 		poll.show_name_voting = d['show_name_voting']
 		poll.show_name_result = d['show_name_result']
@@ -696,7 +696,7 @@ class PollController(VoteController[Poll]):
 				content = cog._trans(interaction, 'not-vote-yet', format = {'title': poll.title})
 			else:
 				has_voted = [f'`{s}`' for s in has_voted]
-				content = f'{cog._trans(interaction, 'has-vote', format = {'title': poll.title})}\n{' '.join(has_voted)}'
+				content = f'{cog._trans(interaction, "has-vote", format = {"title": poll.title})}\n{" ".join(has_voted)}'
 
 			if edit:
 				await interaction.response.edit_message(
@@ -738,7 +738,7 @@ class PollController(VoteController[Poll]):
 				content = cog._trans(interaction, 'not-vote-yet', format = {'title': poll.title})
 			else:
 				has_voted = [f'`{s}`' for s in has_voted]
-				content = f'{cog._trans(interaction, 'has-vote', format = {'title': poll.title})}\n{' '.join(has_voted)}'
+				content = f'{cog._trans(interaction, "has-vote", format = {"title": poll.title})}\n{" ".join(has_voted)}'
 
 			await interaction.response.send_message(content = content, ephemeral = True)
 
@@ -929,9 +929,11 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		super().__init__(bot)
 		self.poll_system = PollHoldSystem(db['poll_system'] if config('POLL_DB_BASED', default = False, cast = bool) else None)
 		# self.bet_system = BetHoldSystem(db['bet_system'] if config('BET_DB_BASED', default = False, cast = bool) else None)
-		self.restore_view: list[VoteOptionView] = []
+
+	@discord.Cog.listener()
+	async def on_ready(self):
 		for poll_info in self.poll_system.restore_poll_info():
-			poll = Poll.from_dict(bot, poll_info)
+			poll = await Poll.from_dict(self.bot, poll_info)
 			# There is no problem to register an expired poll
 			# since "sleep_until" will be skipped instantly
 			# and we have already used mutex locks as guards.
@@ -939,7 +941,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			# There is no problem to register views of expired polls
 			# since each actions ensures the polls are in the system,
 			# and the expired polls are already dropped in the above step.
-			self.restore_view.append(VoteOptionView(poll,
+			self.bot.add_view(VoteOptionView(poll,
 				self._trans(locale, 'vote'),
 				PollController.vote_action(self, poll_system, poll),
 				self._trans(locale, 'lookup'),
@@ -1094,7 +1096,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		# The color is set to be randomly fixed according to the title
 		embed = discord.Embed(title = poll.title, color = discord.Color.random(hash(poll.title)))
 		for option, n in votes.items():
-			name = f'{self._trans(locale, 'render-option-order')}{option}'
+			name = f'{self._trans(locale, "render-option-order")}{option}'
 			value = discord.Empty
 			if show_result:
 				p = round(n * 10000 / total_votes)
@@ -1180,7 +1182,4 @@ class ZeroVoteError(discord.ApplicationCommandError):
 	pass
 
 def setup(bot):
-	cog = VoteCommands(bot)
-	bot.add_cog(cog)
-	for view in cog.restore_view:
-		bot.add_view(view)
+	bot.add_cog(VoteCommands(bot))
