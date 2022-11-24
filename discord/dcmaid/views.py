@@ -8,6 +8,14 @@ class Button(discord.ui.Button):
 	async def callback(self, interaction: discord.Interaction):
 		await self._c(self, interaction)
 
+class Select(discord.ui.Select):
+	def __init__(self, callback, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self._c = callback
+
+	async def callback(self, interaction: discord.Interaction):
+		await self._c(self, interaction)
+
 async def _default_yes_callback(button, interaction):
 	await interaction.response.edit_message(content = "Yes", view = None)
 

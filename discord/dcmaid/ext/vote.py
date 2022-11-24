@@ -3,7 +3,7 @@ import uuid
 from ..basebot import Bot
 from ..basecog import BaseCog, MaidMixin, RandomMixin
 from ..utils import *
-from ..views import Button, YesNoView
+from ..views import Button, Select, YesNoView
 from asyncio import get_running_loop, Lock, sleep, Task
 from collections import Counter
 from collections.abc import Awaitable, Mapping, MutableMapping
