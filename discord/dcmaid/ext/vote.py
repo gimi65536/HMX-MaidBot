@@ -880,9 +880,9 @@ class PollController(VoteController[Poll]):
 			result = await system.replace_votes(poll, interaction.user, options)
 			if result is None:
 				# Due
-				await interaction.message.edit(content = cog._trans(interaction, 'vote-failed'))
+				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'vote-failed'))
 			else:
-				await interaction.message.edit(content = cog._trans(interaction, 'vote-success'))
+				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'vote-success'))
 				if len(result) > 0:
 					peek: Event = result[0]
 					async with poll.mutex:
@@ -920,9 +920,9 @@ class PollController(VoteController[Poll]):
 			result = await system.remove_votes(poll, interaction.user)
 			if result is None:
 				# Due
-				await interaction.message.edit(content = cog._trans(interaction, 'empty-failed'))
+				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'empty-failed'))
 			else:
-				await interaction.message.edit(content = cog._trans(interaction, 'empty-success'))
+				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'empty-success'))
 				if len(result) > 0:
 					peek: Event = result[0]
 					async with poll.mutex:
@@ -1057,7 +1057,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 
 		poll = Poll(ctx.author, ctx.channel, title, options, ctx.locale, period, period_unit, realtime, show_name, show_name_voting, show_name_result, num_votes, min_votes, max_votes)
 		interaction = await ctx.send_response(content = self._trans(ctx, 'creating_poll_message'))
-		message = await interaction.original_message() # NOT interaction.message!
+		message = await interaction.original_response() # NOT interaction.message!
 		poll.connect_to_msg(await ctx.channel.fetch_message(message.id)) # Require common messages instead of InteractionMessage
 		# If no errors, the poll is valid...
 		await self.poll_system.register(poll, self._timeout_process(poll))
