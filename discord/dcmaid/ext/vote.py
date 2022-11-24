@@ -952,9 +952,6 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				PollController.cancel_action(self, poll_system, poll)
 			))
 
-	async def cog_before_invoke(self, ctx):
-		await self._cog_before_invoke(ctx)
-
 	@discord.slash_command(
 		description = 'Create a poll',
 		guild_only = True,
