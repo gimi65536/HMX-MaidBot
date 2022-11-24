@@ -850,17 +850,17 @@ class PollController(VoteController[Poll]):
 		async def f(select, interaction):
 			# This is a server-side check
 			# Do nothing
-			l = len(select.value)
+			l = len(select.values)
 			if l < poll.min_votes or l > poll.max_votes:
 				await interaction.defer()
 				return
 
-			options = '\n'.join(select.value)
+			options = '\n'.join(select.values)
 			content = f'```{options}```'
 			await interaction.response.edit_message(
 				content = content,
 				view = YesNoView(
-					yes_callback = cls.ensured_select_action(cog, system, poll, select.value),
+					yes_callback = cls.ensured_select_action(cog, system, poll, select.values),
 					no_callback = cls.vote_action(cog, system, poll, edit = True)
 				)
 			)
@@ -888,6 +888,8 @@ class PollController(VoteController[Poll]):
 					async with poll.mutex:
 						if poll.processed_order == peek.processed_order:
 							await cog._render(poll)
+
+		return f
 
 	@classmethod
 	def empty_action(cls, cog, system, poll):
@@ -926,6 +928,8 @@ class PollController(VoteController[Poll]):
 					async with poll.mutex:
 						if poll.processed_order == peek.processed_order:
 							await cog._render(poll)
+
+		return f
 
 class VoteCommands(BaseCog, name = 'Vote'):
 	'''
