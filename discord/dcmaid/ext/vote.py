@@ -931,7 +931,11 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		# self.bet_system = BetHoldSystem(db['bet_system'] if config('BET_DB_BASED', default = False, cast = bool) else None)
 		self.restore_view: list[VoteOptionView] = []
 		for poll_info in self.poll_system.restore_poll_info():
-			NotImplemented
+			poll = Poll.from_dict(bot, poll_info)
+			# There is no problem to register an expired poll
+			# since "sleep_until" will be skipped instantly
+			# and we have already used mutex locks as guards.
+			await self.poll_system.register(poll, self._timeout_process(poll))
 
 	async def cog_before_invoke(self, ctx):
 		await self._cog_before_invoke(ctx)
