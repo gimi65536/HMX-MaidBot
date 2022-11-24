@@ -10,8 +10,8 @@ from collections.abc import Awaitable, Mapping, MutableMapping
 from dataclasses import dataclass
 from decouple import config
 from datetime import datetime, timedelta, timezone
+from proxy_types import CounterProxyType
 from simple_parsers.string_argument_parser import StringArgumentParser
-from types import MappingProxyType
 from typing import Generic, Optional, Self, TypeVar
 
 time_units = [
@@ -51,8 +51,8 @@ class BasePoll:
 	options: list[str]
 	_option_set: set[str] # Not in db
 	locale: str
-	vote_receive: Mapping[str, Counter[discord.Member]] # Not in db
-	vote_casted: Mapping[discord.Member, Counter[str]]
+	vote_receive: Mapping[str, CounterProxyType[discord.Member]] # Not in db
+	vote_casted: Mapping[discord.Member, CounterProxyType[str]]
 	_vote_receive: MutableMapping[str, Counter[discord.Member]] # Not in db
 	_vote_casted: MutableMapping[discord.Member, Counter[str]]
 	uuid: uuid.UUID
@@ -80,7 +80,7 @@ class BasePoll:
 
 		self._vote_receive = {o: Counter() for o in self.options}
 		self._vote_casted = {}
-		self.vote_receive = {o: MappingProxyType(c) for o, c in self._vote_receive.items()}
+		self.vote_receive = {o: CounterProxyType(c) for o, c in self._vote_receive.items()}
 		self.vote_casted = {}
 
 		self.uuid = uuid.uuid4()
@@ -95,7 +95,7 @@ class BasePoll:
 			return
 
 		self._vote_casted[member] = Counter({o: 0 for o in self.options})
-		self.vote_casted[member] = MappingProxyType(self._vote_casted[member])
+		self.vote_casted[member] = CounterProxyType(self._vote_casted[member])
 
 	@property
 	def until(self) -> Optional[datetime]:
@@ -176,12 +176,12 @@ class BasePoll:
 
 		# Out of dict
 		poll._option_set = set(poll.options)
-		poll.vote_casted = {member: MappingProxyType(c) for member, c in poll._vote_casted.items()}
+		poll.vote_casted = {member: CounterProxyType(c) for member, c in poll._vote_casted.items()}
 		poll.processed_order = 0
 		poll.mutex = Lock()
 
 		poll._vote_receive = {o: Counter() for o in poll.options}
-		poll.vote_receive = {o: MappingProxyType(c) for o, c in poll._vote_receive.items()}
+		poll.vote_receive = {o: CounterProxyType(c) for o, c in poll._vote_receive.items()}
 		for member, c in poll.vote_casted.items():
 			for option, i in c.items():
 				poll._vote_receive[option][member] = i
@@ -631,7 +631,7 @@ class VoteView(discord.ui.View):
 
 		options = [discord.SelectOption(label = o) for o in poll.options]
 
-		select = discord.ui.Select(
+		select = Select(
 			callback = select_callback,
 			options = options,
 			min_values = poll.min_votes,
