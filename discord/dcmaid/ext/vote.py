@@ -276,6 +276,13 @@ class Event:
 	modification: tuple[int, int] # (From, To)
 	processed_order: int
 
+	def to_dict_pair(self) -> tuple[dict, dict]:
+		return {
+			'uuid': self.poll.uuid
+		},{
+			f'vote_casted.{member.id}.{option}': self.modification[1]
+		}
+
 T = TypeVar('T', bound = BasePoll)
 
 class BaseHoldSystem(Generic[T]):
@@ -287,17 +294,17 @@ class BaseHoldSystem(Generic[T]):
 		self.name = name
 		self.type = type
 		self.col = col
-		self._restore_poll = []
+		self._restore_poll_info = []
 
 		if col is not None:
 			col.create_index({'uuid': 1})
-			# Restore poll from database, but this class does not register them
-			# since this class has no knowledge about timeout awaitable
-			NotImplemented
+			# Restore poll info from database, but this class does not construct
+			# poll objects since the system has no knowledge about the Bot
+			self._restore_poll_info = col.find()
 
-	def restore_poll(self):
+	def restore_poll_info(self):
 		# This method should be called by cogs right after the hold system is created
-		return iter(self._restore_poll)
+		return iter(self._restore_poll_info)
 
 	def _contain(self, poll_or_u: BasePoll | uuid.UUID):
 		if isinstance(poll_or_u, BasePoll):
@@ -326,7 +333,7 @@ class BaseHoldSystem(Generic[T]):
 			self._on_process[poll.uuid] = (poll, task)
 
 			if self.col is not None:
-				NotImplemented
+				col.insert_one(poll.to_dict())
 
 	async def cancel(self, poll_or_u: T | uuid.UUID) -> bool:
 		if isinstance(poll_or_u, BasePoll):
@@ -348,7 +355,7 @@ class BaseHoldSystem(Generic[T]):
 			task.cancel()
 
 			if self.col is not None:
-				NotImplemented
+				col.delete_one({'uuid': poll.uuid})
 
 			return True # Canceled by this method
 
@@ -362,10 +369,16 @@ class BaseHoldSystem(Generic[T]):
 			poll.processed_order += 1 # To prevent late information update after due
 
 			if self.col is not None:
-				NotImplemented
+				col.delete_one({'uuid': poll.uuid})
 
 			# awaitable is called after the processed order increased
 			await awaitable
+
+	def _update_db(self, events):
+		if self.col is not None:
+			for event in events:
+				filter, update = event.to_dict_pair()
+				self.col.update_one(filter, update)
 
 	async def add_votes(self, poll: T, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
 		if not self._contain(poll):
@@ -465,8 +478,7 @@ class PollHoldSystem(HoldSystem[Poll]):
 				# Update processed_order only if necessary to prevent suppressed update
 				poll.processed_order = processed_order
 
-			if self.col is not None:
-				NotImplemented
+				self._update_db(events)
 
 		return events
 
@@ -501,8 +513,7 @@ class PollHoldSystem(HoldSystem[Poll]):
 				# Update processed_order only if necessary to prevent suppressed update
 				poll.processed_order = processed_order
 
-			if self.col is not None:
-				NotImplemented
+				self._update_db(events)
 
 		return events
 
@@ -539,8 +550,7 @@ class PollHoldSystem(HoldSystem[Poll]):
 				# Update processed_order only if necessary to prevent suppressed update
 				poll.processed_order = processed_order
 
-			if self.col is not None:
-				NotImplemented
+				self._update_db(events)
 
 		return events
 
@@ -920,7 +930,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		self.poll_system = PollHoldSystem(db['poll_system'] if config('POLL_DB_BASED', default = False, cast = bool) else None)
 		# self.bet_system = BetHoldSystem(db['bet_system'] if config('BET_DB_BASED', default = False, cast = bool) else None)
 		self.restore_view: list[VoteOptionView] = []
-		for poll in self.poll_system.restore_poll():
+		for poll_info in self.poll_system.restore_poll_info():
 			NotImplemented
 
 	async def cog_before_invoke(self, ctx):
