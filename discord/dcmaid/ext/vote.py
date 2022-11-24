@@ -839,9 +839,9 @@ class PollController(VoteController[Poll]):
 					embed = discord.Embed(
 						title = poll.title,
 						description = cog._trans(interaction, 'canceled-poll'),
-						color = discord.Color.grey
+						color = discord.Color.dark_grey()
 					)
-					await poll.message.edit(content = "", embed = embed, view = None)
+					await poll.msg.edit(content = "", embed = embed, view = None)
 
 		return f
 
