@@ -22,7 +22,7 @@ time_units = [
 	('week', 'w'),
 	#('forever', 'f') # It is hard to handle a forever poll... though forever polls are useful.
 ]
-time_units_options = [discord.Option(name, value) for name, value in time_units]
+time_units_choices = [discord.OptionChoice(name, value) for name, value in time_units]
 
 def period_to_delta(period: int, period_unit) -> Optional[timedelta]:
 	match period_unit:
@@ -439,7 +439,7 @@ class BaseHoldSystem(Generic[T]):
 	async def _remove_votes(self, poll: T, member: discord.Member, options: Optional[Counter[str]]) -> Optional[list[Event]]:
 		raise NotImplementedError
 
-class PollHoldSystem(HoldSystem[Poll]):
+class PollHoldSystem(BaseHoldSystem[Poll]):
 	def __init__(self, col = None):
 		super().__init__('poll', Poll, col)
 
@@ -562,7 +562,7 @@ class BetHoldSystem(HoldSystem[Bet]):
 	...
 '''
 
-class VoteOptionView(discord.View):
+class VoteOptionView(discord.ui.View):
 	# Presistent during the lifetime of the poll
 	prefix: str = config('VOTE_CUSTOM_PREFIX', default = 'HMX-vote-cog')
 
@@ -618,7 +618,7 @@ class VoteOptionView(discord.View):
 		self.add_item(early_button)
 		self.add_item(cancel_button)
 
-class VoteView(discord.View):
+class VoteView(discord.ui.View):
 	def __init__(self, poll, select_callback, empty_label, empty_callback):
 		super().__init__(timeout = 0)
 
@@ -649,19 +649,19 @@ class VoteController(Generic[T]):
 	vote_action acts as a basic response, so it also provides an "edit" variation.
 	'''
 	@classmethod
-	def vote_action(cls, cog: 'VoteCommands', system: HoldSystem[T], poll: T, edit = False):
+	def vote_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T, edit = False):
 		raise NotImplementedError
 
 	@classmethod
-	def lookup_action(cls, cog: 'VoteCommands', system: HoldSystem[T], poll: T):
+	def lookup_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	@classmethod
-	def early_action(cls, cog: 'VoteCommands', system: HoldSystem[T], poll: T):
+	def early_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	@classmethod
-	def cancel_action(cls, cog: 'VoteCommands', system: HoldSystem[T], poll: T):
+	def cancel_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	'''
@@ -672,11 +672,11 @@ class VoteController(Generic[T]):
 	'''
 
 	@classmethod
-	def select_action(cls, cog: 'VoteCommands', system: HoldSystem[T], poll: T):
+	def select_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	@classmethod
-	def empty_action(cls, cog: 'VoteCommands', system: HoldSystem[T], poll: T):
+	def empty_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 class PollController(VoteController[Poll]):
@@ -963,6 +963,10 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				name = 'title',
 				description = 'The title of this poll'
 			),
+			discord.Option(str,
+				name = 'options',
+				description = 'Options to vote.'
+			),
 			discord.Option(int,
 				name = 'period',
 				description = 'How long is the poll active (Default 1 [period_unit])',
@@ -971,7 +975,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			discord.Option(str,
 				name = 'period_unit',
 				description = 'What unit of time is used (Default to "hour")',
-				choices = time_units_options,
+				choices = time_units_choices,
 				default = 'h'),
 			discord.Option(bool,
 				name = 'realtime',
@@ -1003,11 +1007,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				name = 'max_votes',
 				description = 'What the maximum number of votes to cast is (Override num_votes)',
 				default = None,
-				min_value = 0),
-			discord.Option(str,
-				name = 'options',
-				description = 'Options to vote.'
-			)
+				min_value = 0)
 		]
 	)
 	async def poll(self, ctx,
