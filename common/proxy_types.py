@@ -1,11 +1,12 @@
 from collections import Counter
+from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Mapping
+from typing import Generic, Mapping, TypeVar
 
 # This is a remake of the built-in type MappingProxyType.
 # It is not recommended to use this directly since there
 # is the built-in version and that performs better.
-class _MappingProxyType:
+class _MappingProxyType(Mapping):
 	def __init__(self, mapping: Mapping):
 		self._d = mapping
 
@@ -39,7 +40,9 @@ class _MappingProxyType:
 	def __reversed__(self):
 		return self._d.__reversed__()
 
-class CounterProxyType(_MappingProxyType):
+T = TypeVar('T')
+
+class CounterProxyType(_MappingProxyType[T, int]):
 	def __init__(self, counter: Counter):
 		super().__init__(counter)
 
