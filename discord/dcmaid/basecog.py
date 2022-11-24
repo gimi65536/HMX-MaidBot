@@ -84,7 +84,7 @@ class BaseCogMeta(discord.CogMeta):
 
 					# If using autocomplete, then localization is handled by autocomplete
 					choices = option.choices
-					if choices is not None:
+					if choices is None:
 						choices = []
 					for choice in choices:
 						if not isinstance(choice, discord.OptionChoice):
