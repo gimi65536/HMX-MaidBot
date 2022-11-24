@@ -1105,7 +1105,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		embed = discord.Embed(title = poll.title, color = discord.Color.random(seed = hash(poll.title)))
 		for i, (option, n) in enumerate(votes.items(), 1):
 			name = f'{self._trans(locale, "render-option-order", format = {"n": i})}{option}'
-			value = discord.Embed.Empty
+			value = '\u200b'
 			if show_result:
 				p = round(n * 10000 / total_votes) if total_votes > 0 else 0
 				result_text = f'{n}/{total_votes}({p // 100}.{p % 100}%)'
