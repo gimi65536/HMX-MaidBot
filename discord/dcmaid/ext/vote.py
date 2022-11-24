@@ -50,6 +50,7 @@ class BasePoll:
 	title: str
 	options: list[str]
 	_option_set: set[str] # Not in db
+	locale: str
 	vote_receive: Mapping[str, Counter[discord.Member]] # Not in db
 	vote_casted: Mapping[discord.Member, Counter[str]]
 	_vote_receive: MutableMapping[str, Counter[discord.Member]] # Not in db
@@ -59,7 +60,7 @@ class BasePoll:
 	processed_order: int # Not in db. Used by the Cog to refresh information correctly.
 	mutex: Lock # Not in db, of course
 
-	def __init__(self, author: discord.Member, channel: discord.abc.Messageable, title: str, options: list[str], period: int, period_unit):
+	def __init__(self, author: discord.Member, channel: discord.abc.Messageable, title: str, options: list[str], locale: str, period: int, period_unit):
 		if period <= 0:
 			raise NonPositivePeriodError(period)
 
@@ -74,6 +75,8 @@ class BasePoll:
 		_o = {o: None for o in options}
 		self.options = list(_o.keys())
 		self._option_set = set(_o.keys())
+
+		self.locale = locale
 
 		self._vote_receive = {o: Counter() for o in self.options}
 		self._vote_casted = {}
@@ -135,6 +138,7 @@ class BasePoll:
 			'channel': self.channel.id,
 			'title': self.title,
 			'options': self.options,
+			'locale': self.locale,
 			'vote_casted': {member.id: c for member, c in self._vote_casted.items()},
 			'uuid': self.uuid,
 		}
@@ -157,6 +161,8 @@ class BasePoll:
 		poll.title = d['title']
 
 		poll.options = d['options']
+
+		poll.locale = d['locale']
 
 		poll._vote_casted = {}
 		for m_id, c in d['vote_casted']:
@@ -195,6 +201,7 @@ class Poll(BasePoll):
 		channel: discord.abc.Messageable,
 		title: str,
 		options: list[str],
+		locale: str,
 		period: int,
 		period_unit,
 		realtime: bool,
@@ -209,7 +216,7 @@ class Poll(BasePoll):
 		if length == 0:
 			raise EmptyChoiceError()
 
-		super().__init__(author, channel, title, options, period, period_unit)
+		super().__init__(author, channel, title, options, locale, period, period_unit)
 
 		# Checks
 		self.realtime = realtime
@@ -1045,7 +1052,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				ephemeral = True
 			)
 
-		poll = Poll(ctx.author, ctx.channel, title, options, period, period_unit, realtime, show_name, show_name_voting, show_name_result, num_votes, min_votes, max_votes)
+		poll = Poll(ctx.author, ctx.channel, title, options, ctx.guild_locale, period, period_unit, realtime, show_name, show_name_voting, show_name_result, num_votes, min_votes, max_votes)
 		interaction = await ctx.send_response(content = self._trans(ctx, 'creating_poll_message'))
 		message = await interaction.original_message() # NOT interaction.message!
 		poll.connect_to_msg(await ctx.channel.fetch_message(message.id)) # Require common messages instead of InteractionMessage
@@ -1068,7 +1075,8 @@ class VoteCommands(BaseCog, name = 'Vote'):
 
 		channel = poll.channel
 		assert isinstance(channel, (discord.abc.GuildChannel, discord.Thread))
-		locale = channel.guild.preferred_locale
+		#locale = channel.guild.preferred_locale
+		locale = poll.locale
 
 		if isinstance(poll, Poll):
 			await self._render_field_poll(poll, locale, message, end)
