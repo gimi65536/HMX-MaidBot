@@ -1,6 +1,6 @@
 import discord
 
-class _Button(discord.ui.Button):
+class Button(discord.ui.Button):
 	def __init__(self, callback, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self._c = callback
@@ -28,8 +28,8 @@ class YesNoView(discord.ui.View):
 		**kwargs
 	):
 		super().__init__(**kwargs)
-		self._yes = _Button(callback = yes_callback, label = yes_label, style = yes_style, emoji = yes_emoji)
-		self._no = _Button(callback = no_callback, label = no_label, style = no_style, emoji = no_emoji)
+		self._yes = Button(callback = yes_callback, label = yes_label, style = yes_style, emoji = yes_emoji)
+		self._no = Button(callback = no_callback, label = no_label, style = no_style, emoji = no_emoji)
 
 		if yes_left:
 			self.add_item(self._yes)

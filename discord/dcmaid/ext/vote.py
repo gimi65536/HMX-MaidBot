@@ -3,7 +3,7 @@ import uuid
 from ..basebot import Bot
 from ..basecog import BaseCog, MaidMixin, RandomMixin
 from ..utils import *
-from ..views import YesNoView
+from ..views import Button, YesNoView
 from asyncio import get_running_loop, Lock, sleep, Task
 from collections import Counter
 from collections.abc import Awaitable, Mapping, MutableMapping
@@ -587,39 +587,38 @@ class VoteOptionView(discord.ui.View):
 	):
 		super().__init__(timeout = None)
 
-		vote_button = discord.ui.Button(
+		vote_button = Button(
+			callback = vote_callback,
 			label = vote_label,
 			style = discord.ButtonStyle.primary,
 			custom_id = f'{self.prefix}:vote:{poll.uuid}',
 			emoji = '\u2611', #'\U0001F5F9'
 			row = 0
 		)
-		lookup_button = discord.ui.Button(
+		lookup_button = Button(
+			callback = lookup_callback,
 			label = lookup_label,
 			style = discord.ButtonStyle.secondary,
 			custom_id = f'{self.prefix}:lookup:{poll.uuid}',
 			emoji = '\U0001F50E',
 			row = 0
 		)
-		early_button = discord.ui.Button(
+		early_button = Button(
+			callback = early_callback,
 			label = early_label,
 			style = discord.ButtonStyle.secondary,
 			custom_id = f'{self.prefix}:early:{poll.uuid}',
 			emoji = '\u23E9',
 			row = 0
 		)
-		cancel_button = discord.ui.Button(
+		cancel_button = Button(
+			callback = cancel_callback,
 			label = cancel_label,
 			style = discord.ButtonStyle.danger,
 			custom_id = f'{self.prefix}:cancel:{poll.uuid}',
 			emoji = '\u274C',
 			row = 0
 		)
-
-		vote_button.callback = vote_callback
-		lookup_button.callback = lookup_callback
-		early_button.callback = early_callback
-		cancel_button.callback = cancel_callback
 
 		self.add_item(vote_button)
 		self.add_item(lookup_button)
@@ -639,7 +638,7 @@ class VoteView(discord.ui.View):
 			max_values = poll.max_votes,
 			row = 0
 		)
-		button = discord.ui.Button(
+		button = Button(
 			callback = empty_callback,
 			label = empty_label,
 			style = discord.ButtonStyle.danger,
