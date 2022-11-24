@@ -343,7 +343,7 @@ class BaseHoldSystem(Generic[T]):
 
 		t = self._on_process.get(u, None)
 		if t is None:
-			return
+			return False
 		poll, task = t
 
 		async with poll.mutex:
@@ -936,6 +936,19 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			# since "sleep_until" will be skipped instantly
 			# and we have already used mutex locks as guards.
 			await self.poll_system.register(poll, self._timeout_process(poll))
+			# There is no problem to register views of expired polls
+			# since each actions ensures the polls are in the system,
+			# and the expired polls are already dropped in the above step.
+			self.restore_view.append(VoteOptionView(poll,
+				self._trans(locale, 'vote'),
+				PollController.vote_action(self, poll_system, poll),
+				self._trans(locale, 'lookup'),
+				PollController.lookup_action(self, poll_system, poll),
+				self._trans(locale, 'early'),
+				PollController.early_action(self, poll_system, poll),
+				self._trans(locale, 'cancel'),
+				PollController.cancel_action(self, poll_system, poll)
+			))
 
 	async def cog_before_invoke(self, ctx):
 		await self._cog_before_invoke(ctx)
