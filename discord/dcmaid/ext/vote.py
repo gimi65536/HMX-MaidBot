@@ -10,6 +10,7 @@ from collections.abc import Awaitable, Mapping, MutableMapping
 from dataclasses import dataclass
 from decouple import config
 from datetime import datetime, timedelta, timezone
+from hashlib import sha1 as _hash
 from proxy_types import CounterProxyType
 from simple_parsers.string_argument_parser import StringArgumentParser
 from typing import Generic, Optional, overload, Self, TypeVar
@@ -1121,7 +1122,10 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		kwargs = {'content': None}
 
 		# The color is set to be randomly fixed according to the title
-		embed = discord.Embed(title = poll.title, color = discord.Color.random(seed = hash(poll.title)))
+		_h = _hash()
+		_h.update(poll.title.encode())
+		embed = discord.Embed(title = poll.title, color = discord.Color.random(seed = _h.digest()))
+
 		for i, (option, n) in enumerate(votes.items(), 1):
 			name = f'{self._trans(locale, "render-option-order", format = {"n": i})}{option}'
 			value = '\u200b'
