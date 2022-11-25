@@ -5,6 +5,8 @@ from typing import Any, Optional
 from .helper import set_help
 from .typing import Channelable, QuasiContext
 
+EmptyCharacter = '\u200b'
+
 # When creating commands, 'guild_only' does the same thing as what this fundtion does.
 # But for convenience, we preserve this function.
 def check_server_text_channel(ctx: QuasiContext):
