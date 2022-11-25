@@ -336,7 +336,7 @@ class BaseHoldSystem(Generic[T]):
 			poll.put_in_system(self)
 
 			loop = get_running_loop()
-			task = loop.create_task(self.wait_for_timeout(poll, awaitable))
+			task = loop.create_task(self.wait_for_timeout(poll))
 			self._on_process[poll.uuid] = (poll, task, awaitable)
 
 			if self.col is not None:
@@ -367,13 +367,13 @@ class BaseHoldSystem(Generic[T]):
 
 			return True # Canceled by this method
 
-	async def wait_for_timeout(self, poll: T, awaitable: Awaitable):
+	async def wait_for_timeout(self, poll: T):
 		await discord.utils.sleep_until(poll.until)
 		async with poll.mutex:
 			if not self._contain(poll):
 				return
 
-			self._on_process.pop(poll.uuid)
+			_, _, awaitable = self._on_process.pop(poll.uuid)
 			poll.processed_order += 1 # To prevent late information update after due
 
 			if self.col is not None:
