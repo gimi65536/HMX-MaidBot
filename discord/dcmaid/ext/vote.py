@@ -297,7 +297,7 @@ class BaseHoldSystem(Generic[T]):
 	Use db column to restore or not...
 	'''
 	def __init__(self, name: str, type: type[T], col = None):
-		self._on_process: dict[uuid.UUID, tuple[T, Task]] = {}
+		self._on_process: dict[uuid.UUID, tuple[T, Task, Awaitable]] = {}
 		self.name = name
 		self.type = type
 		self.col = col
@@ -337,7 +337,7 @@ class BaseHoldSystem(Generic[T]):
 
 			loop = get_running_loop()
 			task = loop.create_task(self.wait_for_timeout(poll, awaitable))
-			self._on_process[poll.uuid] = (poll, task)
+			self._on_process[poll.uuid] = (poll, task, awaitable)
 
 			if self.col is not None:
 				col.insert_one(poll.to_dict())
@@ -351,7 +351,7 @@ class BaseHoldSystem(Generic[T]):
 		t = self._on_process.get(u, None)
 		if t is None:
 			return False
-		poll, task = t
+		poll, task, awaitable = t
 
 		async with poll.mutex:
 			if not self._contain(poll):
@@ -360,6 +360,7 @@ class BaseHoldSystem(Generic[T]):
 			self._on_process.pop(u)
 			poll.processed_order += 1 # To prevent late information update after the poll is canceled
 			task.cancel()
+			awaitable.close()
 
 			if self.col is not None:
 				col.delete_one({'uuid': poll.uuid})
