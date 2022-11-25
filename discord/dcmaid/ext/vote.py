@@ -396,10 +396,13 @@ class BaseHoldSystem(Generic[T]):
 		return await self._add_votes(poll, member, options)
 
 	async def replace_votes(self, poll: T, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
+		# It is necessary to reveal the information from the poll instances.
 		if not self._contain(poll):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
+		for o in poll.options:
+			options[o] = options[o]
 		return await self._replace_votes(poll, member, options)
 
 	async def remove_votes(self, poll: T, member: discord.Member, options: Optional[list[str] | Counter[str]] = None) -> Optional[list[Event]]:
@@ -417,10 +420,14 @@ class BaseHoldSystem(Generic[T]):
 		return await self._add_votes(self.retrieve(uuid), member, options)
 
 	async def replace_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
-		if not self._contain(poll):
-			# Happen if timeout
+		# Replace is special because the given options usually don't have information of ALL other options.
+		# It is necessary to reveal the information from the poll instances.
+		poll = self.retrieve(uuid)
+		if poll is None:
 			return None
 		options = self._process_options(options)
+		for o in poll.options:
+			options[o] = options[o]
 		return await self._replace_votes(self.retrieve(uuid), member, options)
 
 	async def remove_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: Optional[list[str] | Counter[str]] = None) -> Optional[list[Event]]:
