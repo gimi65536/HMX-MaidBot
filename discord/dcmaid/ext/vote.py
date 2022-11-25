@@ -872,7 +872,7 @@ class PollController(VoteController[Poll]):
 				return
 
 			options = '\n'.join(select.values)
-			content = f'```{options}```'
+			content = f'```\n{options}```'
 			await interaction.response.edit_message(
 				content = content,
 				view = YesNoView(
