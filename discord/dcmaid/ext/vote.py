@@ -29,7 +29,7 @@ def period_to_delta(period: int, period_unit) -> Optional[timedelta]:
 		case 's':
 			time_delta = timedelta(seconds = period)
 		case 'm':
-			time_delta = timedelta(minites = period)
+			time_delta = timedelta(minutes = period)
 		case 'h':
 			time_delta = timedelta(hours = period)
 		case 'd':
