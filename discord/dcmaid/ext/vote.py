@@ -12,7 +12,7 @@ from decouple import config
 from datetime import datetime, timedelta, timezone
 from proxy_types import CounterProxyType
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Generic, Optional, Self, TypeVar
+from typing import Generic, Optional, overload, Self, TypeVar
 
 time_units = [
 	('second', 's'),
@@ -437,9 +437,17 @@ class BaseHoldSystem(Generic[T]):
 		options = self._process_options(options)
 		return await self._remove_votes(self.retrieve(uuid), member, options)
 
+	@overload
+	def _process_options(self, options: list[str] | Counter[str]) -> Counter[str]:
+		...
+
+	@overload
+	def _process_options(self, options: None) -> None:
+		...
+
 	# This implementation is default behaviors. Feel free to override this method.
 	# None options are only used in remove
-	def _process_options(self, options: Optional[list[str] | Counter[str]]) -> Optional[Counter[str]]:
+	def _process_options(self, options):
 		if options is None:
 			return None
 
