@@ -714,7 +714,7 @@ class PollController(VoteController[Poll]):
 					poll.add_user(member)
 				has_voted = list(poll.vote_casted[member].elements())
 
-			content = ''
+			content = None
 			if len(has_voted) == 0:
 				content = cog._trans(interaction, 'not-vote-yet', format = {'title': poll.title})
 			else:
@@ -756,7 +756,7 @@ class PollController(VoteController[Poll]):
 					poll.add_user(member)
 				has_voted = list(poll.vote_casted[member].elements())
 
-			content = ''
+			content = None
 			if len(has_voted) == 0:
 				content = cog._trans(interaction, 'not-vote-yet', format = {'title': poll.title})
 			else:
@@ -857,7 +857,7 @@ class PollController(VoteController[Poll]):
 						description = cog._trans(interaction, 'canceled-poll'),
 						color = discord.Color.dark_grey()
 					)
-					await poll.msg.edit(content = "", embed = embed, view = None)
+					await poll.msg.edit(content = None, embed = embed, view = None)
 
 		return f
 
