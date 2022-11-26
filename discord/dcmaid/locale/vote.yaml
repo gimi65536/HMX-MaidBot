@@ -112,6 +112,9 @@ __translation_table:
   zero-vote-error-value:
     ~: The poll is invalid because users are only allowed to cast zero votes.
     zh-TW: 這個投票只允許使用者投零票。
+  poll-timestamp:
+    ~: "Time left: {t}"
+    zh-TW: 剩餘時間：{t}
   render-option-order:
     ~: "#{n}: "
     zh-TW: "選項{n}："

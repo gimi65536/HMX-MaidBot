@@ -353,9 +353,8 @@ class BasicCommands(BaseCog, name = 'Base'):
 		'''
 		`/{cmd_name}` returns the server time.
 		'''
-		t = int(discord.utils.utcnow().timestamp())
 		embed = discord.Embed(title = discord.Embed.Empty, color = discord.Color.blue())
-		embed.add_field(name = self._trans(ctx, 'current-time'), value = f"<t:{t}:f>", inline = False)
+		embed.add_field(name = self._trans(ctx, 'current-time'), value = discord.utils.format_dt(discord.utils.utcnow()), inline = False)
 		embed.set_footer(text = self._trans(ctx, 'shown-timezone'))
 		await ctx.send_response(embed = embed)
 
