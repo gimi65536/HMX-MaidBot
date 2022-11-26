@@ -1124,11 +1124,17 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		# The color is set to be randomly fixed according to the title
 		_h = _hash()
 		_h.update(poll.title.encode())
-		embed = discord.Embed(
-			title = poll.title,
-			description = self._trans(locale, "poll-timestamp", format = {'t': discord.utils.format_dt(discord.utils.utcnow(), style = 'R')}),
-			color = discord.Color.random(seed = _h.digest())
-		)
+		if end:
+			embed = discord.Embed(
+				title = poll.title,
+				color = discord.Color.random(seed = _h.digest())
+			)
+		else:
+			embed = discord.Embed(
+				title = poll.title,
+				description = self._trans(locale, "poll-timestamp", format = {'t': discord.utils.format_dt(poll.until, style = 'R')}),
+				color = discord.Color.random(seed = _h.digest())
+			)
 
 		for i, (option, n) in enumerate(votes.items(), 1):
 			name = f'{self._trans(locale, "render-option-order", format = {"n": i})}{option}'
