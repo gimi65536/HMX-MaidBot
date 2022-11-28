@@ -1,7 +1,7 @@
 import discord
 import uuid
 from ..basebot import Bot
-from ..basecog import BaseCog, MaidMixin, RandomMixin
+from ..basecog import BaseCog
 from ..utils import *
 from ..views import Button, Select, YesNoView
 from asyncio import get_running_loop, Lock, sleep, Task

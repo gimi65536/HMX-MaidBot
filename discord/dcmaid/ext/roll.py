@@ -11,9 +11,10 @@ from rollgames import (
 from simple_parsers.string_argument_parser import StringArgumentParser
 from typing import Optional
 from ..basebot import Bot
-from ..basecog import BaseCog, MaidMixin, RandomMixin
+from ..basecog import BaseCog
 from ..constants import MAX_FIELDS_IN_EMBED
 from ..helper import set_help
+from ..mixin import MaidMixin, RandomMixin
 from ..perm import admin_only
 from ..typing import QuasiContext
 from ..utils import *
