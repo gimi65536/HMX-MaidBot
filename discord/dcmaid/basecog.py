@@ -3,11 +3,12 @@ This module defines basic cogs class that will do some works \
 before a cog class is created.
 '''
 import discord
+from collections.abc import Sequence
 from importlib_resources import files
 from reader import load
 from typing import Optional
 from .basebot import Bot
-from .exception import MaidNotFound
+from .exception import DependentCogNotLoaded, MaidNotFound
 from .helper import get_help, update_help
 from .typing import Localeable
 from .utils import *
@@ -25,8 +26,13 @@ class BaseCogMeta(discord.CogMeta):
 
 	_common_table: dict[Optional[str], dict[Optional[str], str]] = None
 
-	def __new__(mcls, *args, **kwargs):
+	def __new__(mcls, *args, depends: Optional[Sequence[str]] = None, elementary: bool = False, **kwargs):
 		cls = super().__new__(mcls, *args, **kwargs)
+		if elementary:
+			cls.__depend_cogs__ = ()
+		else:
+			cls.__depend_cogs__ = ('Base', )
+		cls.__depend_cogs__ += tuple(depends) if depends is not None else ()
 
 		commands: list[discord.ApplicationCommand] = []
 		for cmd in cls.__cog_commands__:
@@ -92,11 +98,15 @@ class BaseCogMeta(discord.CogMeta):
 
 		return cls
 
-class BaseCog(discord.Cog, metaclass = BaseCogMeta):
+class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 	# Notice that we only accept the bot of '.basebot.Bot' class or its subclasses.
 	def __init__(self, bot: Bot):
 		if not isinstance(bot, Bot):
 			raise TypeError('Only accepts basebot.Bot type.')
+
+		for cog_name in self.__depend_cogs__:
+			if bot.get(cog_name) is None:
+				raise DependentCogNotLoaded(self.__depend_cogs__, cog_name)
 
 		super().__init__()
 		self.bot = bot

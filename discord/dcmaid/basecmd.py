@@ -12,7 +12,7 @@ from .views import YesNoView
 from .weight import Weight
 
 # This cog (name = 'Base') defines the basic commands.
-class BasicCommands(BaseCog, name = 'Base'):
+class BasicCommands(BaseCog, name = 'Base', elementary = True):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
 
