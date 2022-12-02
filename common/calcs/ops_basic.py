@@ -1,5 +1,5 @@
 from .types import *
-from .ops import BinaryOperator, UnaryOperator
+from .ops import BinaryOperator, TernaryOperator, UnaryOperator
 
 class PlusOperator(BinaryOperator):
 	def eval(self):
@@ -166,3 +166,14 @@ class ConcatOperator(BinaryOperator):
 
 		a, b = a.to_str(), b.to_str()
 		return StringConstant(a.value + b.value)
+
+class IfThenElseOperator(TernaryOperator):
+	def eval(self):
+		a, b, c = self.eval_operands()
+		a = a.extract_constant(a)[0]
+		a = a.to_bool()
+
+		if a.value:
+			return b
+		else:
+			return c
