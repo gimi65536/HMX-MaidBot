@@ -2,7 +2,7 @@ from .types import *
 from .ops import BinaryOperator
 
 class PlusOperator(BinaryOperator):
-	def exec(self):
+	def eval(self):
 		a, b = self.extract_constant(*self.eval_operands())
 
 		if a.is_str or b.is_str:
@@ -15,7 +15,7 @@ class PlusOperator(BinaryOperator):
 			return NumberConstant(a.value + b.value)
 
 class MinusOperator(BinaryOperator):
-	def exec(self):
+	def eval(self):
 		a, b = self.extract_constant(*self.eval_operands())
 
 		if a.is_str or b.is_str:
@@ -27,7 +27,7 @@ class MinusOperator(BinaryOperator):
 			return NumberConstant(a.value - b.value)
 
 class MultipleOperator(BinaryOperator):
-	def exec(self):
+	def eval(self):
 		a, b = self.extract_constant(*self.eval_operands())
 
 		if a.is_str or b.is_str:
@@ -53,7 +53,7 @@ class MultipleOperator(BinaryOperator):
 			return NumberConstant(a.value * b.value)
 
 class DivideOperator(BinaryOperator):
-	def exec(self):
+	def eval(self):
 		a, b = self.extract_constant(*self.eval_operands())
 
 		if a.is_number and b.is_number:
@@ -62,7 +62,7 @@ class DivideOperator(BinaryOperator):
 			raise ValueError('Invalid type division')
 
 class IntegerDivideOperator(BinaryOperator):
-	def exec(self):
+	def eval(self):
 		a, b = self.extract_constant(*self.eval_operands())
 
 		if a.is_number and b.is_number:
@@ -71,7 +71,7 @@ class IntegerDivideOperator(BinaryOperator):
 			raise ValueError('Invalid type division')
 
 class ModuloOperator(BinaryOperator):
-	def exec(self):
+	def eval(self):
 		a, b = self.extract_constant(*self.eval_operands())
 
 		if a.is_number and b.is_number:
