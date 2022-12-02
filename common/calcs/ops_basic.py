@@ -150,7 +150,7 @@ class NorOperator(_BinaryBoolOperator):
 		return not(a or b)
 
 # The below two operators are rarely used and I will not use them
-# Of course these two ops are here to be invoked for free
+# Of course these two ops are here to invoke for free
 
 class ConverseImplOperator(_BinaryBoolOperator):
 	def _logic(self, a, b, /):
@@ -159,3 +159,10 @@ class ConverseImplOperator(_BinaryBoolOperator):
 class ConverseNimplOperator(_BinaryBoolOperator):
 	def _logic(self, a, b, /):
 		return not a and b
+
+class ConcatOperator(BinaryOperator):
+	def eval(self):
+		a, b = self.extract_constant(*self.eval_operands())
+
+		a, b = a.to_str(), b.to_str()
+		return StringConstant(a.value + b.value)
