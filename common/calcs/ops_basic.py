@@ -177,3 +177,73 @@ class IfThenElseOperator(TernaryOperator):
 			return b
 		else:
 			return c
+
+class EqualOperator(BinaryOperator):
+	def eval(self):
+		a, b = self.extract_constant(*self.eval_operands())
+
+		if type(a) != type(b):
+			return BooleanConstant(False)
+
+		return BooleanConstant(a.value == b.value)
+
+class NonequalOperator(BinaryOperator):
+	def eval(self):
+		a, b = self.extract_constant(*self.eval_operands())
+
+		if type(a) != type(b):
+			return BooleanConstant(True)
+
+		return BooleanConstant(a.value != b.value)
+
+class _BinaryComparisonOperator(BinaryOperator):
+	def eval(self):
+		a, b = self.extract_constant(*self.eval_operands())
+		if a.is_bool:
+			a = a.to_number()
+		if b.is_bool:
+			b = b.to_number()
+
+		if a.is_number and b.is_number:
+			if a.value.is_real and b.value.is_real:
+				return BooleanConstant(self._comp(a.value, b.value))
+			else:
+				return BooleanConstant(False)
+		elif a.is_str and b.is_str:
+			return BooleanConstant(self._compstr(a.value, b.value))
+		else:
+			raise ValueError('Unable to compare between string and number/Boolean')
+
+	def _comp(self, a: Expr, b: Expr, /) -> bool:
+		raise NotImplementedError
+
+	def _compstr(self, a: str, b: str, /) -> bool:
+		raise NotImplementedError
+
+class LessOperator(_BinaryComparisonOperator):
+	def _comp(self, a, b, /):
+		return a < b
+
+	def _compstr(self, a, b, /):
+		return a < b
+
+class LeOperator(_BinaryComparisonOperator):
+	def _comp(self, a, b, /):
+		return a <= b
+
+	def _compstr(self, a, b, /):
+		return a <= b
+
+class GreaterOperator(_BinaryComparisonOperator):
+	def _comp(self, a, b, /):
+		return a > b
+
+	def _compstr(self, a, b, /):
+		return a > b
+
+class GeOperator(_BinaryComparisonOperator):
+	def _comp(self, a, b, /):
+		return a >= b
+
+	def _compstr(self, a, b, /):
+		return a >= b
