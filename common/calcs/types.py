@@ -2,11 +2,11 @@ from sympy import Expr, simplify
 from typing import Any, Generic, TypeVar, Union
 
 # Interface class
-class _Sub:
-	def sub(self, mapping: Mapping['Var', 'LValue']) -> 'TreeNodeType':
+class _Eval:
+	def eval(self, mapping: Mapping['Var', 'LValue']) -> 'Value':
 		raise NotImplementedError
 
-class Var(_Sub):
+class Var(_Eval):
 	_name: str
 	_scope: Any # None for "weird" or "naive" variables
 
@@ -26,12 +26,11 @@ class Var(_Sub):
 	def scope(self, s: Any):
 		self._scope = s
 
-	def sub(self, mapping):
-		lv = mapping.get(self)
-		if lv is None:
-			return self
-		else:
-			return lv
+	def eval(self, mapping):
+		if self not in mapping:
+			raise ValueError(f'Variable "{self._name}" is undefined')
+
+		return mapping[self]
 
 	def __eq__(self, other):
 		if not isinstance(other, type(self)):
@@ -50,7 +49,7 @@ class Var(_Sub):
 
 ConstType = TypeVar('ConstType', Expr | bool | str)
 
-class Constant(_Sub, Generic[ConstType]):
+class Constant(_Eval, Generic[ConstType]):
 	_is_number: bool
 	_is_bool: bool
 	_is_str: bool
@@ -62,7 +61,7 @@ class Constant(_Sub, Generic[ConstType]):
 	def value(self):
 		return self._value
 
-	def sub(self, mapping):
+	def eval(self, mapping):
 		return self
 
 	def __eq__(self, other):
@@ -159,7 +158,7 @@ class StringConstant(Constant[str]):
 			case StringConstant:
 				return self
 
-class LValue(_Sub):
+class LValue:
 	def __init__(self, var: Var, value: Constant):
 		self._var = var
 		self._value = value
@@ -176,20 +175,17 @@ class LValue(_Sub):
 	def value(self, value):
 		self._value = value
 
-	def sub(self, mapping):
-		return self
-
 Value: TypeAlias = Constant | LValue
 
 SyntaxValue: TypeAlias = Constant | Var
 
-TreeNodeType = Union['Operator', Constant, LValue, Var]
+TreeNodeType: TypeAlias = Union['Operator', Constant, Var]
 
 #ValidResultType: TypeAlias = type[Constant] | _COERTION | _CONTEXT_DEPENDENT
 
 #ResultType: TypeAlias = ValidResultType | _INVALID
 
-class Operator(_Sub):
+class Operator(_Eval):
 	# An immutable type
 	ary: int
 	_operands: list[TreeNodeType]
@@ -200,17 +196,14 @@ class Operator(_Sub):
 
 		self._operands = args
 
-	def sub(self, mapping):
-		return type(self)(*(o.sub(mapping) for o in self._operands))
-
-	def eval(self) -> Value:
+	def eval(self, mapping):
 		raise NotImplementedError
 
-	def eval_operands(self) -> list[Value]:
+	def eval_operands(self, mapping: Mapping[Var, LValue]) -> list[Value]:
 		result = []
 		for o in self._operands:
 			if isinstance(o, Operator):
-				result.append(o.eval())
+				result.append(o.eval(mapping))
 			elif isinstance(o, Var):
 				raise ValueError('Unable to evaluate a pure variable.')
 			else:
