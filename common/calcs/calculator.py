@@ -274,12 +274,16 @@ class Parser:
 		def __init__(self, content: str):
 			self.content = content
 
-		_is_word: bool
-		_is_str: bool
-		_is_op: bool
-		_is_prefix_op: bool
-		_is_parentheses: bool
-		_is_tuple: bool
+		def __str__(self):
+			return str(self.content)
+
+		_is_word: bool = False
+		_is_str: bool = False
+		_is_op: bool = False
+		_is_prefix_op: bool = False
+		_is_comma: bool = False
+		_is_parentheses: bool = False
+		_is_tuple: bool = False
 
 		@property
 		def is_word(self):
@@ -298,6 +302,10 @@ class Parser:
 			return self._is_prefix_op
 
 		@property
+		def is_comma(self):
+			return self._is_comma
+
+		@property
 		def is_parentheses(self):
 			return self._is_parentheses
 
@@ -307,26 +315,27 @@ class Parser:
 
 	class WordNode(SyntaxTreeNode):
 		_is_word = True
-		_is_str = False
-		_is_op = False
-		_is_prefix_op = False
-		_is_parentheses = False
-		_is_tuple = False
 
 	class StringNode(SyntaxTreeNode):
 		_is_word = True
 		_is_str = True
-		_is_op = False
-		_is_prefix_op = False
-		_is_parentheses = False
-		_is_tuple = False
 
 	class OpNode(SyntaxTreeNode):
-		_is_word = False
-		_is_str = False
 		_is_op = True
-		_is_parentheses = False
-		_is_tuple = False
+
+		def __init__(self, symbol: str, operand: Optional[SyntaxTreeNode] = None):
+			# operand is None in op_stack, not None in total_stack
+			super().__init__(symbol)
+			self.operand = operand
+
+		def __str__(self):
+			if self.operand is None:
+				return super().__str__()
+
+			if self.operand.is_tuple:
+				return f'{self.operand}{super().__str__()}'
+			else:
+				return f'({self.operand}){super().__str__()}'
 
 	class InfixOPNode(OpNode):
 		_is_prefix_op = False
@@ -334,21 +343,15 @@ class Parser:
 	class PrefixOPNode(OpNode):
 		_is_prefix_op = True
 
+	# in op_stack
+	class CommaNode(SyntaxTreeNode):
+		_is_comma = True
+
 	# Not in total_stack
 	class ParenthesesNode(SyntaxTreeNode):
-		_is_word = False
-		_is_str = False
-		_is_op = False
-		_is_prefix_op = False
 		_is_parentheses = True
-		_is_tuple = False
 
 	class TupleNode(SyntaxTreeNode):
-		_is_word = False
-		_is_str = False
-		_is_op = False
-		_is_prefix_op = False
-		_is_parentheses = False
 		_is_tuple = True
 
 		def __init__(self, t: tuple[SyntaxTreeNode, ...]):
@@ -403,12 +406,51 @@ class Parser:
 		self._infix_precedence_table: dict[str, int] = {op_info.symbol: precedence for precedence, layer in self._ptable.items() for op_info in layer}
 		self._infix_asso_table: dict[str, Associability] = {op_info.symbol: layer.asso for precedence, layer in self._ptable.items() for op_info in layer}
 
-		self._prefix_table: dict[str, Operator] = {op_info.symbol: op_info.op for op_info in self._prefix_ops}
+		self._prefix_table: dict[str, dict[int, Operator]] = {}
+		for prefix_op in self._prefix_ops:
+			symbol, ary, op = prefix_op.symbol, prefix_op.ary, prefix_ops.op
+			if symbol not in self._prefix_table:
+				self._prefix_table[symbol] = {}
+
+			if ary in self._prefix_table[symbol]:
+				raise ValueError(f'Two prefix operators with the same symbol and the same ary!')
+
+			self._prefix_table[symbol][ary] = op
 
 	@staticmethod
 	def pop_prefix(op_stack, total_stack):
 		while len(op_stack) > 0 and op_stack[-1]._is_prefix_op:
 			total_stack.append(op_stack.pop())
+
+	def _merge(op_node, total_stack):
+		if not op_node.is_op or not op_node.is_comma:
+			raise ValueError('Unknown error caused by non-operators in op_stack')
+
+		if op_node.is_prefix_op:
+			if len(total_stack) == 0:
+				raise ValueError(f'Prefix operator {op_node.content} encountered no operand')
+			node = total_stack.pop()
+			total_stack.append(PrefixOPNode(op_node.content, node))
+		else:
+			# Infix (op or comma)
+			if len(total_stack) < 2:
+				if op_node.is_op:
+					raise ValueError(f'Infix operator {op_node.content} encountered less than 2 operands')
+				else:
+					raise ValueError(f'Comma {op_node.content} encountered less than 2 operands')
+			n2, n1 = total_stack.pop(), total_stack.pop()
+
+			if op_node.is_op:
+				total_stack.append(InfixOPNode(op_node.content, TupleNode((n1, n2))))
+			else:
+				if n2.is_tuple:
+					raise ValueError(f'Invalid nested tuple {n2.content}')
+				t = ()
+				if n1.is_tuple:
+					t = n1.content + (n2, )
+				else:
+					t = (n1, n2)
+				total_stack.append(TupleNode(t))
 
 	def parse(self, s: str) -> TreeNodeType:
 		self._constant_injure(locals())
@@ -453,9 +495,53 @@ class Parser:
 						status = S.WAIT_INFIX
 				case S.WAIT_INFIX:
 					if is_special:
-						...
+						if token == RP:
+							# Close parentheses
+							while len(op_stack) > 0 and not op_stack[-1].is_parentheses:
+								self._merge(op_stack.pop(), total_stack)
+
+							if len(op_stack) == 0:
+								raise ValueError('Non-close parentheses')
+							op_stack.pop()
+
+							status = S.WAIT_INFIX
+						elif token == COMMA:
+							while len(op_stack) > 0 and not op_stack[-1].is_parentheses:
+								self._merge(op_stack.pop(), total_stack)
+
+							if len(op_stack) == 0:
+								raise ValueError('Comma outsides parentheses')
+							op_stack.pop()
+
+							status = S.WAIT_LITERAL
+						else:
+							raise ValueError(f'Unwanted special token {token} when waiting for infix operators')
 					elif is_op:
-						...
+						# Allow infix operator
+						if token in self._infix_table:
+							precedence = self._infix_precedence_table[token]
+							asso = self._infix_asso_table[token]
+
+							while len(op_stack) > 0:
+								node = op_stack[-1]
+								if node.is_prefix_op:
+									node_prec = self._infix_precedence_table[node.content]
+									if precedence < node_prec:
+										# Put the new operator
+										break
+									elif precedence > node_prec:
+										self._merge(op_stack.pop(), total_stack)
+									elif asso == Associability.LEFT:
+										self._merge(op_stack.pop(), total_stack)
+									else:
+										break
+								else:
+									break
+
+							op_stack.append(InfixOPNode(token))
+							status = S.WAIT_LITERAL
+						else:
+							raise ValueError(f'Unwanted prefix operator {token} when waiting for infix operators')
 					else:
 						raise ValueError(f'Unwanted literal {token} when waiting for infix operators')
 
@@ -463,5 +549,13 @@ class Parser:
 			case S.INITIAL:
 				raise ValueError('No valid input string to parse')
 
-		... # Pop all op in stacks
+		while len(op_stack) > 0 and op_stack[-1].is_op:
+			self._merge(op_stack.pop(), total_stack)
+
+		if len(op_stack) > 0:
+			raise ValueError(f'Unresolved operator {op_stack[-1].content} in op_stack')
+
+		if len(total_stack) != 1:
+			raise ValueError(f'Unknown status of total_stack: {total_stack}')
+
 		... # Connect everything in total_stack
