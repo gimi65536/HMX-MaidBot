@@ -1,8 +1,9 @@
 from .ops_basic import *
-from .types import Operator, TreeNodeType
+from .types import Constant, Operator, TreeNodeType, Var
 from collections import Counter
 from enum import Enum
 from itertools import chain
+from sympy import I, Rational
 from typing import cast, Optional
 import re
 
@@ -436,6 +437,8 @@ class Parser:
 			total_stack.append(op_stack.pop())
 
 	def _merge(op_node, total_stack):
+		self._constant_injure(locals())
+
 		if not op_node.is_op or not op_node.is_comma:
 			raise ValueError('Unknown error caused by non-operators in op_stack')
 
@@ -465,11 +468,45 @@ class Parser:
 					t = (n1, n2)
 				total_stack.append(TupleNode(t))
 
+	def str_to_const(self, s: str) -> Constant | Var:
+		# Boolean parse
+		if s == 'TRUE' or s == 'True' or s == 'true':
+			return BooleanConstant(True)
+		elif s == 'FALSE' or s == 'False' or s == 'false':
+			return BooleanConstant(False)
+
+		# Math constant parse
+		# pi...
+
+		# Imaginary number parse
+		if s.endswith('i'):
+			# May be imaginary number
+			r = s[:-1]
+			if len(r) == 0:
+				return NumberConstant(I)
+			try:
+				n = Rational(r)
+				return NumberConstant(n * I)
+			except:
+				pass
+
+		# Rational number parse
+		try:
+			# Every real number can be given must be rational
+			n = Rational(s)
+			return NumberConstant(n)
+		except:
+			pass
+
+		return Var(s)
+
 	def _to_semantic_tree(self, node: SyntaxTreeNode) -> TreeNodeType:
+		self._constant_injure(locals())
+
 		if node.is_str:
 			return StringConstant(node.content)
 		elif node.is_word:
-			...
+			return self.str_to_const(node.content)
 		elif node.is_op:
 			node = cast(OpNode, node)
 			operand = node.operand
