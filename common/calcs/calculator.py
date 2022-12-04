@@ -98,6 +98,40 @@ default_prefix_ops = [
 	OperatorInfo(NotOperator, '~'),
 ]
 
+class Token:
+	_is_string_const: bool
+	_is_symbol: bool
+
+	def __init__(self, s: str):
+		self._s = s
+
+	@property
+	def string(self) -> str:
+		return self._s
+
+	def __str__(self):
+		return self._s
+
+	@property
+	def is_string_const(self):
+		return self._is_string_const
+
+	@property
+	def is_symbol(self):
+		return self._is_symbol
+
+class WordToken(Token):
+	_is_string_const = False
+	_is_symbol = False
+
+class StringToken(Token):
+	_is_string_const = True
+	_is_symbol = False
+
+class SymbolToken(Token):
+	_is_string_const = False
+	_is_symbol = True
+
 class Lexer:
 	SQ = "'"
 	DQ = '"'
@@ -141,9 +175,9 @@ class Lexer:
 				ss.append(symbol)
 
 		self._parse_symbols = set(ss)
-		self._find_cache: dict[str, Optional[list[str]]] = {'': []}
+		self._find_cache: dict[str, Optional[list[Token]]] = {'': []}
 
-	def _find(self, symbols: str) -> Optional[list[str]]:
+	def _find(self, symbols: str) -> Optional[list[Token]]:
 		if symbols in self._find_cache:
 			return self._find_cache[symbols]
 
@@ -156,7 +190,7 @@ class Lexer:
 			if sub_result is None:
 				continue
 
-			self._find_cache[symbols] = [prefix, *sub_result]
+			self._find_cache[symbols] = [SymbolToken(prefix), *sub_result]
 			return self._find_cache[symbols]
 
 		self._find_cache[symbols] = None
@@ -166,11 +200,7 @@ class Lexer:
 	def is_word(cls, c):
 		return not c.isascii() or cls.ascii_word.match(c)
 
-	@classmethod
-	def is_string(cls, s):
-		return s.startswith(cls.SQ) or s.startswith(cls.DQ)
-
-	def tokenize(self, s: str) -> list[str]:
+	def tokenize(self, s: str) -> list[Token]:
 		self._constant_injure(locals())
 		# First step split
 		first = []
@@ -237,14 +267,14 @@ class Lexer:
 		if len(keep) > 0:
 			first.append(keep)
 
-		result = []
+		result: list[Token] = []
 		for token in first:
 			if token.startswith(SQ) or token.startswith(DQ):
-				result.append(token)
+				result.append(StringToken(token[1:-1]))
 				continue
 
 			if self.check_word.fullmatch(token):
-				result.append(token)
+				result.append(WordToken(token))
 				continue
 
 			find = self._find(token)
@@ -559,38 +589,42 @@ class Parser:
 			# Symbol: should be an operator
 			# Word: may be operator or others...
 			is_op, is_special = False, False
-			if token in self._op_symbols:
+			if token.is_symbol:
 				is_op = True
-				if token in SPECIAL:
+				if token.string in SPECIAL:
 					is_special = True
-			is_str = self._lexer.is_string(token)
+			elif token.is_string_const:
+				is_str = True
+			else:
+				if token.string in self._op_symbols:
+					is_op = True
 
 			match status:
 				case S.INITIAL | S.WAIT_LITERAL:
 					if is_str:
-						total_stack.append(StringNode(token[1:-1]))
+						total_stack.append(StringNode(token.string))
 						self.pop_prefix(op_stack, total_stack)
 						status = S.WAIT_INFIX
 					elif is_special:
-						if token == LP:
-							op_stack.append(ParenthesesNode(token)) # Put token is not needed
+						if token.string == LP:
+							op_stack.append(ParenthesesNode(token.string)) # Put token is not needed
 							status = S.WAIT_LITERAL
 						else:
 							raise ValueError(f'Unwanted special token {token} when waiting for literals')
 					elif is_op:
 						# Allow prefix operator
-						if token in self._prefix_table:
-							op_stack.append(PrefixOPNode(token))
+						if token.string in self._prefix_table:
+							op_stack.append(PrefixOPNode(token.string))
 							status = S.WAIT_LITERAL
 						else:
 							raise ValueError(f'Unwanted infix operator {token} when waiting for literals')
 					else:
-						total_stack.append(WordNode(token))
+						total_stack.append(WordNode(token.string))
 						self.pop_prefix(op_stack, total_stack)
 						status = S.WAIT_INFIX
 				case S.WAIT_INFIX:
 					if is_special:
-						if token == RP:
+						if token.string == RP:
 							# Close parentheses
 							while len(op_stack) > 0 and not op_stack[-1].is_parentheses:
 								self._merge(op_stack.pop(), total_stack)
@@ -600,22 +634,22 @@ class Parser:
 							op_stack.pop()
 
 							status = S.WAIT_INFIX
-						elif token == COMMA:
+						elif token.string == COMMA:
 							while len(op_stack) > 0 and not op_stack[-1].is_parentheses:
 								self._merge(op_stack.pop(), total_stack)
 
 							if len(op_stack) == 0:
 								raise ValueError('Comma outsides parentheses')
-							op_stack.append(CommaNode(token)) # Put token is not needed
+							op_stack.append(CommaNode(token.string)) # Put token is not needed
 
 							status = S.WAIT_LITERAL
 						else:
 							raise ValueError(f'Unwanted special token {token} when waiting for infix operators')
 					elif is_op:
 						# Allow infix operator
-						if token in self._infix_table:
-							precedence = self._infix_precedence_table[token]
-							asso = self._infix_asso_table[token]
+						if token.string in self._infix_table:
+							precedence = self._infix_precedence_table[token.string]
+							asso = self._infix_asso_table[token.string]
 
 							while len(op_stack) > 0:
 								node = op_stack[-1]
@@ -633,7 +667,7 @@ class Parser:
 								else:
 									break
 
-							op_stack.append(InfixOPNode(token))
+							op_stack.append(InfixOPNode(token.string))
 							status = S.WAIT_LITERAL
 						else:
 							raise ValueError(f'Unwanted prefix operator {token} when waiting for infix operators')
