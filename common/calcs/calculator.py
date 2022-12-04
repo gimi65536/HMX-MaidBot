@@ -214,7 +214,7 @@ class Lexer:
 					status = S.INQUOTE
 				case S.INQUOTE:
 					if quote == c:
-						first.append(keep + c)
+						first.append(keep)
 						keep = ''
 						status = S.SYMBOL
 					elif quote == BACKSLASH:
@@ -230,7 +230,7 @@ class Lexer:
 					elif c == SQ or c == DQ:
 						if len(keep) > 0:
 							first.append(keep)
-						keep = c
+						keep = ''
 						quote = c
 						status = INQUOTE
 					elif c == BACKSLASH:
@@ -247,7 +247,7 @@ class Lexer:
 					elif c == SQ or c == DQ:
 						if len(keep) > 0:
 							first.append(keep)
-						keep = c
+						keep = ''
 						quote = c
 						status = INQUOTE
 					elif c == BACKSLASH:
@@ -270,7 +270,7 @@ class Lexer:
 		result: list[Token] = []
 		for token in first:
 			if token.startswith(SQ) or token.startswith(DQ):
-				result.append(StringToken(token[1:-1]))
+				result.append(StringToken(token))
 				continue
 
 			if self.check_word.fullmatch(token):
