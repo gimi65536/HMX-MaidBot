@@ -64,7 +64,7 @@ class Constant(TreeNodeType, Generic[ConstType]):
 		self._value = value
 
 	@property
-	def value(self):
+	def value(self) -> ConstType:
 		return self._value
 
 	def eval(self, mapping):
@@ -177,11 +177,11 @@ class LValue:
 		return self._var
 
 	@property
-	def content(self):
+	def content(self) -> Constant:
 		return self._content
 
 	@content.setter
-	def content(self, const):
+	def content(self, const: Constant):
 		self._content = const
 
 Value: TypeAlias = Constant | LValue
@@ -210,10 +210,10 @@ class Operator(TreeNodeType):
 	@staticmethod
 	def extract_constant(*args: Value) -> list[Constant]:
 		result = []
-		for o in self._operands:
-			if isinstance(o, Constant):
-				result.append(o)
+		for v in args:
+			if isinstance(v, Constant):
+				result.append(v)
 			else:
-				result.append(o.content)
+				result.append(v.content)
 
 		return result
