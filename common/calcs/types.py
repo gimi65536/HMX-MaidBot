@@ -9,11 +9,6 @@ class TreeNodeType:
 	def apply_var(self, f: Callable[['Var'], Any]):
 		raise NotImplementedError
 
-class Value:
-	@property
-	def value(self):
-		return self._value
-
 class Var(TreeNodeType):
 	_name: str
 	_scope: Any # None for "weird" or "naive" variables
@@ -60,13 +55,17 @@ class Var(TreeNodeType):
 
 ConstType = TypeVar('ConstType', Expr, bool, str)
 
-class Constant(TreeNodeType, Value, Generic[ConstType]):
+class Constant(TreeNodeType, Generic[ConstType]):
 	_is_number: bool
 	_is_bool: bool
 	_is_str: bool
 
 	def __init__(self, value: ConstType):
 		self._value = value
+
+	@property
+	def value(self):
+		return self._value
 
 	def eval(self, mapping):
 		return self
@@ -168,22 +167,24 @@ class StringConstant(Constant[str]):
 			case StringConstant:
 				return self
 
-class LValue(Value):
-	def __init__(self, var: Var, value: Constant):
+class LValue:
+	def __init__(self, var: Var, const: Constant):
 		self._var = var
-		self._value = value
+		self._content = const
 
 	@property
 	def var(self):
 		return self._var
 
 	@property
-	def value(self):
-		return self._value
+	def content(self):
+		return self._content
 
-	@value.setter
-	def value(self, value):
-		self._value = value
+	@content.setter
+	def content(self, const):
+		self._content = const
+
+Value: TypeAlias = Constant | LValue
 
 class Operator(TreeNodeType):
 	# An immutable type
@@ -213,6 +214,6 @@ class Operator(TreeNodeType):
 			if isinstance(o, Constant):
 				result.append(o)
 			else:
-				result.append(o.value)
+				result.append(o.content)
 
 		return result
