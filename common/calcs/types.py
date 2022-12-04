@@ -209,19 +209,7 @@ class Operator(TreeNodeType):
 		raise NotImplementedError
 
 	def eval_operands(self, mapping: Mapping[Var, LValue]) -> list[Value]:
-		result = []
-		for o in self._operands:
-			if isinstance(o, Operator):
-				result.append(o.eval(mapping))
-			elif isinstance(o, Var):
-				if o in mapping:
-					result.append(mapping[o])
-				else:
-					raise ValueError('Unable to evaluate a pure variable.')
-			else:
-				result.append(o)
-
-		return result
+		return [o.eval(mapping) for o in self._operands]
 
 	def apply_var(self, f):
 		for o in self._operands:
