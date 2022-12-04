@@ -215,7 +215,10 @@ class Operator(_Eval):
 			if isinstance(o, Operator):
 				result.append(o.eval(mapping))
 			elif isinstance(o, Var):
-				raise ValueError('Unable to evaluate a pure variable.')
+				if o in mapping:
+					result.append(mapping[o])
+				else:
+					raise ValueError('Unable to evaluate a pure variable.')
 			else:
 				result.append(o)
 
