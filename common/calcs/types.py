@@ -2,15 +2,14 @@ from collections.abc import Callable
 from sympy import Expr, simplify
 from typing import Any, Generic, TypeVar, Union
 
-# Interface class
-class _Eval:
+class TreeNodeType:
 	def eval(self, mapping: Mapping['Var', 'LValue']) -> 'Value':
 		raise NotImplementedError
 
 	def apply_var(self, f: Callable[['Var'], Any]):
 		raise NotImplementedError
 
-class Var(_Eval):
+class Var(TreeNodeType):
 	_name: str
 	_scope: Any # None for "weird" or "naive" variables
 
@@ -56,7 +55,7 @@ class Var(_Eval):
 
 ConstType = TypeVar('ConstType', Expr | bool | str)
 
-class Constant(_Eval, Generic[ConstType]):
+class Constant(TreeNodeType, Generic[ConstType]):
 	_is_number: bool
 	_is_bool: bool
 	_is_str: bool
@@ -189,13 +188,13 @@ Value: TypeAlias = Constant | LValue
 
 SyntaxValue: TypeAlias = Constant | Var
 
-TreeNodeType: TypeAlias = Union['Operator', Constant, Var]
+#TreeNodeType: TypeAlias = Union['Operator', Constant, Var]
 
 #ValidResultType: TypeAlias = type[Constant] | _COERTION | _CONTEXT_DEPENDENT
 
 #ResultType: TypeAlias = ValidResultType | _INVALID
 
-class Operator(_Eval):
+class Operator(TreeNodeType):
 	# An immutable type
 	ary: int
 	_operands: list[TreeNodeType]
