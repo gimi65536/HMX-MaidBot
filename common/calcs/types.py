@@ -1,9 +1,13 @@
+from collections.abc import Callable
 from sympy import Expr, simplify
 from typing import Any, Generic, TypeVar, Union
 
 # Interface class
 class _Eval:
 	def eval(self, mapping: Mapping['Var', 'LValue']) -> 'Value':
+		raise NotImplementedError
+
+	def apply_var(self, f: Callable[['Var'], Any]):
 		raise NotImplementedError
 
 class Var(_Eval):
@@ -31,6 +35,9 @@ class Var(_Eval):
 			raise ValueError(f'Variable "{self._name}" is undefined')
 
 		return mapping[self]
+
+	def apply_var(self, f):
+		f(self)
 
 	def __eq__(self, other):
 		if not isinstance(other, type(self)):
@@ -63,6 +70,9 @@ class Constant(_Eval, Generic[ConstType]):
 
 	def eval(self, mapping):
 		return self
+
+	def apply_var(self, f):
+		pass
 
 	def __eq__(self, other):
 		# Only True if the type is same
@@ -210,6 +220,10 @@ class Operator(_Eval):
 				result.append(o)
 
 		return result
+
+	def apply_var(self, f):
+		for o in self._operands:
+			o.apply_var(f)
 
 	@staticmethod
 	def extract_constant(*args: Value) -> list[Constant]:
