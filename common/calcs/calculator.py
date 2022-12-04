@@ -3,7 +3,7 @@ from .types import Operator, TreeNodeType
 from collections import Counter
 from enum import Enum
 from itertools import chain
-from typing import Optional
+from typing import cast, Optional
 import re
 
 class Associability(Enum):
@@ -326,7 +326,11 @@ class Parser:
 		def __init__(self, symbol: str, operand: Optional[SyntaxTreeNode] = None):
 			# operand is None in op_stack, not None in total_stack
 			super().__init__(symbol)
-			self.operand = operand
+			self._operand = operand
+
+		@property
+		def operand(self) -> Optional[SyntaxTreeNode]:
+			return self._operand
 
 		def __str__(self):
 			if self.operand is None:
@@ -343,7 +347,7 @@ class Parser:
 	class PrefixOPNode(OpNode):
 		_is_prefix_op = True
 
-	# in op_stack
+	# Not in total_stack
 	class CommaNode(SyntaxTreeNode):
 		_is_comma = True
 
@@ -374,6 +378,8 @@ class Parser:
 		ld['StringNode'] = cls.StringNode
 		ld['InfixOPNode'] = cls.InfixOPNode
 		ld['PrefixOPNode'] = cls.PrefixOPNode
+		ld['CommaNode'] = cls.CommaNode
+		ld['ParenthesesNode'] = cls.ParenthesesNode
 		ld['TupleNode'] = cls.TupleNode
 
 	def __init__(self, prefix_ops: list[OperatorInfo], ptable: list[PrecedenceLayer] | dict[int, PrecedenceLayer]):
@@ -385,27 +391,17 @@ class Parser:
 
 		self._prefix_ops: list[OperatorInfo] = prefix_ops.copy()
 
-		infix_symbols = list(chain.from_iterable(layer.symbols for layer in self._ptable.values()))
-		c = Counter(infix_symbols)
-		if any(c.items(), (lambda _, i: i > 1)):
-			raise ValueError('Two infix operators with the same symbol!')
-
-		# Prefix operator can be overloaded... like functions
-
-		symbols = infix_symbols + [prefix_op.symbol for prefix_op in self._prefix_ops]
-		# Sanitize
-		for symbol in symbols:
-			if self._special_re.search(symbol):
-				raise ValueError(f'Operator cannot includes the following symbols: "{self._special}"')
-
-		symbols.extend(self._special)
-		self._op_symbols = set(symbols)
-		self._lexer = Lexer(symbols)
+		# Build tables
 
 		self._infix_table: dict[str, Operator] = {op_info.symbol: op_info.op for op_info in chain.from_iterable(self._ptable.values())}
 		self._infix_precedence_table: dict[str, int] = {op_info.symbol: precedence for precedence, layer in self._ptable.items() for op_info in layer}
 		self._infix_asso_table: dict[str, Associability] = {op_info.symbol: layer.asso for precedence, layer in self._ptable.items() for op_info in layer}
 
+		for symbol, op in self._infix_table.items():
+			if op.ary != 2:
+				raise ValueError(f'Infix operator {symbol} is {op.ary}-ary, binary is needed for infix operators')
+
+		# Prefix operator can be overloaded... like functions
 		self._prefix_table: dict[str, dict[int, Operator]] = {}
 		for prefix_op in self._prefix_ops:
 			symbol, ary, op = prefix_op.symbol, prefix_op.ary, prefix_ops.op
@@ -416,6 +412,23 @@ class Parser:
 				raise ValueError(f'Two prefix operators with the same symbol and the same ary!')
 
 			self._prefix_table[symbol][ary] = op
+
+		# Build the lexer
+
+		infix_symbols = list(chain.from_iterable(layer.symbols for layer in self._ptable.values()))
+		for symbol, i in Counter(infix_symbols).items():
+			if i > 1:
+				raise ValueError(f'Two infix operators with the same symbol {symbol}')
+
+		symbols = infix_symbols + [prefix_op.symbol for prefix_op in self._prefix_ops]
+		# Sanitize
+		for symbol in symbols:
+			if self._special_re.search(symbol):
+				raise ValueError(f'Operator cannot includes the following symbols: "{self._special}"')
+
+		symbols.extend(self._special)
+		self._op_symbols = set(symbols)
+		self._lexer = Lexer(symbols)
 
 	@staticmethod
 	def pop_prefix(op_stack, total_stack):
@@ -451,6 +464,51 @@ class Parser:
 				else:
 					t = (n1, n2)
 				total_stack.append(TupleNode(t))
+
+	def _to_semantic_tree(self, node: SyntaxTreeNode) -> TreeNodeType:
+		if node.is_str:
+			return StringConstant(node.content)
+		elif node.is_word:
+			...
+		elif node.is_op:
+			node = cast(OpNode, node)
+			operand = node.operand
+			if operand is None:
+				raise ValueError('Unknown error: Operator with no operand')
+
+			if node.is_prefix_op:
+				# prefix
+				ary: int
+				operands_node: tuple[SyntaxTreeNode]
+				if not operand.is_tuple:
+					ary = 1
+					operands_node = (operand, )
+				else:
+					cast(TupleNode, operand)
+					operands_node = operand.content
+					ary = len(operands_node)
+
+				if ary not in self._prefix_table[node.content]:
+					raise ValueError(f'Prefix operator {node.content} is not {ary}-ary')
+
+				operands = [self._to_semantic_tree(subn) for subn in operands_node]
+				op = self._prefix_table[node.content][ary]
+			else:
+				# infix
+				if not operand.is_tuple:
+					raise ValueError('Unknown error: Infix operator has only one operand')
+
+				cast(TupleNode, operand)
+				t = operand.content
+				if len(t) != 2:
+					raise ValueError(f'Unknown error: Infix operator has {len(t)} operand')
+
+				operands = [self._to_semantic_tree(subn) for subn in t]
+				op = self._infix_table[node.content]
+
+			return op(*operands)
+		else:
+			raise ValueError(f'Unknown error: Invalid for semantic trees {type(node)}: {node}')
 
 	def parse(self, s: str) -> TreeNodeType:
 		self._constant_injure(locals())
@@ -511,7 +569,7 @@ class Parser:
 
 							if len(op_stack) == 0:
 								raise ValueError('Comma outsides parentheses')
-							op_stack.pop()
+							op_stack.append(CommaNode(token)) # Put token is not needed
 
 							status = S.WAIT_LITERAL
 						else:
@@ -558,4 +616,9 @@ class Parser:
 		if len(total_stack) != 1:
 			raise ValueError(f'Unknown status of total_stack: {total_stack}')
 
-		... # Connect everything in total_stack
+		node = total_stack[0]
+
+		if node.is_tuple:
+			raise ValueError(f'Topmost element is tuple')
+
+		return self._to_semantic_tree(node)
