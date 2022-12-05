@@ -42,10 +42,10 @@ class PrecedenceLayer:
 		self._asso = asso
 
 		c = Counter(o.symbol for o in ops)
-		if any(c.items(), (lambda _, i: i > 1)):
+		if any(i > 1 for i in c.values()):
 			raise ValueError('Two operators with the same symbol in the same precedence!')
-		if any(ops, (lambda o: o.ary != 2)):
-			raise ValueError(f'All operators should be {ary}-ary')
+		if any(o.ary != 2 for o in ops):
+			raise ValueError(f'All operators should be binary')
 
 		self._ops = ops
 		self._op_table: dict[str, type[Operator]] = {o.symbol: o.op for o in ops}
@@ -136,11 +136,9 @@ class Lexer:
 	SQ = "'"
 	DQ = '"'
 	BACKSLASH = '\\'
-	space = re.compile(r'\s', re.ASCII)
-	ascii_word = re.compile(r'\w', re.ASCII)
-	check_word = re.compile(r'(?:\w|[^\x00-\x7f])+', re.ASCII)
-	ascii_symbols = re.compile(r'\W+', re.ASCII)
-	ascii_words = re.compile(r'\w+', re.ASCII)
+	space_re = re.compile(r'\s', re.ASCII)
+	word_re = re.compile(r'\w|[^\x00-\x7f]', re.ASCII)
+	symbol_re = None
 
 	class S(Enum):
 		SYMBOL = 0
@@ -148,31 +146,76 @@ class Lexer:
 		INQUOTE = 2
 		INQUOTE_ESCAPE = 3
 
-	@classmethod
-	def _constant_injure(cls, ld):
-		ld['SQ'] = cls.SQ
-		ld['DQ'] = cls.DQ
-		ld['BACKSLASH'] = cls.BACKSLASH
+	def _constant_injure(self, ld):
+		ld['SQ'] = self.SQ
+		ld['DQ'] = self.DQ
+		ld['BACKSLASH'] = self.BACKSLASH
 
-		ld['S'] = cls.S
+		ld['S'] = self.S
 
-	def __init__(self, symbols: list[str]):
+	def full_word(self, s: str) -> bool:
+		# Pre-condition: no spaces
+		if self.word_re is not None:
+			return all(self.word_re.match(c) for c in s)
+		else:
+			return not any(self.symbol_re.match(c) for c in s)
+
+	def full_symbol(self, s: str) -> bool:
+		# Pre-condition: no spaces
+		if self.symbol_re is not None:
+			return all(self.symbol_re.match(c) for c in s)
+		else:
+			return not any(self.word_re.match(c) for c in s)
+
+	def __init__(self, op_symbols: list[str], word_re = None, symbol_re = None, space_re = None, **kwargs):
+		# Lexer constant check
+		SQ = kwargs.pop('SQ', Lexer.SQ)
+		DQ = kwargs.pop('DQ', Lexer.DQ)
+		BACKSLASH = kwargs.pop('BACKSLASH', Lexer.BACKSLASH)
+
+		if len(SQ) != 1:
+			raise ValueError('Length of SQ should be 1')
+		if len(DQ) != 1:
+			raise ValueError('Length of DQ should be 1')
+		if len(BACKSLASH) != 1:
+			raise ValueError('Length of BACKSLASH should be 1')
+
+		self.SQ = SQ
+		self.DQ = DQ
+		self.BACKSLASH = BACKSLASH
+
+		# All special constants for the lexer
+		self.SPECIAL = SQ + DQ # Backslash is "not special enough"
+		self._special_re = re.compile(f'[{re.escape(self.SPECIAL)}]')
+
+		if word_re is None and symbol_re is None:
+			self.word_re = Lexer.word_re
+			self.symbol_re = None
+		elif word_re is not None:
+			self.word_re = word_re
+			self.symbol_re = None
+		else:
+			self.word_re = None
+			self.symbol_re = symbol_re
+
+		if space_re is not None:
+			self.space_re = space_re
+
 		ss = []
-		for symbol in symbols:
+		for symbol in op_symbols:
 			if len(symbol) == 0:
 				raise ValueError('Empty operators are disallowed')
-			if symbol.isascii():
-				if self.ascii_symbols.fullmatch(symbol):
-					ss.append(symbol)
-				elif not self.ascii_words.fullmatch(symbol):
-					raise ValueError('Operators mixed with symbols and words are disallowed')
-			else:
-				for c in symbol:
-					if c.isascii() or self.ascii_words.match(c):
-						continue
+			if self.space_re.find(symbol):
+				raise ValueError('Operators with space characters are disallowed')
+			if self._special_re.search(symbol):
+				raise ValueError(f'Operator cannot includes the following symbols (reserved for the lexer): "{self.SPECIAL}"')
 
-					raise ValueError('Operators mixed with symbols and words are disallowed')
+			if self.full_word(symbol):
+				continue
+			elif self.full_symbol(symbol):
 				ss.append(symbol)
+			else:
+				raise ValueError('Operators mixed with symbols and words are disallowed')
 
 		self._parse_symbols = set(ss)
 		self._find_cache: dict[str, Optional[list[Token]]] = {'': []}
@@ -196,9 +239,12 @@ class Lexer:
 		self._find_cache[symbols] = None
 		return None
 
-	@classmethod
-	def is_word(cls, c):
-		return not c.isascii() or cls.ascii_word.match(c)
+	def is_word(self, c):
+		# Pre-condition: no spaces
+		if self.word_re is not None:
+			return self.word_re.match(c)
+		else:
+			return self.symbol_re.match(c)
 
 	def tokenize(self, s: str) -> list[Token]:
 		self._constant_injure(locals())
@@ -214,7 +260,7 @@ class Lexer:
 					status = S.INQUOTE
 				case S.INQUOTE:
 					if quote == c:
-						first.append(keep)
+						first.append(keep + c)
 						keep = ''
 						status = S.SYMBOL
 					elif quote == BACKSLASH:
@@ -222,7 +268,11 @@ class Lexer:
 					else:
 						keep += c
 				case S.SYMBOL:
-					if self.is_word(c):
+					if self.space_re.match(c):
+						if len(keep) > 0:
+							first.append(keep)
+						keep = ''
+					elif self.is_word(c):
 						if len(keep) > 0:
 							first.append(keep)
 						keep = c
@@ -230,32 +280,24 @@ class Lexer:
 					elif c == SQ or c == DQ:
 						if len(keep) > 0:
 							first.append(keep)
-						keep = ''
+						keep = c
 						quote = c
 						status = INQUOTE
-					elif c == BACKSLASH:
-						raise ValueError('Parse error with the backslash outside quotes')
-					elif self.space.match(c):
-						if len(keep) > 0:
-							first.append(keep)
-						keep = ''
 					else:
 						keep += c
 				case S.WORD:
-					if self.is_word(c):
+					if self.space_re.match(c):
+						if len(keep) > 0:
+							first.append(keep)
+						keep = ''
+					elif self.is_word(c):
 						keep += c
 					elif c == SQ or c == DQ:
 						if len(keep) > 0:
 							first.append(keep)
-						keep = ''
+						keep = c
 						quote = c
 						status = INQUOTE
-					elif c == BACKSLASH:
-						raise ValueError('Parse error with the backslash outside quotes')
-					elif self.space.match(c):
-						if len(keep) > 0:
-							first.append(keep)
-						keep = ''
 					else:
 						if len(keep) > 0:
 							first.append(keep)
@@ -270,10 +312,10 @@ class Lexer:
 		result: list[Token] = []
 		for token in first:
 			if token.startswith(SQ) or token.startswith(DQ):
-				result.append(StringToken(token))
+				result.append(StringToken(token[1:-1]))
 				continue
 
-			if self.check_word.fullmatch(token):
+			if self.full_word(token):
 				result.append(WordToken(token))
 				continue
 
@@ -288,13 +330,6 @@ class Parser:
 	LP = '('
 	RP = ')'
 	COMMA = ',' # Acts like a binary infix operator with the lowest prec and left-asso
-	SQ = Lexer.SQ
-	DQ = Lexer.DQ
-	QUOTE = SQ + DQ
-	BACKSLASH = Lexer.BACKSLASH
-	SPECIAL = LP + RP + COMMA + QUOTE + BACKSLASH
-	_special = SPECIAL
-	_special_re = re.compile(f'[{re.escape(_special)}]')
 
 	class S(Enum):
 		INITIAL = 0
@@ -392,28 +427,45 @@ class Parser:
 		def __init__(self, t: tuple[SyntaxTreeNode, ...]):
 			self.content = t
 
-	@classmethod
-	def _constant_injure(cls, ld):
-		ld['LP'] = cls.LP
-		ld['RP'] = cls.RP
-		ld['COMMA'] = cls.COMMA
-		ld['SQ'] = cls.SQ
-		ld['DQ'] = cls.DQ
-		ld['QUOTE'] = cls.QUOTE
-		ld['BACKSLASH'] = cls.BACKSLASH
+	def _constant_injure(self, ld):
+		ld['LP'] = self.LP
+		ld['RP'] = self.RP
+		ld['COMMA'] = self.COMMA
 
-		ld['SPECIAL'] = cls.SPECIAL
-		ld['S'] = cls.S
+		ld['SPECIAL'] = self.SPECIAL
+		ld['S'] = self.S
 
-		ld['WordNode'] = cls.WordNode
-		ld['StringNode'] = cls.StringNode
-		ld['InfixOPNode'] = cls.InfixOPNode
-		ld['PrefixOPNode'] = cls.PrefixOPNode
-		ld['CommaNode'] = cls.CommaNode
-		ld['ParenthesesNode'] = cls.ParenthesesNode
-		ld['TupleNode'] = cls.TupleNode
+		ld['WordNode'] = self.WordNode
+		ld['StringNode'] = self.StringNode
+		ld['InfixOPNode'] = self.InfixOPNode
+		ld['PrefixOPNode'] = self.PrefixOPNode
+		ld['CommaNode'] = self.CommaNode
+		ld['ParenthesesNode'] = self.ParenthesesNode
+		ld['TupleNode'] = self.TupleNode
 
-	def __init__(self, prefix_ops: list[OperatorInfo], ptable: list[PrecedenceLayer] | dict[int, PrecedenceLayer]):
+	def __init__(self, prefix_ops: list[OperatorInfo], ptable: list[PrecedenceLayer] | dict[int, PrecedenceLayer], **kwargs):
+		# Parser constant check
+		LP = kwargs.pop('LP', Parser.LP)
+		RP = kwargs.pop('RP', Parser.RP)
+		COMMA = kwargs.pop('COMMA', Parser.COMMA)
+
+		if len(LP) != 1:
+			raise ValueError('Length of LP should be 1')
+		if len(RP) != 1:
+			raise ValueError('Length of RP should be 1')
+		if len(COMMA) != 1:
+			raise ValueError('Length of COMMA should be 1')
+
+		self.LP = LP
+		self.RP = RP
+		self.COMMA = COMMA
+
+		# All special constants for the parser
+		self.SPECIAL = LP + RP + COMMA
+		self._special_re = re.compile(f'[{re.escape(self.SPECIAL)}]')
+
+		# Pass arguments
+
 		self._ptable: dict[int, PrecedenceLayer]
 		if isinstance(ptable, list):
 			self._ptable = {i: p for i, p in enumerate(ptable)}
@@ -455,11 +507,11 @@ class Parser:
 		# Sanitize
 		for symbol in symbols:
 			if self._special_re.search(symbol):
-				raise ValueError(f'Operator cannot includes the following symbols: "{self._special}"')
+				raise ValueError(f'Operator cannot includes the following symbols (reserved for the parser): "{self.SPECIAL}"')
 
-		symbols.extend(self._special)
+		symbols.extend(self.SPECIAL)
 		self._op_symbols = set(symbols)
-		self._lexer = Lexer(symbols)
+		self._lexer = Lexer(symbols, **kwargs)
 
 	@staticmethod
 	def pop_prefix(op_stack, total_stack):
