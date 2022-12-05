@@ -330,6 +330,7 @@ class Parser:
 	LP = '('
 	RP = ')'
 	COMMA = ',' # Acts like a binary infix operator with the lowest prec and left-asso
+	imagine_re = re.compile(r'^(.*)[IiJj]$')
 
 	class S(Enum):
 		INITIAL = 0
@@ -561,9 +562,9 @@ class Parser:
 		# pi...
 
 		# Imaginary number parse
-		if s.endswith('i'):
+		if (m := self.imagine_re.fullmatch(s)):
 			# May be imaginary number
-			r = s[:-1]
+			r = m.group(1)
 			if len(r) == 0:
 				return NumberConstant(I)
 			try:
