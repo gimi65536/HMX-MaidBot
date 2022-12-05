@@ -2,14 +2,15 @@ FROM python:3.11
 
 WORKDIR /tmp
 
+COPY common ./common
+RUN cd ./common && pip install .
+RUN rm -rf ./common
+
 COPY discord/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY discord .
-COPY common ./common
-
-ENV PYTHONPATH "${PYTHONPATH}:/tmp/common"
 
 # If given, the image will be treated as in production
 ARG production
