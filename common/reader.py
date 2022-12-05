@@ -1,6 +1,6 @@
 import json
 from collections.abc import Sequence
-from importlib_resources import as_file
+from importlib.resources import as_file
 from pathlib import PurePath
 from typing import TextIO
 

@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable, Iterator
-from importlib_resources import files
+from importlib.resources import files
 from more_itertools import repeat_last, SequenceView
 from reader import load
 from simple_parsers.string_argument_parser import StringArgumentParser

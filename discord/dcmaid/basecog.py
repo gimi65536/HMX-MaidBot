@@ -4,7 +4,7 @@ before a cog class is created.
 '''
 import discord
 from collections.abc import Sequence
-from importlib_resources import files
+from importlib.resources import files
 from reader import load
 from typing import Optional
 from .basebot import Bot
