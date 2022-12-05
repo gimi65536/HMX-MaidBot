@@ -105,7 +105,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 			raise TypeError('Only accepts basebot.Bot type.')
 
 		for cog_name in self.__depend_cogs__:
-			if bot.get(cog_name) is None:
+			if bot.get_cog(cog_name) is None:
 				raise DependentCogNotLoaded(self.__depend_cogs__, cog_name)
 
 		super().__init__()
