@@ -3,8 +3,9 @@ from .types import Constant, Operator, TreeNodeType, Var
 from collections import Counter
 from enum import Enum
 from itertools import chain
-from sympy import I, Rational
+from sympy import Float, I, Rational
 from typing import cast, Optional
+import random
 import re
 
 class Associability(Enum):
@@ -331,6 +332,7 @@ class Parser:
 	RP = ')'
 	COMMA = ',' # Acts like a binary infix operator with the lowest prec and left-asso
 	imagine_re = re.compile(r'^(.*)[IiJj]$')
+	wildcard_re = re.compile(r'_')
 
 	class S(Enum):
 		INITIAL = 0
@@ -552,11 +554,16 @@ class Parser:
 				total_stack.append(TupleNode(t))
 
 	def str_to_const(self, s: str) -> Constant | Var:
+		# This method applies on a token in the parser
+		# That is, only a "word" should appear here
 		# Boolean parse
 		if s == 'TRUE' or s == 'True' or s == 'true':
 			return BooleanConstant(True)
 		elif s == 'FALSE' or s == 'False' or s == 'false':
 			return BooleanConstant(False)
+
+		if self.wildcard_re.fullmatch(s):
+			return NumberConstant(Float(random.random()))
 
 		# Math constant parse
 		# pi...
