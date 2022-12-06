@@ -563,7 +563,7 @@ class Parser:
 			return BooleanConstant(False)
 
 		if self.wildcard_re.fullmatch(s):
-			return NumberConstant(Float(random.random()))
+			return NumberConstant.create_dummy(Float(random.random()))
 
 		# Math constant parse
 		# pi...

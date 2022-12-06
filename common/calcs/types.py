@@ -60,6 +60,14 @@ class Constant(TreeNodeType, Generic[ConstType]):
 	_is_bool: bool
 	_is_str: bool
 
+	_is_dummy: bool = False
+
+	@classmethod
+	def create_dummy(cls, dummy_value: ConstType):
+		result = cls(dummy_value)
+		result._is_dummy = True
+		return result
+
 	def __init__(self, value: ConstType):
 		self._value = value
 
@@ -103,6 +111,10 @@ class Constant(TreeNodeType, Generic[ConstType]):
 	@property
 	def is_str(self) -> bool:
 		return self._is_str
+
+	@property
+	def is_dummy(self) -> bool:
+		return self._is_dummy
 
 class NumberConstant(Constant[Expr]):
 	_is_number = True
