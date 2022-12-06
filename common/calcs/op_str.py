@@ -1,5 +1,6 @@
 from .types import *
 from .ops import BinaryOperator, TernaryOperator, UnaryOperator
+from .utils import *
 from sympy import E, Expr, I, S
 from sympy.parsing.sympy_parser import (
 	parse_expr,
@@ -37,6 +38,9 @@ Specially, we make "i/j/J" be I, "e" be E, and 'Pi/PI' be pi.
 
 Note that an equality check with variables "x = 5" CANNOT be written
 in "x == 5" because "'x' is a variable, not a constant 5."
+We solve this problem by inputing all the information of the contexts
+(mapping) to local_dict.
+This solution hurts performance when the contexts are extremely large.
 
 Also, of course, the function using SymPy parser cannot handle any
 assignment clauses to interfere the variable spaces.
@@ -57,7 +61,17 @@ class SymParseOperator(UnaryOperator):
 			return BooleanConstant(False)
 
 		try:
-			expr = parse_expr(s, transformations = (
+			mapping = mapping_flatten(mapping)
+			local_dict = {
+				'i': I,
+				'j': I,
+				'J': I,
+				'e': E,
+				'Pi': S.Pi,
+				'PI': S.Pi,
+			}
+			local_dict.update({v.name: lv.content for v, lv in mapping.items()})
+			n = parse_expr(s, transformations = (
 				auto_symbol,
 				repeated_decimals,
 				auto_number,
@@ -66,32 +80,7 @@ class SymParseOperator(UnaryOperator):
 				implicit_multiplication,
 				convert_equals_signs,
 				rationalize
-			), local_dict = {
-				'i': I,
-				'j': I,
-				'J': I,
-				'e': E,
-				'Pi': S.Pi,
-				'PI': S.Pi,
-			})
-			free_symbols = expr.free_symbols
-			subs = {}
-			for symbol in free_symbols:
-				v = Var(symbol)
-				if v not in mapping:
-					raise ValueError(f'The expression includes undefined variable {symbol}')
-				c = mapping.get(v).content
-				if c.is_str:
-					raise ValueError(f'The variable {symbol} is a string')
-				if c.is_bool:
-					if c.value:
-						subs[symbol] = S.true
-					else:
-						subs[symbol] = S.false
-				else:
-					subs[symbol] = c.value
-
-			n = expr.subs(subs)
+			), local_dict = local_dict)
 
 			if isinstance(n, Expr):
 				return NumberConstant(n)
