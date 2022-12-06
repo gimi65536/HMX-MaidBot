@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from sympy import Expr, simplify
 from typing import Any, Generic, TypeVar, Union
 
