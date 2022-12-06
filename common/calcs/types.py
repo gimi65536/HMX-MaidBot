@@ -180,9 +180,10 @@ class StringConstant(Constant[str]):
 				return self
 
 class LValue:
-	def __init__(self, var: Var, const: Constant):
+	def __init__(self, var: Var, const: Constant, bookkeeping: dict['LValue', tuple[Constant, Constant]] = {}):
 		self._var = var
 		self._content = const
+		self._bookkeeping = bookkeeping
 
 	@property
 	def var(self):
@@ -194,7 +195,18 @@ class LValue:
 
 	@content.setter
 	def content(self, const: Constant):
-		self._content = const
+		if self in self._bookkeeping:
+			self._content = const
+			ori = self._bookkeeping[self][0]
+			if ori == const:
+				self._bookkeeping.pop(self)
+			else:
+				self._bookkeeping[self] = (ori, const)
+		else:
+			ori = self._content
+			if ori != const:
+				self._content = const
+				self._bookkeeping[self] = (ori, const)
 
 Value: TypeAlias = Constant | LValue
 
