@@ -50,3 +50,45 @@ class ImagOperator(UnaryOperator):
 			raise ValueError('Only apply to numbers')
 
 		return NumberConstant(sympy.im(a.value))
+
+# ++x
+class IncrementOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.eval_operands(mapping)[0]
+		if isinstance(a, LValue) and a.content.is_number:
+			a.content = NumberConstant(a.content.value + 1)
+			return a
+
+		raise ValueError('Only apply to number variables')
+
+# x++
+class PostIncrementOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.eval_operands(mapping)[0]
+		if isinstance(a, LValue) and a.content.is_number:
+			result = a.content
+			a.content = NumberConstant(result.value + 1)
+			return result.without_dummy()
+
+		raise ValueError('Only apply to number variables')
+
+# --x
+class DecrementOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.eval_operands(mapping)[0]
+		if isinstance(a, LValue) and a.content.is_number:
+			a.content = NumberConstant(a.content.value - 1)
+			return a
+
+		raise ValueError('Only apply to number variables')
+
+# x--
+class PostIncrementOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.eval_operands(mapping)[0]
+		if isinstance(a, LValue) and a.content.is_number:
+			result = a.content
+			a.content = NumberConstant(result.value - 1)
+			return result.without_dummy()
+
+		raise ValueError('Only apply to number variables')
