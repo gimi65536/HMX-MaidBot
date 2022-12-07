@@ -169,14 +169,14 @@ class ConcatOperator(BinaryOperator):
 
 class IfThenElseOperator(TernaryOperator):
 	def eval(self, mapping):
-		a, b, c = self.eval_operands(mapping)
+		a = self._operands[0].eval(mapping)
 		a = a.extract_constant(a)[0]
 		a = a.to_bool()
 
 		if a.value:
-			return b
+			return self._operands[1].eval(mapping)
 		else:
-			return c
+			return self._operands[2].eval(mapping)
 
 class EqualOperator(BinaryOperator):
 	def eval(self, mapping):
