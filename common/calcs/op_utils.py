@@ -31,3 +31,12 @@ class PassOperator(BinaryOperator):
 		a, b = self.extract_constant(*self.eval_operands(mapping))
 
 		return b
+
+class ReverseOperator(UnaryOperator):
+	def eval(self, mapping):
+		operand = self._operands[0]
+		if isinstance(operand, Operator):
+			node = type(operand)(*reversed(operand._operands))
+			return node.eval(mapping)
+
+		raise ValueError('Can only applied to an operation node')
