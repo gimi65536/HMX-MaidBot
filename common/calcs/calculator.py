@@ -99,6 +99,9 @@ default_prefix_ops = [
 	OperatorInfo(NotOperator, '~'),
 ]
 
+default_postfix_ops = [
+]
+
 class Token:
 	_is_string_const: bool
 	_is_symbol: bool
@@ -350,6 +353,7 @@ class Parser:
 		_is_str: bool = False
 		_is_op: bool = False
 		_is_prefix_op: bool = False
+		_is_postfix_op: bool = False
 		_is_comma: bool = False
 		_is_parentheses: bool = False
 		_is_tuple: bool = False
@@ -369,6 +373,10 @@ class Parser:
 		@property
 		def is_prefix_op(self):
 			return self._is_prefix_op
+
+		@property
+		def is_postfix_op(self):
+			return self._is_postfix_op
 
 		@property
 		def is_comma(self):
@@ -416,6 +424,10 @@ class Parser:
 	class PrefixOPNode(OpNode):
 		_is_prefix_op = True
 
+	# Not in op_stack
+	class PostfixOPNode(OpNode):
+		_is_postfix_op = True
+
 	# Not in total_stack
 	class CommaNode(SyntaxTreeNode):
 		_is_comma = True
@@ -446,7 +458,11 @@ class Parser:
 		ld['ParenthesesNode'] = self.ParenthesesNode
 		ld['TupleNode'] = self.TupleNode
 
-	def __init__(self, prefix_ops: list[OperatorInfo], ptable: list[PrecedenceLayer] | dict[int, PrecedenceLayer], **kwargs):
+	def __init__(self,
+		prefix_ops: list[OperatorInfo],
+		postfix_ops: list[OperatorInfo],
+		ptable: list[PrecedenceLayer] | dict[int, PrecedenceLayer], **kwargs):
+
 		# Parser constant check
 		LP = kwargs.pop('LP', Parser.LP)
 		RP = kwargs.pop('RP', Parser.RP)
@@ -476,9 +492,11 @@ class Parser:
 			self._ptable = ptable.copy()
 
 		self._prefix_ops: list[OperatorInfo] = prefix_ops.copy()
+		self._postfix_ops: list[OperatorInfo] = postfix_ops.copy()
 
 		# Build tables
 
+		# Infix operator
 		self._infix_table: dict[str, Operator] = {op_info.symbol: op_info.op for op_info in chain.from_iterable(self._ptable.values())}
 		self._infix_precedence_table: dict[str, int] = {op_info.symbol: precedence for precedence, layer in self._ptable.items() for op_info in layer}
 		self._infix_asso_table: dict[str, Associability] = {op_info.symbol: layer.asso for precedence, layer in self._ptable.items() for op_info in layer}
@@ -490,7 +508,7 @@ class Parser:
 		# Prefix operator can be overloaded... like functions
 		self._prefix_table: dict[str, dict[int, Operator]] = {}
 		for prefix_op in self._prefix_ops:
-			symbol, ary, op = prefix_op.symbol, prefix_op.ary, prefix_ops.op
+			symbol, ary, op = prefix_op.symbol, prefix_op.ary, prefix_op.op
 			if symbol not in self._prefix_table:
 				self._prefix_table[symbol] = {}
 
@@ -499,14 +517,27 @@ class Parser:
 
 			self._prefix_table[symbol][ary] = op
 
-		# Build the lexer
+		# Postfix operator can be overloaded...
+		# However I don't think it is a good idea to have a prefix operator other than unary.
+		self._postfix_table: dict[str, dict[int, Operator]] = {}
+		for postfix_op in self._postfix_ops:
+			symbol, ary, op = postfix_op.symbol, postfix_op.ary, postfix_op.op
+			if symbol in self._infix_table:
+				raise ValueError(f'The symbol {symbol} is both infix and postfix, which is disallowed')
+			if symbol not in self._postfix_table:
+				self._postfix_table[symbol] = {}
+
+			if ary in self._postfix_table[symbol]:
+				raise ValueError(f'Two postfix operators with the same symbol and the same ary!')
+
+			self._postfix_table[symbol][ary] = op
 
 		infix_symbols = list(chain.from_iterable(layer.symbols for layer in self._ptable.values()))
 		for symbol, i in Counter(infix_symbols).items():
 			if i > 1:
 				raise ValueError(f'Two infix operators with the same symbol {symbol}')
 
-		symbols = infix_symbols + [prefix_op.symbol for prefix_op in self._prefix_ops]
+		symbols = infix_symbols + [prefix_op.symbol for prefix_op in self._prefix_ops] + [postfix_op.symbol for postfix_op in self._postfix_ops]
 		# Sanitize
 		for symbol in symbols:
 			if self._special_re.search(symbol):
@@ -514,6 +545,8 @@ class Parser:
 
 		symbols.extend(self.SPECIAL)
 		self._op_symbols = set(symbols)
+
+		# Build the lexer
 		self._lexer = Lexer(symbols, **kwargs)
 
 	@staticmethod
@@ -532,6 +565,11 @@ class Parser:
 				raise ValueError(f'Prefix operator {op_node.content} encountered no operand')
 			node = total_stack.pop()
 			total_stack.append(PrefixOPNode(op_node.content, node))
+		elif op_node.is_postfix_op:
+			if len(total_stack) == 0:
+				raise ValueError(f'Postfix operator {op_node.content} encountered no operand')
+			node = total_stack.pop()
+			total_stack.append(PostfixOPNode(op_node.content, node))
 		else:
 			# Infix (op or comma)
 			if len(total_stack) < 2:
@@ -603,7 +641,7 @@ class Parser:
 			if operand is None:
 				raise ValueError('Unknown error: Operator with no operand')
 
-			if node.is_prefix_op:
+			if node.is_prefix_op or node.is_postfix_op:
 				# prefix
 				ary: int
 				operands_node: tuple[SyntaxTreeNode, ...]
@@ -615,11 +653,18 @@ class Parser:
 					operands_node = operand.content
 					ary = len(operands_node)
 
-				if ary not in self._prefix_table[node.content]:
-					raise ValueError(f'Prefix operator {node.content} is not {ary}-ary')
+				if node.is_prefix_op:
+					if ary not in self._prefix_table[node.content]:
+						raise ValueError(f'Prefix operator {node.content} is not {ary}-ary')
 
-				operands = [self._to_semantic_tree(subn) for subn in operands_node]
-				op = self._prefix_table[node.content][ary]
+					operands = [self._to_semantic_tree(subn) for subn in operands_node]
+					op = self._prefix_table[node.content][ary]
+				else:
+					if ary not in self._postfix_table[node.content]:
+						raise ValueError(f'Postfix operator {node.content} is not {ary}-ary')
+
+					operands = [self._to_semantic_tree(subn) for subn in operands_node]
+					op = self._postfix_table[node.content][ary]
 			else:
 				# infix
 				if not operand.is_tuple:
@@ -727,7 +772,7 @@ class Parser:
 						else:
 							raise ValueError(f'Unwanted special token {token} when waiting for infix operators')
 					elif is_op:
-						# Allow infix operator
+						# Allow infix and postfix operator
 						if token.string in self._infix_table:
 							precedence = self._infix_precedence_table[token.string]
 							asso = self._infix_asso_table[token.string]
@@ -750,6 +795,8 @@ class Parser:
 
 							op_stack.append(InfixOPNode(token.string))
 							status = S.WAIT_LITERAL
+						elif token.string in self._postfix_table:
+							self._merge(PostfixOPNode(token.string), total_stack)
 						else:
 							raise ValueError(f'Unwanted prefix operator {token} when waiting for infix operators')
 					else:
