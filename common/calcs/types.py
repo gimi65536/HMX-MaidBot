@@ -68,6 +68,12 @@ class Constant(TreeNodeType, Generic[ConstType]):
 		result._is_dummy = True
 		return result
 
+	def without_dummy(self):
+		if not self.is_dummy:
+			return self
+
+		return type(self)(self._value)
+
 	def __init__(self, value: ConstType):
 		self._value = value
 
