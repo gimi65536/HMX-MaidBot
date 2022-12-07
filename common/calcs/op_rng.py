@@ -1,9 +1,13 @@
 from .types import *
-from .ops import BinaryOperator, TernaryOperator, UnaryOperator
+from .ops import BinaryOperator, NullaryOperator, TernaryOperator, UnaryOperator
 from sympy import ceiling, Float, floor, Integer, Number
 from sympy.core.random import rng, random_complex_number
 
-class RandomOperator(UnaryOperator):
+class RandomOperator(NullaryOperator):
+	def eval(self, mapping):
+		return NumberConstant(Float(rng.random()))
+
+class RandomWithSeedOperator(UnaryOperator):
 	def eval(self, mapping):
 		a = self.extract_constant(*self.eval_operands(mapping))[0]
 
