@@ -91,7 +91,7 @@ class SymParseOperator(UnaryOperator):
 		except:
 			pass
 
-		return a
+		return a.without_dummy()
 
 class StrictSymParseOperator(ParseOperator):
 	def eval(self, mapping):

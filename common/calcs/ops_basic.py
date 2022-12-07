@@ -84,7 +84,7 @@ class PositiveOperator(UnaryOperator):
 		a = self.extract_constant(*self.eval_operands(mapping))[0]
 
 		if a.is_number:
-			return a
+			return a.without_dummy()
 		else:
 			raise ValueError('Only positive number')
 

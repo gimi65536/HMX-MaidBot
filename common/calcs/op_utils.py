@@ -28,9 +28,7 @@ class PrintOperator(UnaryOperator):
 
 class PassOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
-
-		return b
+		return self.eval_operands(mapping)[1]
 
 class ReverseOperator(UnaryOperator):
 	def eval(self, mapping):
@@ -40,3 +38,15 @@ class ReverseOperator(UnaryOperator):
 			return node.eval(mapping)
 
 		raise ValueError('Can only applied to an operation node')
+
+class DummizeOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.extract_constant(*self.eval_operands(mapping))[0]
+
+		return a.with_dummy()
+
+class DedummizeOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.extract_constant(*self.eval_operands(mapping))[0]
+
+		return a.without_dummy()
