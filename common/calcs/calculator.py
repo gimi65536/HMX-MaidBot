@@ -140,9 +140,10 @@ class Lexer:
 	SQ = "'"
 	DQ = '"'
 	BACKSLASH = '\\'
-	space_re = re.compile(r'\s', re.ASCII)
-	word_re = re.compile(r'\w|[^\x00-\x7f]', re.ASCII)
-	symbol_re = None
+	space_re: re.Pattern[str] = re.compile(r'\s', re.ASCII)
+	word_re: Optional[re.Pattern[str]] = re.compile(r'\w|[^\x00-\x7f]', re.ASCII)
+	symbol_re: Optional[re.Pattern[str]] = None
+	assert not(word_re is None and symbol_re is None)
 
 	class S(Enum):
 		SYMBOL = 0
@@ -171,7 +172,12 @@ class Lexer:
 		else:
 			return not any(self.word_re.match(c) for c in s)
 
-	def __init__(self, op_symbols: list[str], word_re = None, symbol_re = None, space_re = None, **kwargs):
+	def __init__(self,
+		op_symbols: list[str],
+		word_re: Optional[re.Pattern[str]] = None,
+		symbol_re: Optional[re.Pattern[str]] = None,
+		space_re: Optional[re.Pattern[str]] = None, **kwargs):
+
 		# Lexer constant check
 		SQ = kwargs.pop('SQ', Lexer.SQ)
 		DQ = kwargs.pop('DQ', Lexer.DQ)
@@ -334,8 +340,8 @@ class Parser:
 	LP = '('
 	RP = ')'
 	COMMA = ',' # Acts like a binary infix operator with the lowest prec and left-asso
-	imagine_re = re.compile(r'^(.*)[IiJj]$')
-	wildcard_re = re.compile(r'_')
+	imagine_re: re.Pattern[str] = re.compile(r'^(.*)[IiJj]$')
+	wildcard_re: re.Pattern[str] = re.compile(r'_')
 
 	class S(Enum):
 		INITIAL = 0
@@ -461,7 +467,9 @@ class Parser:
 	def __init__(self,
 		prefix_ops: list[OperatorInfo],
 		postfix_ops: list[OperatorInfo],
-		ptable: list[PrecedenceLayer] | dict[int, PrecedenceLayer], **kwargs):
+		ptable: list[PrecedenceLayer] | dict[int, PrecedenceLayer],
+		imagine_re: Optional[re.Pattern[str]] = None,
+		wildcard_re: Optional[re.Pattern[str]] = None, **kwargs):
 
 		# Parser constant check
 		LP = kwargs.pop('LP', Parser.LP)
@@ -493,6 +501,11 @@ class Parser:
 
 		self._prefix_ops: list[OperatorInfo] = prefix_ops.copy()
 		self._postfix_ops: list[OperatorInfo] = postfix_ops.copy()
+
+		if imagine_re is not None:
+			self.imagine_re = imagine_re
+		if wildcard_re is not None:
+			self.wildcard_re = wildcard_re
 
 		# Build tables
 
