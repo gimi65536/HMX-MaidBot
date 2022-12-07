@@ -606,7 +606,7 @@ class Parser:
 			if node.is_prefix_op:
 				# prefix
 				ary: int
-				operands_node: tuple[SyntaxTreeNode]
+				operands_node: tuple[SyntaxTreeNode, ...]
 				if not operand.is_tuple:
 					ary = 1
 					operands_node = (operand, )
