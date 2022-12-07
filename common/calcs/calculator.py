@@ -668,9 +668,30 @@ class Parser:
 					elif is_special:
 						if token.string == LP:
 							op_stack.append(ParenthesesNode(token.string)) # Put token is not needed
-							status = S.WAIT_LITERAL
-						else:
-							raise ValueError(f'Unwanted special token {token} when waiting for literals')
+							status = S.WAIT_INFIX
+							continue
+						elif token.string == RP:
+							# To accept "()" or "(... , )"
+							if len(op_stack) > 0:
+								peek = op_stack[-1]
+								if peek.is_parentheses:
+									# ()
+									op_stack.pop()
+									total_stack.append(TupleNode(()))
+									status = S.WAIT_INFIX
+									continue
+								elif peek.is_comma:
+									# (... , )
+									op_stack.pop()
+									# Because COMMA will pop all other operators in parentheses,
+									# the next element in the stack should be the parenthesis.
+									if len(op_stack) == 0 or not op_stack[-1].is_parentheses:
+										raise ValueError('Unknown error: Not merged expressions before comma')
+									op_stack.pop()
+									status = S.WAIT_INFIX
+									continue
+
+						raise ValueError(f'Unwanted special token {token} when waiting for literals')
 					elif is_op:
 						# Allow prefix operator
 						if token.string in self._prefix_table:
