@@ -55,7 +55,7 @@ class ImagOperator(UnaryOperator):
 class IncrementOperator(UnaryOperator):
 	def eval(self, mapping):
 		a = self.eval_operands(mapping)[0]
-		if isinstance(a, LValue) and a.content.is_number:
+		if a.is_lvalue and a.content.is_number:
 			a.content = NumberConstant(a.content.value + 1)
 			return a
 
@@ -65,7 +65,7 @@ class IncrementOperator(UnaryOperator):
 class PostIncrementOperator(UnaryOperator):
 	def eval(self, mapping):
 		a = self.eval_operands(mapping)[0]
-		if isinstance(a, LValue) and a.content.is_number:
+		if a.is_lvalue and a.content.is_number:
 			result = a.content
 			a.content = NumberConstant(result.value + 1)
 			return result.without_dummy()
@@ -76,7 +76,7 @@ class PostIncrementOperator(UnaryOperator):
 class DecrementOperator(UnaryOperator):
 	def eval(self, mapping):
 		a = self.eval_operands(mapping)[0]
-		if isinstance(a, LValue) and a.content.is_number:
+		if a.is_lvalue and a.content.is_number:
 			a.content = NumberConstant(a.content.value - 1)
 			return a
 
@@ -86,7 +86,7 @@ class DecrementOperator(UnaryOperator):
 class PostIncrementOperator(UnaryOperator):
 	def eval(self, mapping):
 		a = self.eval_operands(mapping)[0]
-		if isinstance(a, LValue) and a.content.is_number:
+		if a.is_lvalue and a.content.is_number:
 			result = a.content
 			a.content = NumberConstant(result.value - 1)
 			return result.without_dummy()

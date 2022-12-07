@@ -9,6 +9,18 @@ class TreeNodeType:
 	def apply_var(self, f: Callable[['Var'], Any]):
 		raise NotImplementedError
 
+class Value:
+	_is_constant: bool = False
+	_is_lvalue: bool = False
+
+	@property
+	def is_constant(self):
+		return self._is_constant
+
+	@property
+	def is_lvalue(self):
+		return self._is_lvalue
+
 class Var(TreeNodeType):
 	_name: str
 	_scope: Any # None for "weird" or "naive" variables
@@ -55,12 +67,14 @@ class Var(TreeNodeType):
 
 ConstType = TypeVar('ConstType', Expr, bool, str)
 
-class Constant(TreeNodeType, Generic[ConstType]):
+class Constant(TreeNodeType, Value, Generic[ConstType]):
 	_is_number: bool
 	_is_bool: bool
 	_is_str: bool
 
 	_is_dummy: bool = False
+
+	_is_constant = True
 
 	@classmethod
 	def create_dummy(cls, dummy_value: ConstType):
@@ -191,7 +205,9 @@ class StringConstant(Constant[str]):
 			case StringConstant:
 				return self
 
-class LValue:
+class LValue(Value):
+	_is_lvalue = True
+
 	def __init__(self, var: Var, const: Constant, bookkeeping: dict['LValue', tuple[Constant, Constant]] = {}):
 		self._var = var
 		self._content = const
@@ -219,8 +235,6 @@ class LValue:
 			if ori != const:
 				self._content = const
 				self._bookkeeping[self] = (ori, const)
-
-Value: TypeAlias = Constant | LValue
 
 class Operator(TreeNodeType):
 	# An immutable type
