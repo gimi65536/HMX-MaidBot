@@ -1,5 +1,6 @@
 from .types import *
 from .ops import BinaryOperator, TernaryOperator, UnaryOperator
+from typing import Optional, overload
 
 class PlusOperator(BinaryOperator):
 	def eval(self, mapping):
@@ -108,57 +109,107 @@ class NotOperator(UnaryOperator):
 			return BooleanConstant(not a.value)
 
 class _BinaryBoolOperator(BinaryOperator):
+	_shortcut: bool = True
+
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		if self._shortcut:
+			a = self.extract_constant(self._operands[0].eval(mapping))[0].to_bool()
+			result = self._logic(a.value)
 
-		a, b = a.to_bool(), b.to_bool()
-		return BooleanConstant(self._logic(a.value, b.value))
+			if result is not None:
+				return BooleanConstant(result)
 
-	def _logic(self, a: bool, b: bool, /):
+			b = self.extract_constant(self._operands[1].eval(mapping))[0].to_bool()
+			return BooleanConstant(self._logic(a.value, b.value))
+		else:
+			a, b = self.extract_constant(*self.eval_operands(mapping))
+
+			a, b = a.to_bool(), b.to_bool()
+			return BooleanConstant(self._logic(a.value, b.value))
+
+	@overload
+	def _logic(self, a: bool, /) -> Optional[bool]:
+		...
+
+	@overload
+	def _logic(self, a: bool, b: bool, /) -> bool:
+		...
+
+	def _logic(self, a, b = None, /):
 		raise NotImplementedError
 
+	@staticmethod
+	def _not(b: Optional[bool]):
+		return None if b is None else (not b)
+
 class AndOperator(_BinaryBoolOperator):
-	def _logic(self, a, b, /):
-		return a and b
+	def _logic(self, a, b = None, /):
+		if a:
+			return b
+		else:
+			return False
 
 class OrOperator(_BinaryBoolOperator):
-	def _logic(self, a, b, /):
-		return a or b
+	def _logic(self, a, b = None, /):
+		if not a:
+			return b
+		else:
+			return True
 
 class ImplOperator(_BinaryBoolOperator):
-	def _logic(self, a, b, /):
-		return not a or b
+	def _logic(self, a, b = None, /):
+		if a:
+			return b
+		else:
+			return True
 
 class NimplOperator(_BinaryBoolOperator):
-	def _logic(self, a, b, /):
-		return a and not b
+	def _logic(self, a, b = None, /):
+		if a:
+			return self._not(b)
+		else:
+			return False
 
 class XorOperator(_BinaryBoolOperator):
-	def _logic(self, a, b, /):
+	_shortcut = False
+	def _logic(self, a, b = None, /):
 		return a != b
 
 class IffOperator(_BinaryBoolOperator):
-	def _logic(self, a, b, /):
+	_shortcut = False
+	def _logic(self, a, b = None, /):
 		return a == b
 
 class NandOperator(_BinaryBoolOperator):
 	def _logic(self, a, b, /):
-		return not(a and b)
+		if a:
+			return self._not(b)
+		else:
+			return True
 
 class NorOperator(_BinaryBoolOperator):
 	def _logic(self, a, b, /):
-		return not(a or b)
+		if not a:
+			return self._not(b)
+		else:
+			return False
 
 # The below two operators are rarely used and I will not use them
 # Of course these two ops are here to invoke for free
 
 class ConverseImplOperator(_BinaryBoolOperator):
 	def _logic(self, a, b, /):
-		return a or not b
+		if not a:
+			return self._not(b)
+		else:
+			return True
 
 class ConverseNimplOperator(_BinaryBoolOperator):
 	def _logic(self, a, b, /):
-		return not a and b
+		if not a:
+			return b
+		else:
+			return False
 
 class ConcatOperator(BinaryOperator):
 	def eval(self, mapping):
