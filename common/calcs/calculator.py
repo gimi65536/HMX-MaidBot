@@ -63,46 +63,6 @@ class PrecedenceLayer:
 	def symbols(self) -> list[str]:
 		return [o.symbol for o in self._ops]
 
-default_precedence_table = {
-	10: PrecedenceLayer(Associability.LEFT,
-		OperatorInfo(MultipleOperator, '*'),
-		OperatorInfo(DivideOperator, '/'),
-		OperatorInfo(IntegerDivideOperator, '//'),
-		OperatorInfo(ModuloOperator, '%'),
-	),
-	20: PrecedenceLayer(Associability.LEFT,
-		OperatorInfo(PlusOperator, '+'),
-		OperatorInfo(MinusOperator, '-'),
-		OperatorInfo(ConcatOperator, '.'),
-	),
-	70: PrecedenceLayer(Associability.LEFT,
-		OperatorInfo(LessOperator, '<'),
-		OperatorInfo(LeOperator, '<='),
-		OperatorInfo(GreaterOperator, '>'),
-		OperatorInfo(GeOperator, '>='),
-	),
-	80: PrecedenceLayer(Associability.LEFT,
-		OperatorInfo(EqualOperator, '=='),
-		OperatorInfo(NonequalOperator, '!='),
-	),
-	110: PrecedenceLayer(Associability.RIGHT,
-		OperatorInfo(AndOperator, '&&'),
-		OperatorInfo(OrOperator, '||'),
-		OperatorInfo(ImplOperator, '->'),
-		OperatorInfo(XorOperator, '^'),
-		OperatorInfo(IffOperator, '<->'),
-	),
-}
-
-default_prefix_ops = [
-	OperatorInfo(PositiveOperator, '+'),
-	OperatorInfo(NegativeOperator, '-'),
-	OperatorInfo(NotOperator, '~'),
-]
-
-default_postfix_ops = [
-]
-
 class Token:
 	_is_string_const: bool
 	_is_symbol: bool
