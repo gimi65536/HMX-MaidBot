@@ -107,9 +107,11 @@ class Lexer:
 	SQ = "'"
 	DQ = '"'
 	BACKSLASH = '\\'
+	DECIMAL_POINT = '.'
 	space_re: re.Pattern[str] = re.compile(r'\s', re.ASCII)
 	word_re: Optional[re.Pattern[str]] = re.compile(r'\w|[^\x00-\x7f]', re.ASCII)
 	symbol_re: Optional[re.Pattern[str]] = None
+	decimal_integer_re: re.Pattern[str] = re.compile(r'\d+') # Subset of word_re
 	assert not(word_re is None and symbol_re is None)
 
 	class S(Enum):
@@ -224,15 +226,35 @@ class Lexer:
 		else:
 			return self.symbol_re.match(c)
 
+	def _put_decimal(self, first: list[tuple[int, str]], keep: str, keep_from: int):
+		l = keep.split(self.DECIMAL_POINT)
+		if len(l) != 2:
+			raise TokenizeError(token.position, 'Unknown error with decimal point')
+		if self.decimal_integer_re.fullmatch(l[1]):
+			a, b = l
+			a = a.lstrip('0')
+			if len(a) == 0:
+				a = '0'
+			first.append((keep_from, f'{a}{self.DECIMAL_POINT}{b}'))
+		else:
+			i = keep_from
+			first.append((i, l[0]))
+			i += len(self.DECIMAL_POINT)
+			first.append((i, self.DECIMAL_POINT))
+			i += 1
+			first.append((i, l[1]))
+
 	def tokenize(self, s: str) -> list[Token]:
 		SQ = self.SQ
 		DQ = self.DQ
 		BACKSLASH = self.BACKSLASH
+		DECIMAL_POINT = self.DECIMAL_POINT
 		S = self.S
 
 		# First step split
 		first: list[tuple[int, str]] = []
 		status = S.SYMBOL
+		add_decimal_point = False # If True, keep is not empty
 		keep, keep_from, quote = '', 0, DQ
 		for i, c in enumerate(s, 1):
 			match status:
@@ -275,7 +297,10 @@ class Lexer:
 						keep += c
 				case S.WORD:
 					if self.space_re.match(c):
-						if len(keep) > 0:
+						if add_decimal_point:
+							self._put_decimal(first, keep, keep_from)
+							add_decimal_point = False
+						elif len(keep) > 0:
 							first.append((keep_from, keep))
 						keep = ''
 					elif self.is_word(c):
@@ -283,14 +308,37 @@ class Lexer:
 							keep_from = i
 						keep += c
 					elif c == SQ or c == DQ:
-						if len(keep) > 0:
+						if add_decimal_point:
+							self._put_decimal(first, keep, keep_from)
+							add_decimal_point = False
+						elif len(keep) > 0:
 							first.append((keep_from, keep))
 						keep = c
 						keep_from = i
 						quote = c
 						status = S.INQUOTE
+					elif c == DECIMAL_POINT:
+						if self.decimal_integer_re.fullmatch(keep):
+							# Decimal point
+							keep += c
+							add_decimal_point = True
+						elif add_decimal_point:
+							self._put_decimal(first, keep, keep_from)
+							add_decimal_point = False
+							keep = c
+							keep_from = i
+							status = S.SYMBOL
+						else:
+							if len(keep) > 0:
+								first.append((keep_from, keep))
+							keep = c
+							keep_from = i
+							status = S.SYMBOL
 					else:
-						if len(keep) > 0:
+						if add_decimal_point:
+							self._put_decimal(first, keep, keep_from)
+							add_decimal_point = False
+						elif len(keep) > 0:
 							first.append((keep_from, keep))
 						keep = c
 						keep_from = i
@@ -298,7 +346,11 @@ class Lexer:
 
 		if status == S.INQUOTE or status == S.INQUOTE_ESCAPE:
 			raise TokenizeError(keep_from, 'Quote not closed')
-		if len(keep) > 0:
+
+		if add_decimal_point:
+			self._put_decimal(first, keep, keep_from)
+			add_decimal_point = False
+		elif len(keep) > 0:
 			first.append((keep_from, keep))
 
 		result: list[Token] = []
@@ -311,9 +363,13 @@ class Lexer:
 				result.append(WordToken(token, i))
 				continue
 
+			if len(l := token.split(DECIMAL_POINT)) == 2 and self.decimal_integer_re.fullmatch(l[0]) and self.decimal_integer_re.fullmatch(l[1]):
+				result.append(WordToken(token, i))
+				continue
+
 			find = self._find(token, i)
 			if find is None:
-				raise TokenizeError(token.position, f'Tokenize error with the symbols "{token}"')
+				raise TokenizeError(i, f'Tokenize error with the symbols "{token}"')
 			result.extend(find)
 
 		return result
