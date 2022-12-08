@@ -334,6 +334,7 @@ class Parser:
 		_is_str: bool = False
 		_is_op: bool = False
 		_is_prefix_op: bool = False
+		_is_infix_op: bool = False
 		_is_postfix_op: bool = False
 		_is_comma: bool = False
 		_is_parentheses: bool = False
@@ -354,6 +355,10 @@ class Parser:
 		@property
 		def is_prefix_op(self):
 			return self._is_prefix_op
+
+		@property
+		def is_infix_op(self):
+			return self._is_infix_op
 
 		@property
 		def is_postfix_op(self):
@@ -400,7 +405,7 @@ class Parser:
 				return f'({self.operand}){super().__str__()}'
 
 	class InfixOPNode(OpNode):
-		_is_prefix_op = False
+		_is_infix_op = True
 
 	class PrefixOPNode(OpNode):
 		_is_prefix_op = True
@@ -769,7 +774,7 @@ class Parser:
 
 							while len(op_stack) > 0:
 								node = op_stack[-1]
-								if node.is_prefix_op:
+								if node.is_infix_op:
 									node_prec = self._infix_precedence_table[node.content]
 									if precedence < node_prec:
 										# Put the new operator
