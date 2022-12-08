@@ -98,6 +98,12 @@ class Constant(TreeNodeType, Value, Generic[ConstType]):
 	def __init__(self, value: ConstType):
 		self._value = value
 
+	def __str__(self):
+		return str(self._value)
+
+	def __repr__(self):
+		return repr(self._value)
+
 	@property
 	def value(self) -> ConstType:
 		return self._value
@@ -266,10 +272,10 @@ class Operator(TreeNodeType):
 
 	@staticmethod
 	def extract_constant(value: Value) -> Constant:
-		if isinstance(v, Constant):
-			return v
+		if isinstance(value, Constant):
+			return value
 		else:
-			return v.content
+			return value.content
 
 	@classmethod
 	def extract_constants(cls, *args: Value) -> list[Constant]:

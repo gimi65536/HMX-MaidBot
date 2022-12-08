@@ -118,13 +118,6 @@ class Lexer:
 		INQUOTE = 2
 		INQUOTE_ESCAPE = 3
 
-	def _constant_injure(self, ld):
-		ld['SQ'] = self.SQ
-		ld['DQ'] = self.DQ
-		ld['BACKSLASH'] = self.BACKSLASH
-
-		ld['S'] = self.S
-
 	def full_word(self, s: str) -> bool:
 		# Pre-condition: no spaces
 		if self.word_re is not None:
@@ -224,7 +217,11 @@ class Lexer:
 			return self.symbol_re.match(c)
 
 	def tokenize(self, s: str) -> list[Token]:
-		self._constant_injure(locals())
+		SQ = self.SQ
+		DQ = self.DQ
+		BACKSLASH = self.BACKSLASH
+		S = self.S
+
 		# First step split
 		first: list[tuple[int, str]] = []
 		status = S.SYMBOL
@@ -263,7 +260,7 @@ class Lexer:
 						keep = c
 						keep_from = i
 						quote = c
-						status = INQUOTE
+						status = S.INQUOTE
 					else:
 						if len(keep) == 0:
 							keep_from = i
@@ -283,7 +280,7 @@ class Lexer:
 						keep = c
 						keep_from = i
 						quote = c
-						status = INQUOTE
+						status = S.INQUOTE
 					else:
 						if len(keep) > 0:
 							first.append((keep_from, keep))
@@ -291,7 +288,7 @@ class Lexer:
 						keep_from = i
 						status = S.SYMBOL
 
-		if status == INQUOTE or status == INQUOTE_ESCAPE:
+		if status == S.INQUOTE or status == S.INQUOTE_ESCAPE:
 			raise TokenizeError(keep_from, 'Quote not closed')
 		if len(keep) > 0:
 			first.append((keep_from, keep))
@@ -423,25 +420,9 @@ class Parser:
 	class TupleNode(SyntaxTreeNode):
 		_is_tuple = True
 
-		def __init__(self, position: int, t: tuple[SyntaxTreeNode, ...]):
-			self.position = position
+		def __init__(self, t: tuple[SyntaxTreeNode, ...], position: int):
 			self.content = t
-
-	def _constant_injure(self, ld):
-		ld['LP'] = self.LP
-		ld['RP'] = self.RP
-		ld['COMMA'] = self.COMMA
-
-		ld['SPECIAL'] = self.SPECIAL
-		ld['S'] = self.S
-
-		ld['WordNode'] = self.WordNode
-		ld['StringNode'] = self.StringNode
-		ld['InfixOPNode'] = self.InfixOPNode
-		ld['PrefixOPNode'] = self.PrefixOPNode
-		ld['CommaNode'] = self.CommaNode
-		ld['ParenthesesNode'] = self.ParenthesesNode
-		ld['TupleNode'] = self.TupleNode
+			self.position = position
 
 	def __init__(self,
 		prefix_ops: list[OperatorInfo],
@@ -546,10 +527,13 @@ class Parser:
 		while len(op_stack) > 0 and op_stack[-1]._is_prefix_op:
 			total_stack.append(op_stack.pop())
 
-	def _merge(op_node, total_stack):
-		self._constant_injure(locals())
+	def _merge(self, op_node, total_stack):
+		InfixOPNode = self.InfixOPNode
+		PrefixOPNode = self.PrefixOPNode
+		PostfixOPNode = self.PostfixOPNode
+		TupleNode = self.TupleNode
 
-		if not op_node.is_op or not op_node.is_comma:
+		if not op_node.is_op and not op_node.is_comma:
 			raise ParseError(op_node.position, 'Unknown error caused by non-operators in op_stack')
 
 		if op_node.is_prefix_op:
@@ -572,7 +556,7 @@ class Parser:
 			n2, n1 = total_stack.pop(), total_stack.pop()
 
 			if op_node.is_op:
-				total_stack.append(InfixOPNode(op_node.content, n1.position, TupleNode((n1, n2))))
+				total_stack.append(InfixOPNode(op_node.content, n1.position, TupleNode((n1, n2), n1.position)))
 			else:
 				if n2.is_tuple:
 					raise ParseError(n2.position, f'Invalid nested tuple {n2.content}')
@@ -581,7 +565,7 @@ class Parser:
 					t = n1.content + (n2, )
 				else:
 					t = (n1, n2)
-				total_stack.append(TupleNode(n1.position, t))
+				total_stack.append(TupleNode(t, n1.position))
 
 	def str_to_const(self, s: str) -> Constant | Var:
 		# This method applies on a token in the parser
@@ -621,7 +605,8 @@ class Parser:
 		return Var(s)
 
 	def _to_semantic_tree(self, node: SyntaxTreeNode) -> TreeNodeType:
-		self._constant_injure(locals())
+		OpNode = self.OpNode
+		TupleNode = self.TupleNode
 
 		if node.is_str:
 			return StringConstant(node.content)
@@ -675,7 +660,19 @@ class Parser:
 			raise ParseError(node.position, f'Unknown error: Invalid for semantic trees {type(node)}: {node}')
 
 	def parse(self, s: str) -> TreeNodeType:
-		self._constant_injure(locals())
+		LP= self.LP
+		RP = self.RP
+		COMMA = self.COMMA
+		SPECIAL = self.SPECIAL
+		S = self.S
+		WordNode = self.WordNode
+		StringNode = self.StringNode
+		InfixOPNode = self.InfixOPNode
+		PrefixOPNode = self.PrefixOPNode
+		PostfixOPNode = self.PostfixOPNode
+		CommaNode = self.CommaNode
+		ParenthesesNode = self.ParenthesesNode
+		TupleNode = self.TupleNode
 
 		tokens = self._lexer.tokenize(s)
 		status = S.INITIAL
@@ -685,7 +682,7 @@ class Parser:
 		for token in tokens:
 			# Symbol: should be an operator
 			# Word: may be operator or others...
-			is_op, is_special = False, False
+			is_op, is_special, is_str = False, False, False
 			if token.is_symbol:
 				is_op = True
 				if token.string in SPECIAL:
@@ -699,12 +696,12 @@ class Parser:
 			match status:
 				case S.INITIAL | S.WAIT_LITERAL:
 					if is_str:
-						total_stack.append(StringNode(token.position, token.string))
+						total_stack.append(StringNode(token.string, token.position))
 						self.pop_prefix(op_stack, total_stack)
 						status = S.WAIT_INFIX
 					elif is_special:
 						if token.string == LP:
-							op_stack.append(ParenthesesNode(token.position, token.string)) # Put token is not needed
+							op_stack.append(ParenthesesNode(token.string, token.position)) # Put token is not needed
 							status = S.WAIT_INFIX
 							continue
 						elif token.string == RP:
@@ -714,7 +711,7 @@ class Parser:
 								if peek.is_parentheses:
 									# ()
 									lp_node = op_stack.pop()
-									total_stack.append(TupleNode(lp_node.position, ()))
+									total_stack.append(TupleNode((), lp_node.position))
 									status = S.WAIT_INFIX
 									continue
 								elif peek.is_comma:
@@ -732,12 +729,12 @@ class Parser:
 					elif is_op:
 						# Allow prefix operator
 						if token.string in self._prefix_table:
-							op_stack.append(PrefixOPNode(token.position, token.string))
+							op_stack.append(PrefixOPNode(token.string, token.position))
 							status = S.WAIT_LITERAL
 						else:
 							raise ParseError(token.position, f'Unwanted infix operator {token} when waiting for literals')
 					else:
-						total_stack.append(WordNode(token.position, token.string))
+						total_stack.append(WordNode(token.string, token.position))
 						self.pop_prefix(op_stack, total_stack)
 						status = S.WAIT_INFIX
 				case S.WAIT_INFIX:
@@ -760,7 +757,7 @@ class Parser:
 
 							if len(op_stack) == 0:
 								raise ParseError(token.position, 'Comma outsides parentheses')
-							op_stack.append(CommaNode(token.position, token.string)) # Put token is not needed
+							op_stack.append(CommaNode(token.string, token.position)) # Put token is not needed
 
 							status = S.WAIT_LITERAL
 						else:
@@ -787,10 +784,10 @@ class Parser:
 								else:
 									break
 
-							op_stack.append(InfixOPNode(token.position, token.string))
+							op_stack.append(InfixOPNode(token.string, token.position))
 							status = S.WAIT_LITERAL
 						elif token.string in self._postfix_table:
-							self._merge(PostfixOPNode(token.position, token.string), total_stack)
+							self._merge(PostfixOPNode(token.string, token.position), total_stack)
 						else:
 							raise ParseError(token.position, f'Unwanted prefix operator {token} when waiting for infix operators')
 					else:
