@@ -706,7 +706,7 @@ class Parser:
 					elif is_special:
 						if token.string == LP:
 							op_stack.append(ParenthesesNode(token.string, token.position)) # Put token is not needed
-							status = S.WAIT_INFIX
+							status = S.WAIT_LITERAL
 							continue
 						elif token.string == RP:
 							# To accept "()" or "(... , )"
