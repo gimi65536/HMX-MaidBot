@@ -30,6 +30,12 @@ class Var(TreeNodeType):
 		self._name = name
 		self._scope = scope
 
+	def __repr__(self):
+		if self._scope is None:
+			return self._name
+		else:
+			return f'<{self._scope}.{self._name}>'
+
 	@property
 	def name(self) -> str:
 		return self._name
@@ -216,6 +222,9 @@ class LValue(Value):
 		self._var = var
 		self._content = const
 		self._bookkeeping = bookkeeping
+
+	def __repr__(self):
+		return f'<{self._var}: {self._content}>'
 
 	@property
 	def var(self):
