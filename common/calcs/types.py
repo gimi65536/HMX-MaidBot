@@ -157,25 +157,24 @@ class NumberConstant(Constant[Expr]):
 		super().__init__(value)
 
 	def cast(self, to_type):
-		match to_type:
-			case NumberConstant:
-				return self
-			case BooleanConstant:
-				return BooleanConstant(bool(self._value))
-			case StringConstant:
-				s, v = '', self._value
-				if v.is_integer:
-					s = str(int(v))
-				elif v.is_Number:
-					# Rational, Float
-					s = str(v.evalf())
-				elif v.is_irrational:
-					# Other real numbers
-					s = str(v.evalf())
-				else:
-					s = str(complex(v))
+		if to_type is NumberConstant:
+			return self
+		elif to_type is BooleanConstant:
+			return BooleanConstant(bool(self._value))
+		elif to_type is StringConstant:
+			s, v = '', self._value
+			if v.is_integer:
+				s = str(int(v))
+			elif v.is_Number:
+				# Rational, Float
+				s = str(v.evalf())
+			elif v.is_irrational:
+				# Other real numbers
+				s = str(v.evalf())
+			else:
+				s = str(complex(v))
 
-				return StringConstant(s)
+			return StringConstant(s)
 
 class BooleanConstant(Constant[bool]):
 	_is_number = False
@@ -183,13 +182,12 @@ class BooleanConstant(Constant[bool]):
 	_is_str = False
 
 	def cast(self, to_type):
-		match to_type:
-			case NumberConstant:
-				return NumberConstant(int(self._value))
-			case BooleanConstant:
-				return self
-			case StringConstant:
-				return StringConstant(str(self._value))
+		if to_type is NumberConstant:
+			return NumberConstant(int(self._value))
+		elif to_type is BooleanConstant:
+			return self
+		elif to_type is StringConstant:
+			return StringConstant(str(self._value))
 
 class StringConstant(Constant[str]):
 	_is_number = False
@@ -197,13 +195,12 @@ class StringConstant(Constant[str]):
 	_is_str = True
 
 	def cast(self, to_type):
-		match to_type:
-			case NumberConstant:
-				return NumberConstant(simplify(self._value))
-			case BooleanConstant:
-				return BooleanConstant(bool(self._value))
-			case StringConstant:
-				return self
+		if to_type is NumberConstant:
+			return NumberConstant(simplify(self._value))
+		elif to_type is BooleanConstant:
+			return BooleanConstant(bool(self._value))
+		elif to_type is StringConstant:
+			return self
 
 class LValue(Value):
 	_is_lvalue = True
