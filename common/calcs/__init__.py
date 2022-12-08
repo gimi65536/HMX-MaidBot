@@ -16,6 +16,9 @@ from . import (
 
 def give_basic_parser():
 	default_precedence_table = {
+		9: PrecedenceLayer(Associability.RIGHT,
+			OperatorInfo(op_num.PowOperator, '**')
+		),
 		10: PrecedenceLayer(Associability.LEFT,
 			OperatorInfo(op_basic.MultipleOperator, '*'),
 			OperatorInfo(op_basic.DivideOperator, '/'),
@@ -53,6 +56,7 @@ def give_basic_parser():
 	]
 
 	default_postfix_ops = [
+		OperatorInfo(op_num.FactorialOperator, '!')
 	]
 
 	return Parser(default_prefix_ops, default_postfix_ops, default_precedence_table)
