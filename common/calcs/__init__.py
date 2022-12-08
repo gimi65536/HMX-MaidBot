@@ -53,10 +53,11 @@ def give_basic_parser():
 		OperatorInfo(op_basic.PositiveOperator, '+'),
 		OperatorInfo(op_basic.NegativeOperator, '-'),
 		OperatorInfo(op_basic.NotOperator, '~'),
+		#OperatorInfo(op_utils.DecimalPointOperator, '.')
 	]
 
 	default_postfix_ops = [
-		OperatorInfo(op_num.FactorialOperator, '!')
+		OperatorInfo(op_num.FactorialOperator, '!'),
 	]
 
 	return Parser(default_prefix_ops, default_postfix_ops, default_precedence_table)

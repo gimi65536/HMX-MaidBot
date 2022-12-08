@@ -1,6 +1,7 @@
 from .types import *
 from .exceptions import UserDefinedError
 from .ops import BinaryOperator, TernaryOperator, UnaryOperator
+from sympy.parsing.sympy_parser import auto_number, parse_expr, rationalize
 
 class ToStringOperator(UnaryOperator):
 	# Just do str() to the contents of the constants
@@ -76,3 +77,12 @@ class RaiseOperator(UnaryOperator):
 		a = self.eval_and_extract_constant(0, mapping)
 
 		raise UserDefinedError(str(a))
+
+class DecimalPointOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.eval_and_extract_constant(0, mapping)
+		n = a.value
+		if a.is_number and n.is_integer and n.is_nonnegative:
+			return NumberConstant(parse_expr(f'0.{n}', transformations = (auto_number, rationalize)))
+
+		raise ValueError('Only apply to nonnegative integers')
