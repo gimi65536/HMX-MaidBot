@@ -522,10 +522,9 @@ class Parser:
 		# Build the lexer
 		self._lexer = Lexer(symbols, **kwargs)
 
-	@staticmethod
-	def pop_prefix(op_stack, total_stack):
+	def _pop_prefix(self, op_stack, total_stack):
 		while len(op_stack) > 0 and op_stack[-1]._is_prefix_op:
-			total_stack.append(op_stack.pop())
+			self._merge(op_stack.pop(), total_stack)
 
 	def _merge(self, op_node, total_stack):
 		InfixOPNode = self.InfixOPNode
@@ -697,7 +696,7 @@ class Parser:
 				case S.INITIAL | S.WAIT_LITERAL:
 					if is_str:
 						total_stack.append(StringNode(token.string, token.position))
-						self.pop_prefix(op_stack, total_stack)
+						self._pop_prefix(op_stack, total_stack)
 						status = S.WAIT_INFIX
 					elif is_special:
 						if token.string == LP:
@@ -735,7 +734,7 @@ class Parser:
 							raise ParseError(token.position, f'Unwanted infix operator {token} when waiting for literals')
 					else:
 						total_stack.append(WordNode(token.string, token.position))
-						self.pop_prefix(op_stack, total_stack)
+						self._pop_prefix(op_stack, total_stack)
 						status = S.WAIT_INFIX
 				case S.WAIT_INFIX:
 					if is_special:
