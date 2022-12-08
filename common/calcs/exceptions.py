@@ -1,0 +1,2 @@
+class UserDefinedError(Exception):
+	pass

@@ -1,4 +1,5 @@
 from .types import *
+from .exceptions import UserDefinedError
 from .ops import BinaryOperator, TernaryOperator, UnaryOperator
 
 class ToStringOperator(UnaryOperator):
@@ -50,3 +51,28 @@ class DedummizeOperator(UnaryOperator):
 		a = self.eval_and_extract_constant(0, mapping)
 
 		return a.without_dummy()
+
+class RepeatTwiceOperator(UnaryOperator):
+	def eval(self, mapping):
+		self.eval_operand(0, mapping)
+		a = self.eval_operand(0, mapping)
+
+		return a
+
+class RepeatTimesOperator(BinaryOperator):
+	def eval(self, mapping):
+		a = self.eval_and_extract_constant(0, mapping)
+		n = a.value
+		if a.is_number and n.is_integer and n.is_positive:
+			for _ in range(n):
+				b = self.eval_operand(1, mapping)
+
+			return b
+
+		raise ValueError('Only accept positive integer as the first argument')
+
+class RaiseOperator(UnaryOperator):
+	def eval(self, mapping):
+		a = self.eval_and_extract_constant(0, mapping)
+
+		raise UserDefinedError(str(a))
