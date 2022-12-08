@@ -17,7 +17,7 @@ class Associability(Enum):
 
 class OperatorInfo:
 	@classmethod
-	def factory(cls, op: type[Operator], *symbols: str) -> list['OperatorInfo']:
+	def factory(cls, op: type[Operator], *symbols: str) -> list[OperatorInfo]:
 		return [cls(op, symbol) for symbol in symbols]
 
 	def __init__(self, op: type[Operator], symbol: str):

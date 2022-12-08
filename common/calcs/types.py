@@ -1,12 +1,13 @@
+from __future__ import annotations
 from collections.abc import Callable, Mapping
 from sympy import Expr, simplify
 from typing import Any, Generic, TypeVar, Union
 
 class TreeNodeType:
-	def eval(self, mapping: Mapping['Var', 'LValue']) -> 'Value':
+	def eval(self, mapping: Mapping[Var, LValue]) -> Value:
 		raise NotImplementedError
 
-	def apply_var(self, f: Callable[['Var'], Any]):
+	def apply_var(self, f: Callable[[Var], Any]):
 		raise NotImplementedError
 
 class Value:
@@ -114,16 +115,16 @@ class Constant(TreeNodeType, Value, Generic[ConstType]):
 
 		return self._value == other._value
 
-	def cast(self, to_type: type['Constant']):
+	def cast(self, to_type: type[Constant]):
 		raise NotImplementedError
 
-	def to_number(self) -> 'NumberConstant':
+	def to_number(self) -> NumberConstant:
 		return self.cast(NumberConstant)
 
-	def to_bool(self) -> 'BooleanConstant':
+	def to_bool(self) -> BooleanConstant:
 		return self.cast(BooleanConstant)
 
-	def to_str(self) -> 'StringConstant':
+	def to_str(self) -> StringConstant:
 		return self.cast(StringConstant)
 
 	@property
@@ -205,7 +206,7 @@ class StringConstant(Constant[str]):
 class LValue(Value):
 	_is_lvalue = True
 
-	def __init__(self, var: Var, const: Constant, bookkeeping: dict['LValue', tuple[Constant, Constant]] = {}):
+	def __init__(self, var: Var, const: Constant, bookkeeping: dict[LValue, tuple[Constant, Constant]] = {}):
 		self._var = var
 		self._content = const
 		self._bookkeeping = bookkeeping
