@@ -493,11 +493,11 @@ class Parser:
 		COMMA = kwargs.pop('COMMA', Parser.COMMA)
 
 		if len(LP) != 1:
-			raise ValueError('Length of LP should be 1')
+			raise ParserConstructError('Length of LP should be 1')
 		if len(RP) != 1:
-			raise ValueError('Length of RP should be 1')
+			raise ParserConstructError('Length of RP should be 1')
 		if len(COMMA) != 1:
-			raise ValueError('Length of COMMA should be 1')
+			raise ParserConstructError('Length of COMMA should be 1')
 
 		self.LP = LP
 		self.RP = RP
@@ -532,7 +532,7 @@ class Parser:
 
 		for symbol, op in self._infix_table.items():
 			if op.ary != 2:
-				raise ValueError(f'Infix operator {symbol} is {op.ary}-ary, binary is needed for infix operators')
+				raise ParserConstructError(f'Infix operator {symbol} is {op.ary}-ary, binary is needed for infix operators')
 
 		# Prefix operator can be overloaded... like functions
 		self._prefix_table: dict[str, dict[int, Operator]] = {}
@@ -542,7 +542,7 @@ class Parser:
 				self._prefix_table[symbol] = {}
 
 			if ary in self._prefix_table[symbol]:
-				raise ValueError(f'Two prefix operators with the same symbol and the same ary!')
+				raise ParserConstructError(f'Two prefix operators with the same symbol and the same ary!')
 
 			self._prefix_table[symbol][ary] = op
 
@@ -552,25 +552,25 @@ class Parser:
 		for postfix_op in self._postfix_ops:
 			symbol, ary, op = postfix_op.symbol, postfix_op.ary, postfix_op.op
 			if symbol in self._infix_table:
-				raise ValueError(f'The symbol {symbol} is both infix and postfix, which is disallowed')
+				raise ParserConstructError(f'The symbol {symbol} is both infix and postfix, which is disallowed')
 			if symbol not in self._postfix_table:
 				self._postfix_table[symbol] = {}
 
 			if ary in self._postfix_table[symbol]:
-				raise ValueError(f'Two postfix operators with the same symbol and the same ary!')
+				raise ParserConstructError(f'Two postfix operators with the same symbol and the same ary!')
 
 			self._postfix_table[symbol][ary] = op
 
 		infix_symbols = list(chain.from_iterable(layer.symbols for layer in self._ptable.values()))
 		for symbol, i in Counter(infix_symbols).items():
 			if i > 1:
-				raise ValueError(f'Two infix operators with the same symbol {symbol}')
+				raise ParserConstructError(f'Two infix operators with the same symbol {symbol}')
 
 		symbols = infix_symbols + [prefix_op.symbol for prefix_op in self._prefix_ops] + [postfix_op.symbol for postfix_op in self._postfix_ops]
 		# Sanitize
 		for symbol in symbols:
 			if self._special_re.search(symbol):
-				raise ValueError(f'Operator cannot includes the following symbols (reserved for the parser): "{self.SPECIAL}"')
+				raise ParserConstructError(f'Operator cannot includes the following symbols (reserved for the parser): "{self.SPECIAL}"')
 
 		symbols.extend(self.SPECIAL)
 		self._op_symbols = set(symbols)
