@@ -188,9 +188,9 @@ class Lexer:
 				raise LexerConstructError('Operators mixed with symbols and words are disallowed')
 
 		self._parse_symbols = set(ss)
-		self._find_cache: dict[str, Optional[list[Token]]] = {'': []}
+		self._find_cache: dict[str, Optional[list[SymbolToken]]] = {'': []}
 
-	def _find(self, symbols: str, position: int) -> Optional[list[Token]]:
+	def _find_without_position(self, symbols: str) -> Optional[list[SymbolToken]]:
 		if symbols in self._find_cache:
 			return self._find_cache[symbols]
 
@@ -199,15 +199,23 @@ class Lexer:
 			if prefix not in self._parse_symbols:
 				continue
 
-			sub_result = self._find(symbols[i:], position + i)
+			sub_result = self._find_without_position(symbols[i:])
 			if sub_result is None:
 				continue
+			sub_result = [SymbolToken(token.string, token.position + i) for token in sub_result]
 
-			self._find_cache[symbols] = [SymbolToken(prefix, position), *sub_result]
+			self._find_cache[symbols] = [SymbolToken(prefix, 0), *sub_result]
 			return self._find_cache[symbols]
 
 		self._find_cache[symbols] = None
 		return None
+
+	def _find(self, symbols: str, position: int) -> Optional[list[SymbolToken]]:
+		result = self._find_without_position(symbols)
+		if result is None:
+			return None
+
+		return [SymbolToken(token.string, token.position + position) for token in result]
 
 	def is_word(self, c):
 		# Pre-condition: no spaces
