@@ -1,3 +1,4 @@
+from .exceptions import *
 from .op_basic import *
 from .types import Constant, Operator, TreeNodeType, Var
 from collections import Counter
@@ -189,11 +190,11 @@ class Lexer:
 		BACKSLASH = kwargs.pop('BACKSLASH', Lexer.BACKSLASH)
 
 		if len(SQ) != 1:
-			raise ValueError('Length of SQ should be 1')
+			raise LexerConstructError('Length of SQ should be 1')
 		if len(DQ) != 1:
-			raise ValueError('Length of DQ should be 1')
+			raise LexerConstructError('Length of DQ should be 1')
 		if len(BACKSLASH) != 1:
-			raise ValueError('Length of BACKSLASH should be 1')
+			raise LexerConstructError('Length of BACKSLASH should be 1')
 
 		self.SQ = SQ
 		self.DQ = DQ
@@ -219,18 +220,18 @@ class Lexer:
 		ss = []
 		for symbol in op_symbols:
 			if len(symbol) == 0:
-				raise ValueError('Empty operators are disallowed')
+				raise LexerConstructError('Empty operators are disallowed')
 			if self.space_re.find(symbol):
-				raise ValueError('Operators with space characters are disallowed')
+				raise LexerConstructError('Operators with space characters are disallowed')
 			if self._special_re.search(symbol):
-				raise ValueError(f'Operator cannot includes the following symbols (reserved for the lexer): "{self.SPECIAL}"')
+				raise LexerConstructError(f'Operator cannot includes the following symbols (reserved for the lexer): "{self.SPECIAL}"')
 
 			if self.full_word(symbol):
 				continue
 			elif self.full_symbol(symbol):
 				ss.append(symbol)
 			else:
-				raise ValueError('Operators mixed with symbols and words are disallowed')
+				raise LexerConstructError('Operators mixed with symbols and words are disallowed')
 
 		self._parse_symbols = set(ss)
 		self._find_cache: dict[str, Optional[list[Token]]] = {'': []}
@@ -330,7 +331,7 @@ class Lexer:
 						status = S.SYMBOL
 
 		if status == INQUOTE or status == INQUOTE_ESCAPE:
-			raise ValueError('Quote not closed')
+			raise TokenizeError(keep_from, 'Quote not closed')
 		if len(keep) > 0:
 			first.append((keep_from, keep))
 
@@ -346,7 +347,7 @@ class Lexer:
 
 			find = self._find(token, i)
 			if find is None:
-				raise ValueError(f'Parse error with the symbols "{token}"')
+				raise TokenizeError(token.position, f'Tokenize error with the symbols "{token}"')
 			result.extend(find)
 
 		return result
