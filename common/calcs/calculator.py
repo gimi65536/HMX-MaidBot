@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .exceptions import *
 from .op_basic import *
 from .types import Constant, Operator, TreeNodeType, Var

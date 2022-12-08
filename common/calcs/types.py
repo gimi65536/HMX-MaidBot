@@ -114,7 +114,7 @@ class Constant(TreeNodeType, Value, Generic[ConstType]):
 
 		return self._value == other._value
 
-	def cast(self, to_type: type[Constant]):
+	def cast(self, to_type: type['Constant']):
 		raise NotImplementedError
 
 	def to_number(self) -> 'NumberConstant':

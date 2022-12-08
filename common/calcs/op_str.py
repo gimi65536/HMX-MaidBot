@@ -92,7 +92,7 @@ class SymParseOperator(UnaryOperator):
 
 		return a.without_dummy()
 
-class StrictSymParseOperator(ParseOperator):
+class StrictSymParseOperator(SymParseOperator):
 	def eval(self, mapping):
 		result = super().eval(mapping)
 
