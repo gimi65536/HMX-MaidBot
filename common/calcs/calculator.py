@@ -182,7 +182,7 @@ class Lexer:
 		for symbol in op_symbols:
 			if len(symbol) == 0:
 				raise LexerConstructError('Empty operators are disallowed')
-			if self.space_re.find(symbol):
+			if self.space_re.search(symbol):
 				raise LexerConstructError('Operators with space characters are disallowed')
 			if self._special_re.search(symbol):
 				raise LexerConstructError(f'Operator cannot includes the following symbols (reserved for the lexer): "{self.SPECIAL}"')
