@@ -4,7 +4,6 @@ from .utils import *
 from sympy import E, Expr, I, S
 from sympy.parsing.sympy_parser import (
 	parse_expr,
-	auto_symbol,
 	repeated_decimals,
 	auto_number,
 	factorial_notation,
@@ -25,7 +24,7 @@ class LengthOperator(UnaryOperator):
 
 '''
 The function invokes a more flexible parser provided by SymPy with:
-auto_symbol, repeated_decimals (0.2[1] to 0.2111...), auto_number,
+repeated_decimals (0.2[1] to 0.2111...), auto_number,
 factorial_notation (5! = 120), convert_xor (3^2 is 3**2),
 implicit_multiplication (sin(1)cos(1) is sin(1)*cos(1)),
 convert_equals_signs (1 = 1 is 1 == 1), and rationalize
@@ -60,19 +59,19 @@ class SymParseOperator(UnaryOperator):
 		elif s == 'FALSE' or s == 'False' or s == 'false':
 			return BooleanConstant(False)
 
+		mapping = mapping_flatten(mapping)
+		local_dict = {
+			'i': I,
+			'j': I,
+			'J': I,
+			'e': E,
+			'Pi': S.Pi,
+			'PI': S.Pi,
+		}
+		local_dict.update({v.name: lv.content for v, lv in mapping.items()})
+
 		try:
-			mapping = mapping_flatten(mapping)
-			local_dict = {
-				'i': I,
-				'j': I,
-				'J': I,
-				'e': E,
-				'Pi': S.Pi,
-				'PI': S.Pi,
-			}
-			local_dict.update({v.name: lv.content for v, lv in mapping.items()})
 			n = parse_expr(s, transformations = (
-				auto_symbol,
 				repeated_decimals,
 				auto_number,
 				factorial_notation,
