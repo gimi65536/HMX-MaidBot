@@ -9,7 +9,7 @@ class RandomOperator(NullaryOperator):
 
 class RandomWithSeedOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		if not a.is_dummy:
 			rng.seed(str(a.value))
@@ -35,13 +35,13 @@ class _RandomIntOperator:
 
 class RandomIntOperator(BinaryOperator, _RandomIntOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		return self._eval(a, b)
 
 class RandomIntWithSeedOperator(TernaryOperator, _RandomIntOperator):
 	def eval(self, mapping):
-		s, a, b = self.extract_constant(*self.eval_operands(mapping))
+		s, a, b = self.eval_and_extract_constants(mapping)
 
 		return self._eval(a, b, s)
 
@@ -57,13 +57,13 @@ class _RandomRealOperator:
 
 class RandomRealOperator(BinaryOperator, _RandomRealOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		return self._eval(a, b)
 
 class RandomRealWithSeedOperator(TernaryOperator, _RandomRealOperator):
 	def eval(self, mapping):
-		s, a, b = self.extract_constant(*self.eval_operands(mapping))
+		s, a, b = self.eval_and_extract_constants(mapping)
 
 		return self._eval(a, b, s)
 
@@ -80,13 +80,13 @@ class _RandomComplexOperator:
 class RandomComplexWithSeedOperator(Operator, _RandomComplexOperator):
 	ary = 4
 	def eval(self, mapping):
-		a, b, c, d = self.extract_constant(*self.eval_operands(mapping))
+		a, b, c, d = self.eval_and_extract_constants(mapping)
 
 		return self._eval(a, b, c, d)
 
 class RandomComplexWithSeedOperator(Operator, _RandomComplexOperator):
 	ary = 5
 	def eval(self, mapping):
-		s, a, b, c, d = self.extract_constant(*self.eval_operands(mapping))
+		s, a, b, c, d = self.eval_and_extract_constants(mapping)
 
 		return self._eval(a, b, c, d, s)

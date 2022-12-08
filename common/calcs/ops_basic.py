@@ -4,7 +4,7 @@ from typing import Optional, overload
 
 class PlusOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if a.is_str or b.is_str:
 			a, b = a.to_str(), b.to_str()
@@ -17,7 +17,7 @@ class PlusOperator(BinaryOperator):
 
 class MinusOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if a.is_str or b.is_str:
 			raise ValueError('Invalid string subtraction')
@@ -29,7 +29,7 @@ class MinusOperator(BinaryOperator):
 
 class MultipleOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if a.is_str or b.is_str:
 			# a:num/bool b:str
@@ -55,7 +55,7 @@ class MultipleOperator(BinaryOperator):
 
 class DivideOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if a.is_number and b.is_number:
 			return NumberConstant(a.value / b.value)
@@ -64,7 +64,7 @@ class DivideOperator(BinaryOperator):
 
 class IntegerDivideOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if a.is_number and b.is_number:
 			return NumberConstant(a.value // b.value)
@@ -73,7 +73,7 @@ class IntegerDivideOperator(BinaryOperator):
 
 class ModuloOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if a.is_number and b.is_number:
 			return NumberConstant(a.value % b.value)
@@ -82,7 +82,7 @@ class ModuloOperator(BinaryOperator):
 
 class PositiveOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		if a.is_number:
 			return a.without_dummy()
@@ -91,7 +91,7 @@ class PositiveOperator(UnaryOperator):
 
 class NegativeOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		if a.is_number:
 			return NumberConstant(-a.value)
@@ -100,7 +100,7 @@ class NegativeOperator(UnaryOperator):
 
 class NotOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		if a.is_bool:
 			return BooleanConstant(not a.value)
@@ -113,16 +113,16 @@ class _BinaryBoolOperator(BinaryOperator):
 
 	def eval(self, mapping):
 		if self._shortcut:
-			a = self.extract_constant(self._operands[0].eval(mapping))[0].to_bool()
+			a = self.eval_and_extract_constant(0, mapping).to_bool()
 			result = self._logic(a.value)
 
 			if result is not None:
 				return BooleanConstant(result)
 
-			b = self.extract_constant(self._operands[1].eval(mapping))[0].to_bool()
+			b = self.eval_and_extract_constant(1, mapping).to_bool()
 			return BooleanConstant(self._logic(a.value, b.value))
 		else:
-			a, b = self.extract_constant(*self.eval_operands(mapping))
+			a, b = self.eval_and_extract_constants(mapping)
 
 			a, b = a.to_bool(), b.to_bool()
 			return BooleanConstant(self._logic(a.value, b.value))
@@ -213,25 +213,25 @@ class ConverseNimplOperator(_BinaryBoolOperator):
 
 class ConcatOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		a, b = a.to_str(), b.to_str()
 		return StringConstant(a.value + b.value)
 
 class IfThenElseOperator(TernaryOperator):
 	def eval(self, mapping):
-		a = self._operands[0].eval(mapping)
+		a = self.eval_operand(0, mapping)
 		a = a.extract_constant(a)[0]
 		a = a.to_bool()
 
 		if a.value:
-			return self._operands[1].eval(mapping)
+			return self.eval_operand(1, mapping)
 		else:
-			return self._operands[2].eval(mapping)
+			return self.eval_operand(2, mapping)
 
 class EqualOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if type(a) != type(b):
 			return BooleanConstant(False)
@@ -240,7 +240,7 @@ class EqualOperator(BinaryOperator):
 
 class NonequalOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 
 		if type(a) != type(b):
 			return BooleanConstant(True)
@@ -249,7 +249,7 @@ class NonequalOperator(BinaryOperator):
 
 class _BinaryComparisonOperator(BinaryOperator):
 	def eval(self, mapping):
-		a, b = self.extract_constant(*self.eval_operands(mapping))
+		a, b = self.eval_and_extract_constants(mapping)
 		if a.is_bool:
 			a = a.to_number()
 		if b.is_bool:

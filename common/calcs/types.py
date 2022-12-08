@@ -250,20 +250,29 @@ class Operator(TreeNodeType):
 	def eval(self, mapping):
 		raise NotImplementedError
 
+	def eval_operand(self, i: int, mapping: Mapping[Var, LValue]) -> Value:
+		return self._operands[i].eval(mapping)
+
 	def eval_operands(self, mapping: Mapping[Var, LValue]) -> list[Value]:
 		return [o.eval(mapping) for o in self._operands]
+
+	def eval_and_extract_constant(self, i: int, mapping: Mapping[Var, LValue]) -> Constant:
+		return self.extract_constant(self.eval_operand(i, mapping))
+
+	def eval_and_extract_constants(self, mapping: Mapping[Var, LValue]) -> list[Constant]:
+		return self.extract_constants(*self.eval_operands(mapping))
 
 	def apply_var(self, f):
 		for o in self._operands:
 			o.apply_var(f)
 
 	@staticmethod
-	def extract_constant(*args: Value) -> list[Constant]:
-		result = []
-		for v in args:
-			if isinstance(v, Constant):
-				result.append(v)
-			else:
-				result.append(v.content)
+	def extract_constant(value: Value) -> Constant:
+		if isinstance(v, Constant):
+			return v
+		else:
+			return v.content
 
-		return result
+	@classmethod
+	def extract_constants(cls, *args: Value) -> list[Constant]:
+		return [cls.extract_constant(v) for v in args]

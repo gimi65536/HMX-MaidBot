@@ -16,7 +16,7 @@ from sympy.parsing.sympy_parser import (
 
 class LengthOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		if not a.is_str:
 			raise ValueError('Only apply to strings')
@@ -47,7 +47,7 @@ assignment clauses to interfere the variable spaces.
 '''
 class SymParseOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		if not a.is_str:
 			raise ValueError('Only apply to strings')

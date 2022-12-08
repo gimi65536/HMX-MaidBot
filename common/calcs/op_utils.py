@@ -4,14 +4,14 @@ from .ops import BinaryOperator, TernaryOperator, UnaryOperator
 class ToStringOperator(UnaryOperator):
 	# Just do str() to the contents of the constants
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		return StringConstant(str(a.value))
 
 class PrintOperator(UnaryOperator):
 	# For numbers, the function returns expressions of primary types: int float complex
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		if a.is_number:
 			n = a.value
@@ -41,12 +41,12 @@ class ReverseOperator(UnaryOperator):
 
 class DummizeOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		return a.with_dummy()
 
 class DedummizeOperator(UnaryOperator):
 	def eval(self, mapping):
-		a = self.extract_constant(*self.eval_operands(mapping))[0]
+		a = self.eval_and_extract_constant(0, mapping)
 
 		return a.without_dummy()
