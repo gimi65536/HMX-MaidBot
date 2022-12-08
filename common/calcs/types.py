@@ -251,6 +251,9 @@ class Operator(TreeNodeType):
 
 		self._operands = args
 
+	def __repr__(self):
+		return type(self).__name__ + '(' + ', '.join(repr(o) for o in self._operands) + ')'
+
 	def eval(self, mapping):
 		raise NotImplementedError
 
