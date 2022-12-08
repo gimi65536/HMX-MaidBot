@@ -106,12 +106,17 @@ class Token:
 	_is_string_const: bool
 	_is_symbol: bool
 
-	def __init__(self, s: str):
+	def __init__(self, s: str, position: int):
 		self._s = s
+		self._p = position
 
 	@property
 	def string(self) -> str:
 		return self._s
+
+	@property
+	def position(self) -> int:
+		return self._p
 
 	def __str__(self):
 		return self._s
@@ -230,7 +235,7 @@ class Lexer:
 		self._parse_symbols = set(ss)
 		self._find_cache: dict[str, Optional[list[Token]]] = {'': []}
 
-	def _find(self, symbols: str) -> Optional[list[Token]]:
+	def _find(self, symbols: str, position: int) -> Optional[list[Token]]:
 		if symbols in self._find_cache:
 			return self._find_cache[symbols]
 
@@ -239,11 +244,11 @@ class Lexer:
 			if prefix not in self._parse_symbols:
 				continue
 
-			sub_result = self._find(symbols[i:])
+			sub_result = self._find(symbols[i:], position + i)
 			if sub_result is None:
 				continue
 
-			self._find_cache[symbols] = [SymbolToken(prefix), *sub_result]
+			self._find_cache[symbols] = [SymbolToken(prefix, position), *sub_result]
 			return self._find_cache[symbols]
 
 		self._find_cache[symbols] = None
@@ -259,18 +264,20 @@ class Lexer:
 	def tokenize(self, s: str) -> list[Token]:
 		self._constant_injure(locals())
 		# First step split
-		first = []
+		first: list[tuple[int, str]] = []
 		status = S.SYMBOL
-		keep, quote = '', DQ
-		for c in s:
+		keep, keep_from, quote = '', 0, DQ
+		for i, c in enumerate(s, 1):
 			match status:
 				case S.INQUOTE_ESCAPE:
 					# Only escape that \? = ?
+					# keep_from won't update
 					keep += c
 					status = S.INQUOTE
 				case S.INQUOTE:
+					# keep_from won't update
 					if quote == c:
-						first.append(keep + c)
+						first.append((keep_from, keep + c))
 						keep = ''
 						status = S.SYMBOL
 					elif quote == BACKSLASH:
@@ -280,56 +287,64 @@ class Lexer:
 				case S.SYMBOL:
 					if self.space_re.match(c):
 						if len(keep) > 0:
-							first.append(keep)
+							first.append((keep_from, keep))
 						keep = ''
 					elif self.is_word(c):
 						if len(keep) > 0:
-							first.append(keep)
+							first.append((keep_from, keep))
 						keep = c
+						keep_from = i
 						status = S.WORD
 					elif c == SQ or c == DQ:
 						if len(keep) > 0:
-							first.append(keep)
+							first.append((keep_from, keep))
 						keep = c
+						keep_from = i
 						quote = c
 						status = INQUOTE
 					else:
+						if len(keep) == 0:
+							keep_from = i
 						keep += c
 				case S.WORD:
 					if self.space_re.match(c):
 						if len(keep) > 0:
-							first.append(keep)
+							first.append((keep_from, keep))
 						keep = ''
 					elif self.is_word(c):
+						if len(keep) == 0:
+							keep_from = i
 						keep += c
 					elif c == SQ or c == DQ:
 						if len(keep) > 0:
-							first.append(keep)
+							first.append((keep_from, keep))
 						keep = c
+						keep_from = i
 						quote = c
 						status = INQUOTE
 					else:
 						if len(keep) > 0:
-							first.append(keep)
+							first.append((keep_from, keep))
 						keep = c
+						keep_from = i
 						status = S.SYMBOL
 
 		if status == INQUOTE or status == INQUOTE_ESCAPE:
 			raise ValueError('Quote not closed')
 		if len(keep) > 0:
-			first.append(keep)
+			first.append((keep_from, keep))
 
 		result: list[Token] = []
-		for token in first:
+		for i, token in first:
 			if token.startswith(SQ) or token.startswith(DQ):
-				result.append(StringToken(token[1:-1]))
+				result.append(StringToken(token[1:-1], i))
 				continue
 
 			if self.full_word(token):
-				result.append(WordToken(token))
+				result.append(WordToken(token, i))
 				continue
 
-			find = self._find(token)
+			find = self._find(token, i)
 			if find is None:
 				raise ValueError(f'Parse error with the symbols "{token}"')
 			result.extend(find)
