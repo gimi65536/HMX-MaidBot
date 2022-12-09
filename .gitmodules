@@ -1,0 +1,3 @@
+[submodule "SimpleCalculator"]
+	path = SimpleCalculator
+	url = git@github.com:gimi65536/SimpleCalculator.git
