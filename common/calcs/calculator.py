@@ -5,6 +5,7 @@ from .types import Constant, Operator, TreeNodeType, Var
 from collections import Counter
 from enum import Enum
 from itertools import chain
+from more_itertools import sliding_window
 from sympy import Float, I, Rational
 from typing import cast, Optional
 import random
@@ -226,24 +227,6 @@ class Lexer:
 		else:
 			return self.symbol_re.match(c)
 
-	def _put_decimal(self, first: list[tuple[int, str]], keep: str, keep_from: int):
-		l = keep.split(self.DECIMAL_POINT)
-		if len(l) != 2:
-			raise TokenizeError(token.position, 'Unknown error with decimal point')
-		if self.decimal_integer_re.fullmatch(l[1]):
-			a, b = l
-			a = a.lstrip('0')
-			if len(a) == 0:
-				a = '0'
-			first.append((keep_from, f'{a}{self.DECIMAL_POINT}{b}'))
-		else:
-			i = keep_from
-			first.append((i, l[0]))
-			i += len(self.DECIMAL_POINT)
-			first.append((i, self.DECIMAL_POINT))
-			i += 1
-			first.append((i, l[1]))
-
 	def tokenize(self, s: str) -> list[Token]:
 		SQ = self.SQ
 		DQ = self.DQ
@@ -254,7 +237,6 @@ class Lexer:
 		# First step split
 		first: list[tuple[int, str]] = []
 		status = S.SYMBOL
-		add_decimal_point = False # If True, keep is not empty
 		keep, keep_from, quote = '', 0, DQ
 		for i, c in enumerate(s, 1):
 			match status:
@@ -297,10 +279,7 @@ class Lexer:
 						keep += c
 				case S.WORD:
 					if self.space_re.match(c):
-						if add_decimal_point:
-							self._put_decimal(first, keep, keep_from)
-							add_decimal_point = False
-						elif len(keep) > 0:
+						if len(keep) > 0:
 							first.append((keep_from, keep))
 						keep = ''
 					elif self.is_word(c):
@@ -308,37 +287,14 @@ class Lexer:
 							keep_from = i
 						keep += c
 					elif c == SQ or c == DQ:
-						if add_decimal_point:
-							self._put_decimal(first, keep, keep_from)
-							add_decimal_point = False
-						elif len(keep) > 0:
+						if len(keep) > 0:
 							first.append((keep_from, keep))
 						keep = c
 						keep_from = i
 						quote = c
 						status = S.INQUOTE
-					elif c == DECIMAL_POINT:
-						if self.decimal_integer_re.fullmatch(keep):
-							# Decimal point
-							keep += c
-							add_decimal_point = True
-						elif add_decimal_point:
-							self._put_decimal(first, keep, keep_from)
-							add_decimal_point = False
-							keep = c
-							keep_from = i
-							status = S.SYMBOL
-						else:
-							if len(keep) > 0:
-								first.append((keep_from, keep))
-							keep = c
-							keep_from = i
-							status = S.SYMBOL
 					else:
-						if add_decimal_point:
-							self._put_decimal(first, keep, keep_from)
-							add_decimal_point = False
-						elif len(keep) > 0:
+						if len(keep) > 0:
 							first.append((keep_from, keep))
 						keep = c
 						keep_from = i
@@ -347,30 +303,47 @@ class Lexer:
 		if status == S.INQUOTE or status == S.INQUOTE_ESCAPE:
 			raise TokenizeError(keep_from, 'Quote not closed')
 
-		if add_decimal_point:
-			self._put_decimal(first, keep, keep_from)
-			add_decimal_point = False
-		elif len(keep) > 0:
+		if len(keep) > 0:
 			first.append((keep_from, keep))
 
+		# Note that no empty string in first list
+
+		# Second, restore numbers with decimal points
+		second: list[tuple[int, str]] = []
+		fill = [(-1, ''), (-1, '')]
+		processed = -1
+		for i, ((i1, t1), (i2, t2), (i3, t3)) in enumerate(sliding_window(chain(first, fill), 3)):
+			if processed >= i:
+				continue
+
+			if t2 == DECIMAL_POINT:
+				# Have decimal point, of course...
+				if (i2 - i1) == len(t1) and i3 - i2 == 1:
+					# The three tokens are neighboring
+					if self.decimal_integer_re.fullmatch(t1) and self.decimal_integer_re.fullmatch(t3):
+						# Yeah
+						t1 = t1.lstrip('0')
+						if len(t1) == 0:
+							t1 = '0'
+						second.append((i1, f'{t1}{t2}{t3}'))
+						processed = i + 2
+						continue
+
+			second.append((i1, t1))
+			processed = i
+
 		result: list[Token] = []
-		for i, token in first:
+		for i, token in second:
 			if token.startswith(SQ) or token.startswith(DQ):
 				result.append(StringToken(token[1:-1], i))
-				continue
-
-			if self.full_word(token):
+			elif self.full_symbol(token):
+				find = self._find(token, i)
+				if find is None:
+					raise TokenizeError(i, f'Tokenize error with the symbols "{token}"')
+				result.extend(find)
+			else:
+				# May contain decimal points..., etc.
 				result.append(WordToken(token, i))
-				continue
-
-			if len(l := token.split(DECIMAL_POINT)) == 2 and self.decimal_integer_re.fullmatch(l[0]) and self.decimal_integer_re.fullmatch(l[1]):
-				result.append(WordToken(token, i))
-				continue
-
-			find = self._find(token, i)
-			if find is None:
-				raise TokenizeError(i, f'Tokenize error with the symbols "{token}"')
-			result.extend(find)
 
 		return result
 
