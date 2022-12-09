@@ -4,10 +4,11 @@ setup(
 	name = 'common',
 	version = '0.4',
 	description = 'Common utilities used in HMX-MaidBot project',
-	packages = ['rollgames', 'simple_parsers'],
+	packages = ['rollgames', 'simple_parsers', 'calcs'],
 	py_modules = ['proxy_types', 'reader'],
 	install_requires = [
 		'more_itertools>=9',
-		'pyparsing>=3.0.9'
+		'pyparsing>=3.0.9',
+		'sympy>=1.11.1'
 	]
 )
