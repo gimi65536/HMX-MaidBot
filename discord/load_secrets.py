@@ -1,4 +1,4 @@
-from decouple import config
+from decouple import config, Csv
 
 secret = {
 	"app_id": config('APP_ID', cast = int),
@@ -7,7 +7,8 @@ secret = {
 	"mongo_address": config('MONGO_ADDRESS'),
 	"mongo_admin": config('MONGO_ADMIN'),
 	"mongo_pwd": config('MONGO_PWD'),
-	"debug_server_id": config('DEBUG_SERVER_ID', cast = int)
+	"debug_server_id": config('DEBUG_SERVER_ID', cast = Csv(int)),
+	"load_ext": config('LOAD_EXT', default = '', cast = Csv())
 }
 
 __all__ = ['secret']

@@ -588,7 +588,7 @@ class BetHoldSystem(HoldSystem[Bet]):
 
 class VoteOptionView(discord.ui.View):
 	# Presistent during the lifetime of the poll
-	prefix: str = config('VOTE_CUSTOM_PREFIX', default = 'HMX-vote-cog')
+	prefix: str = config('EXT_VOTE_CUSTOM_PREFIX', default = 'HMX-vote-cog')
 
 	def __init__(
 		self,
@@ -955,8 +955,8 @@ class VoteCommands(BaseCog, name = 'Vote'):
 	'''
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
-		self.poll_system = PollHoldSystem(db['poll_system'] if config('POLL_DB_BASED', default = False, cast = bool) else None)
-		# self.bet_system = BetHoldSystem(db['bet_system'] if config('BET_DB_BASED', default = False, cast = bool) else None)
+		self.poll_system = PollHoldSystem(db['poll_system'] if config('EXT_VOTE_POLL_DB_BASED', default = False, cast = bool) else None)
+		# self.bet_system = BetHoldSystem(db['bet_system'] if config('EXT_VOTE_BET_DB_BASED', default = False, cast = bool) else None)
 
 	@discord.Cog.listener()
 	async def on_ready(self):
@@ -1054,7 +1054,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		By default, this command generates a one-hour poll with single vote without showing details.
 		Can be only called in a server channel.
 		'''
-		atleast = config('POLL_PERIOD_ATLEAST', default = 60, cast = int)
+		atleast = config('EXT_VOTE_POLL_PERIOD_ATLEAST', default = 60, cast = int)
 		if (p := period_to_delta(period, period_unit)) and p.total_seconds() < atleast:
 			# Valid in semantics but too tricky to use
 			await send_error_embed(ctx,
@@ -1064,7 +1064,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			)
 
 		options: list[str] = StringArgumentParser.pick(options)
-		max_options = config('POLL_MAXIMUM_OPTIONS', default = 20, cast = int)
+		max_options = config('EXT_VOTE_POLL_MAXIMUM_OPTIONS', default = 20, cast = int)
 		if len(options) > max_options:
 			await send_error_embed(ctx,
 				name = self._trans(ctx, 'too-many-options-error'),

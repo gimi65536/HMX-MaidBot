@@ -1,5 +1,6 @@
 import discord
 import random
+from decouple import config, Csv
 from discord.ext.pages import Paginator
 from importlib import import_module
 from more_itertools import chunked
@@ -414,4 +415,6 @@ class GameNotFound(GNF, discord.ApplicationCommandError):
 ext_roll = import_module('.ext-roll', __package__)
 
 def setup(bot):
+	cog = RollCommands(bot)
+	cog.load_game_exts(config('EXT_ROLL_GAME', default = '', cast = Csv()))
 	bot.add_cog(RollCommands(bot))

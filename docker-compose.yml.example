@@ -13,6 +13,8 @@ services:
       - MONGO_ADMIN=admin
       - MONGO_PWD=<password>
       - DEBUG_SERVER_ID=1919810
+      - LOAD_EXT=roll,vote
+      - EXT_ROLL_GAME=dice,choose
     networks:
       - mongo
 networks:
