@@ -2,6 +2,11 @@ FROM python:3.11
 
 WORKDIR /tmp
 
+# Install requirements for this repo
+COPY discord/requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
 # Install dependencies
 COPY common ./common
 RUN cd ./common && pip install .
@@ -10,11 +15,6 @@ RUN rm -rf ./common
 COPY SimpleCalculator ./SimpleCalculator
 RUN cd ./SimpleCalculator && pip install .
 RUN rm -rf ./SimpleCalculator
-
-# Install requirements for this repo
-COPY discord/requirements.txt .
-
-RUN pip install --no-cache-dir -r requirements.txt
 
 COPY discord .
 
