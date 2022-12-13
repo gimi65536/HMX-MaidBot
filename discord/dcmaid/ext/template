@@ -1,0 +1,23 @@
+import discord
+from ..basebot import Bot
+from ..basecog import BaseCog
+from ..utils import *
+
+class TemplateCommands(BaseCog, name = 'Template'):
+	def __init__(self, bot: Bot):
+		super().__init__(bot)
+
+	@discord.slash_command(
+		description = 'Test command',
+		options = [
+			discord.Option(str,
+				name = 'foo',
+				description = 'String option (Optional)',
+				default = None)
+		]
+	)
+	async def test(self, ctx, foo):
+		await ctx.defer()
+
+def setup(bot):
+	bot.add_cog(TemplateCommands(bot))
