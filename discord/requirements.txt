@@ -1,9 +1,9 @@
-py-cord
-pymongo
+py-cord>=2.3
+pymongo>=4.3
 python-decouple
-pyyaml
-pyjson5
-more-itertools
-case-insensitive-dictionary
-uvloop
-aiorwlock
+pyyaml>=5
+pyjson5>=1.6.2
+more-itertools>=9
+case-insensitive-dictionary>=0.2.1
+uvloop>=0.17
+aiorwlock>=1.2
