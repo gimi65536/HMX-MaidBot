@@ -6,4 +6,4 @@ pyjson5
 more-itertools
 case-insensitive-dictionary
 uvloop
-
+aiorwlock

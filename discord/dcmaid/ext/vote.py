@@ -4,6 +4,7 @@ from ..basebot import Bot
 from ..basecog import BaseCog
 from ..utils import *
 from ..views import Button, Select, YesNoView
+from aiorwlock import RWLock
 from asyncio import get_running_loop, Lock, sleep, Task
 from collections import Counter
 from collections.abc import Awaitable, Mapping, MutableMapping
@@ -59,7 +60,7 @@ class BasePoll:
 	uuid: uuid.UUID
 	msg: Optional[discord.Message] = None # Inserted by the Cog
 	processed_order: int # Not in db. Used by the Cog to refresh information correctly.
-	mutex: Lock # Not in db, of course
+	rwlock: RWLock # Not in db, of course
 
 	def __init__(self, author: discord.Member, channel: discord.abc.Messageable, title: str, options: list[str], locale: str, period: int, period_unit):
 		if period <= 0:
@@ -86,7 +87,10 @@ class BasePoll:
 
 		self.uuid = uuid.uuid4()
 		self.processed_order = 0
-		self.mutex = Lock()
+		self.rwlock = RWLock()
+
+		self.reader = self.rwlock.reader
+		self.writer = self.rwlock.writer
 
 	def has_user(self, member: discord.Member):
 		return member in self._vote_casted
@@ -121,7 +125,7 @@ class BasePoll:
 		self.msg = msg
 
 	def get_votes_per_option(self) -> dict[str, int]:
-		# This method is unstable when the mutex is locked and the caller doesn't hold it.
+		# This method is unstable when the caller doesn't hold any lock.
 		result = {}
 		for o, d in self._vote_receive.items():
 			result[o] = d.total()
@@ -179,7 +183,9 @@ class BasePoll:
 		poll._option_set = set(poll.options)
 		poll.vote_casted = {member: CounterProxyType(c) for member, c in poll._vote_casted.items()}
 		poll.processed_order = 0
-		poll.mutex = Lock()
+		poll.rwlock = RWLock()
+		poll.reader = poll.rwlock.reader
+		poll.writer = poll.rwlock.writer
 
 		poll._vote_receive = {o: Counter() for o in poll.options}
 		poll.vote_receive = {o: CounterProxyType(c) for o, c in poll._vote_receive.items()}
@@ -329,8 +335,8 @@ class BaseHoldSystem(Generic[T]):
 		return self._on_process.get(u)[0]
 
 	async def register(self, poll: T, awaitable: Awaitable):
-		# awaitable will be awaited within the poll mutex
-		async with poll.mutex:
+		# awaitable will be awaited within the writer lock (see wait_for_timeout)
+		async with poll.writer:
 			if self._contain(poll):
 				return
 
@@ -354,7 +360,7 @@ class BaseHoldSystem(Generic[T]):
 			return False
 		poll, task, awaitable = t
 
-		async with poll.mutex:
+		async with poll.writer:
 			if not self._contain(poll):
 				return False # Not canceled by this method
 
@@ -370,7 +376,7 @@ class BaseHoldSystem(Generic[T]):
 
 	async def wait_for_timeout(self, poll: T):
 		await discord.utils.sleep_until(poll.until)
-		async with poll.mutex:
+		async with poll.writer:
 			if not self._contain(poll):
 				return
 
@@ -478,7 +484,7 @@ class PollHoldSystem(BaseHoldSystem[Poll]):
 
 	async def _add_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
 		events = []
-		async with poll.mutex:
+		async with poll.writer:
 			if not self._contain(poll):
 				# Happen if timeout
 				return
@@ -508,7 +514,7 @@ class PollHoldSystem(BaseHoldSystem[Poll]):
 
 	async def _replace_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
 		events = []
-		async with poll.mutex:
+		async with poll.writer:
 			if not self._contain(poll):
 				# Happen if timeout
 				return
@@ -543,7 +549,7 @@ class PollHoldSystem(BaseHoldSystem[Poll]):
 
 	async def _remove_votes(self, poll: Poll, member: discord.Member, options: Optional[Counter[str]]) -> Optional[list[Event]]:
 		events = []
-		async with poll.mutex:
+		async with poll.writer:
 			if not self._contain(poll):
 				# Happen if timeout
 				return
@@ -710,9 +716,11 @@ class PollController(VoteController[Poll]):
 			member = interaction.user
 			assert member is not None
 
-			async with poll.mutex:
-				if not poll.has_user(member):
+			if not poll.has_user(member):
+				async with poll.writer:
 					poll.add_user(member)
+
+			async with poll.reader:
 				has_voted = list(poll.vote_casted[member].elements())
 
 			content = None
@@ -752,9 +760,11 @@ class PollController(VoteController[Poll]):
 			member = interaction.user
 			assert member is not None
 
-			async with poll.mutex:
-				if not poll.has_user(member):
+			if not poll.has_user(member):
+				async with poll.writer:
 					poll.add_user(member)
+
+			async with poll.reader:
 				has_voted = list(poll.vote_casted[member].elements())
 
 			content = None
@@ -808,7 +818,7 @@ class PollController(VoteController[Poll]):
 			else:
 				result = await system.cancel(poll)
 				if result:
-					async with poll.mutex:
+					async with poll.writer:
 						await cog._timeout_process(poll)
 
 		return f
@@ -902,7 +912,7 @@ class PollController(VoteController[Poll]):
 				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'vote-success'))
 				if len(result) > 0:
 					peek: Event = result[0]
-					async with poll.mutex:
+					async with poll.writer: # To maintain the order
 						if poll.processed_order == peek.processed_order:
 							await cog._render(poll)
 
@@ -942,7 +952,7 @@ class PollController(VoteController[Poll]):
 				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'empty-success'))
 				if len(result) > 0:
 					peek: Event = result[0]
-					async with poll.mutex:
+					async with poll.writer: # To maintain the order
 						if poll.processed_order == peek.processed_order:
 							await cog._render(poll)
 
@@ -964,7 +974,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			poll = await Poll.from_dict(self.bot, poll_info)
 			# There is no problem to register an expired poll
 			# since "sleep_until" will be skipped instantly
-			# and we have already used mutex locks as guards.
+			# and we have already used mutex (writer) locks as guards.
 			await self.poll_system.register(poll, self._timeout_process(poll))
 			# There is no problem to register views of expired polls
 			# since each actions ensures the polls are in the system,
@@ -1079,15 +1089,16 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		# If no errors, the poll is valid...
 		await self.poll_system.register(poll, self._timeout_process(poll))
 		# Build embed
-		async with poll.mutex:
+		async with poll.writer:
 			# To remind me that we should get lock before rendering.
-			# The mutex here is not necessary, though.
+			# The writer lock here is not necessary, though it is recommended to lock.
 
 			# If processed_order is right...
 			await self._render(poll, message = message)
 
 	async def _render(self, poll: BasePoll, message = None, end = False):
 		'''
+		This method is recommended to be invoked into writer locks to maintain the rendering order.
 		This method does not handle anything about processing order and mutex locks.
 		'''
 		if message is None:
@@ -1170,11 +1181,11 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		await message.edit(**kwargs)
 
 	async def _timeout_process(self, poll: BasePoll):
-		# This method is called in locked mutex (ensured in HoldSystem)
+		# This method is called in writer lock (ensured in HoldSystem)
 		await self._render(poll, end = True)
 
 	#async def _ending(self, poll: BasePoll):
-		# This method needs to be called in locked mutex
+		# This method is called in writer lock
 		#...
 
 	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
