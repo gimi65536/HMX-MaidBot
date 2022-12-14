@@ -146,6 +146,7 @@ class BasePoll:
 			'locale': self.locale,
 			'vote_casted': {member.id: c for member, c in self._vote_casted.items()},
 			'uuid': self.uuid,
+			'msg': None if self.msg is None else self.msg.id
 		}
 
 	@classmethod
@@ -154,14 +155,10 @@ class BasePoll:
 		poll = super().__new__(cls)
 
 		# In dict
-		poll.channel = bot.get_channel(d['channel'])
-		if poll.channel is None:
-			poll.channel = await discord.utils.get_or_fetch(bot, 'channel', d['channel'])
+		poll.channel = await discord.utils.get_or_fetch(bot, 'channel', d['channel'])
 		guild = poll.channel.guild
 
-		poll.author = guild.get_member(d['author'])
-		if poll.author is None:
-			poll.author = await discord.utils.get_or_fetch(guild, 'member', d['author'])
+		poll.author = await discord.utils.get_or_fetch(guild, 'member', d['author'])
 
 		poll.title = d['title']
 
@@ -171,13 +168,17 @@ class BasePoll:
 
 		poll._vote_casted = {}
 		for m_id, c in d['vote_casted']:
-			member = guild.get_member(m_id)
-			if member is None:
+			try:
 				member = await discord.utils.get_or_fetch(guild, 'member', m_id)
+			except:
+				# If the member disappeared... just do not count their in-db votes in the memory
+				continue
 
 			poll._vote_casted[member] = Counter(c)
 
 		poll.uuid = d['uuid']
+
+		poll.msg = await channel.fetch_message(d['msg'])
 
 		# Out of dict
 		poll._option_set = set(poll.options)
@@ -965,13 +966,27 @@ class VoteCommands(BaseCog, name = 'Vote'):
 	'''
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
-		self.poll_system = PollHoldSystem(db['poll_system'] if config('EXT_VOTE_POLL_DB_BASED', default = False, cast = bool) else None)
+		self._poll_col = bot.db['poll_system'] if config('EXT_VOTE_POLL_DB_BASED', default = False, cast = bool) else None
+		self.poll_system = PollHoldSystem(self._poll_col)
 		# self.bet_system = BetHoldSystem(db['bet_system'] if config('EXT_VOTE_BET_DB_BASED', default = False, cast = bool) else None)
 
 	@discord.Cog.listener()
 	async def on_ready(self):
 		for poll_info in self.poll_system.restore_poll_info():
-			poll = await Poll.from_dict(self.bot, poll_info)
+			if poll_info['msg'] is None:
+				# Not-registered poll, how is it in db???
+				continue
+
+			try:
+				poll = await Poll.from_dict(self.bot, poll_info)
+			except (discord.NotFound, discord.Forbidden):
+				# Drop the poll from the database if the channel/author/message disappeared, or the bot is forbidden
+				self._poll_col.delete_one({'uuid': poll_info['uuid']})
+				continue
+			except _:
+				# Other http exceptions...
+				continue
+
 			# There is no problem to register an expired poll
 			# since "sleep_until" will be skipped instantly
 			# and we have already used mutex (writer) locks as guards.
