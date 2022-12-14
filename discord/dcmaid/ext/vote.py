@@ -156,12 +156,12 @@ class BasePoll:
 		# In dict
 		poll.channel = bot.get_channel(d['channel'])
 		if poll.channel is None:
-			poll.channel = await bot.fetch_channel(d['channel'])
+			poll.channel = await discord.utils.get_or_fetch(bot, 'channel', d['channel'])
 		guild = poll.channel.guild
 
 		poll.author = guild.get_member(d['author'])
 		if poll.author is None:
-			poll.author = await guild.fetch_member(d['author'])
+			poll.author = await discord.utils.get_or_fetch(guild, 'member', d['author'])
 
 		poll.title = d['title']
 
@@ -173,7 +173,7 @@ class BasePoll:
 		for m_id, c in d['vote_casted']:
 			member = guild.get_member(m_id)
 			if member is None:
-				member = await guild.fetch_member(m_id)
+				member = await discord.utils.get_or_fetch(guild, 'member', m_id)
 
 			poll._vote_casted[member] = Counter(c)
 
