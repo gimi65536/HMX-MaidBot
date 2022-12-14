@@ -3,70 +3,44 @@ import calcs
 import discord
 from ..basebot import Bot
 from ..basecog import BaseCog
+from ..typing import ChannelType
 from ..utils import *
-from typing import Generic, TypeAlias, TypeVar
 
-Messageable: TypeAlias = (
-	discord.abc.GuildChannel |
-	discord.abc.PrivateChannel |
-	discord.Thread
-)
-
-ScopedType = TypeVar('ScopedType',
-	discord.User,
-	discord.Guild,
-	Messageable
-)
-
-class Scope(Generic[ScopedType]):
-	_content: ScopedType
-
+class Scope:
+	_id: int
 	_is_user: bool = False
 	_is_guild: bool = False
 	_is_channel: bool = False
 
-	def __init__(self, content: Messageable, /):
-		self._content = content
+	def __init__(self, id_or_obj: int | discord.Snowflake, /):
+		if isinstance(id_or_obj, int):
+			self._id = id_or_obj
+		else:
+			self._id = id_or_obj.id
 
 	def __hash__(self):
-		return hash(self._content)
+		return hash(self._id)
 
 	def __eq__(self, other):
+		# @pre: ids of different types of object 
 		if type(self) is type(other):
-			return self._content.id == other._content.id
+			return self._id == other._id
 
 		return False
 
 	@property
-	def content(self):
-		return self._content
+	def id(self):
+		return self._id
 
-	@property
-	def is_user_scope(self):
-		return self._is_user
-
-	@property
-	def is_guild_scope(self):
-		return self._is_guild
-
-	@property
-	def is_channel_scope(self):
-		return self._is_channel
-
-class UserScope(Scope[discord.User]):
+class UserScope(Scope):
 	_is_user = True
-	def __init__(self, content, /):
-		super().__init__(content)
 
-class GuildScope(Scope[discord.Guild]):
+class GuildScope(Scope):
 	_is_guild = True
-	def __init__(self, content, /):
-		super().__init__(content)
 
-class ChannelScope(Scope[Messageable]):
+# Every channel/thread that can be fetched by bot.fetch_channel()
+class ChannelScope(Scope):
 	_is_channel = True
-	def __init__(self, content: Messageable, /):
-		super().__init__(content)
 
 class VariableSystem:
 	def __init__(self, col = None):
@@ -81,11 +55,19 @@ class VariableSystem:
 	def restore_info(self):
 		return iter(self._restore_info)
 
-	def add_var(self, name, scope: discord.User | discord.Guild | discord.abc.GuildChannel):
+	def add_var(self, name, scope: discord.User | discord.Guild | ChannelType):
+		match scope:
+			case discord.User():
+				...
+			case discord.Guild():
+				...
+			case _:
+				...
 		...
 
 	def retrieve_mapping(self,
-		scope: discord.Member | discord.User,
+		caller: discord.User,
+		channel: ChannelType,
 		bookkeeping: dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]) -> dict[calcs.Var, calcs.LValue]:
 		# Member: in guild
 		# User: only user
@@ -105,12 +87,23 @@ class _ChangeScopeOperator(calcs.UnaryOperator):
 	def _cast_scope(self, var: calcs.Var, bot: Bot, ctx):
 		raise NotImplementedError
 
+class ToThreadOperator(_ChangeScopeOperator):
+	def _cast_scope(self, var, bot, ctx):
+		if not isinstance(ctx.channel, discord.Thread):
+			raise ValueError('Not in thread')
+		var.scope = ChannelScope(ctx.channel)
+
 class ToChannelOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
-		var.scope = ChannelScope(channel)
+		if isinstance(ctx.channel, discord.Thread):
+			var.scope = ChannelScope(ctx.channel.channel)
+		else:
+			var.scope = ChannelScope(ctx.channel)
 
 class ToGuildOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
+		if is_DM(ctx.channel):
+			raise ValueError('Not in guild')
 		var.scope = GuildScope(channel.guild)
 
 class VarCommands(BaseCog, name = 'Var'):
