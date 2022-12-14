@@ -110,7 +110,7 @@ def proxy(f_or_attr, /):
 		return wrapper
 
 def is_DM(channel):
-	return isinstance(channel, (discord.PartialMessageable, discord.DMChannel, discord.GroupChannel))
+	return isinstance(channel, (discord.PartialMessageable, discord.abc.PrivateChannel))
 
 def get_bot_name_in_ctx(ctx: QuasiContext) -> str:
 	guild = ctx.guild
