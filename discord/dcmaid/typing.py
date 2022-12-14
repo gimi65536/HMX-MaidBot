@@ -1,4 +1,5 @@
-from discord import ApplicationContext, Interaction
+from discord import ApplicationContext, Interaction, PartialMessageable, Thread
+from discord.abc import GuildChannel, PrivateChannel
 from typing import Any, Protocol, TypeAlias
 
 class Localeable(Protocol):
@@ -8,5 +9,7 @@ class Channelable(Protocol):
 	channel: Any
 
 QuasiContext: TypeAlias = ApplicationContext | Interaction
+
+ChannelType: TypeAlias = GuildChannel | PrivateChannel | PartialMessageable | Thread
 
 __all__ = ('Channelable', 'Localeable', 'QuasiContext')
