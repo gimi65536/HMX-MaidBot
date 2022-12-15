@@ -335,7 +335,7 @@ class BaseHoldSystem(Generic[T]):
 
 		return self._on_process.get(u)[0]
 
-	async def register(self, poll: T, awaitable: Awaitable):
+	async def register(self, poll: T, awaitable: Awaitable, restore: bool = False):
 		# awaitable will be awaited within the writer lock (see wait_for_timeout)
 		async with poll.writer:
 			if self._contain(poll):
@@ -347,7 +347,7 @@ class BaseHoldSystem(Generic[T]):
 			task = loop.create_task(self.wait_for_timeout(poll))
 			self._on_process[poll.uuid] = (poll, task, awaitable)
 
-			if self.col is not None:
+			if self.col is not None and not restore:
 				col.insert_one(poll.to_dict())
 
 	async def cancel(self, poll_or_u: T | uuid.UUID) -> bool:
@@ -990,7 +990,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			# There is no problem to register an expired poll
 			# since "sleep_until" will be skipped instantly
 			# and we have already used mutex (writer) locks as guards.
-			await self.poll_system.register(poll, self._timeout_process(poll))
+			await self.poll_system.register(poll, self._timeout_process(poll), restore = True)
 			# There is no problem to register views of expired polls
 			# since each actions ensures the polls are in the system,
 			# and the expired polls are already dropped in the above step.
