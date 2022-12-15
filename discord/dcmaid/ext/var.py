@@ -181,6 +181,33 @@ class VariableSystem:
 
 		return result
 
+	def update_bookkeeping(self, bookkeeping: dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]):
+		# @Pre the permission checks are done
+		# The method only updates directly
+		# Also, the method does not handle theading or async, handle them in the caller
+		table: dict[int, list[calcs.LValue]] = {}
+		for lv in bookkeeping:
+			if lv.var.scope.id not in table:
+				table[lv.var.scope.id] = []
+			table[lv.var.scope.id].append(lv)
+
+		for scope_id, lvs in table.items():
+			lock, d = self._stored_value[scope_id]
+			with lock.write:
+				for lv in lvs:
+					f, t = bookkeeping[lv]
+					d[lv.var.name] = t
+
+					if self.col is not None:
+						if t.is_number:
+							value = {'type': 'number', 'value': sympy.srepr(t.value)}
+						elif t.is_bool:
+							value = {'type': 'boolean', 'value': str(t.value).lower()}
+						else:
+							value = {'type': 'string', 'value': t.value}
+
+						self.col.update_one({'scope_id': scope_id}, value)
+
 	...
 
 class _ChangeScopeOperator(calcs.UnaryOperator):
