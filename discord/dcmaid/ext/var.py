@@ -67,7 +67,6 @@ class VariableSystem:
 
 		self._managed_scopes: dict[int, Scope] = {} # id: Scope
 		self._stored_value: dict[int, tuple[RWLock, dict[str, calcs.Constant]]] = {} # scope_id: (lock, {name: constant})
-		...
 
 	async def restore_info(self, bot):
 		# Injure all names in SymPy
@@ -100,8 +99,7 @@ class VariableSystem:
 					# Unknown type in the db, but we choose to just omit without dropping.
 					continue
 
-				self._managed_scopes[scope_id] = scope
-				self._stored_value[scope_id] = (RWLock(), {})
+				self.add_scope(scope)
 				d: dict[str, calcs.Constant] = self._stored_value[scope_id][1]
 
 				for var in scope_info['vars']:
@@ -109,20 +107,20 @@ class VariableSystem:
 					if type == 'number':
 						try:
 							value = eval(value)
-							d[name] = NumberConstant(value)
+							d[name] = calcs.NumberConstant(value)
 						except:
 							# Unknown error
 							pass
 					elif type == 'boolean':
 						if value.lower() == 'true':
-							d[name] = BooleanConstant(True)
+							d[name] = calcs.BooleanConstant(True)
 						elif value.lower() == 'false':
-							d[name] = BooleanConstant(False)
+							d[name] = calcs.BooleanConstant(False)
 						else:
 							# Unknown
 							pass
 					elif type == 'string':
-						d[name] == StringConstant(value)
+						d[name] == calcs.StringConstant(value)
 					else:
 						# Unknown to omit
 						pass
@@ -131,6 +129,14 @@ class VariableSystem:
 				self.col.delete_many({'scope_type': scope_type, 'scope_id': scope_id})
 			except:
 				continue
+
+	def add_scope(self, scope: Scope) -> Scope:
+		if scope.id in self._managed_scopes:
+			return self._managed_scopes[scope.id]
+
+		self._managed_scopes[scope.id] = scope
+		self._stored_value[scope.id] = (RWLock(), {})
+		return scope
 
 	def add_var(self, name, scope: discord.User | discord.Guild | ChannelType):
 		match scope:
@@ -147,7 +153,33 @@ class VariableSystem:
 		channel: ChannelType,
 		bookkeeping: Optional[dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]] = None) -> dict[calcs.Var, calcs.LValue]:
 
-		...
+		result: dict[calcs.Var, calcs.LValue] = {}
+
+		scopes = []
+		# user scope
+		scopes.append(self.add_scope(UserScope(caller)))
+		# thread scope
+		if isinstance(channel, discord.Thread):
+			scopes.append(self.add_scope(ChannelScope(channel)))
+		# channel scope
+		if isinstance(channel, discord.Thread):
+			scopes.append(self.add_scope(ChannelScope(channel.channel)))
+		else:
+			scopes.append(self.add_scope(ChannelScope(channel)))
+		# guild scope
+		if not is_DM(channel):
+			scopes.append(self.add_scope(GuildScope(channel.guild)))
+
+		for scope in scopes:
+			d: dict[str, calcs.Constant]
+			lock, d = self._stored_value[scope.id]
+			with lock.read:
+				for name, constant in d.items():
+					var = calcs.Var(name, scope)
+					lv = calcs.LValue(var, constant, bookkeeping)
+					result[var] = lv
+
+		return result
 
 	...
 
