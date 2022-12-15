@@ -1,10 +1,14 @@
 # Let users handle variables for themselves...
 import calcs
 import discord
+import sympy
 from ..basebot import Bot
 from ..basecog import BaseCog
 from ..typing import ChannelType
 from ..utils import *
+from aiorwlock import RWLock
+from sympy import *
+from typing import Optional
 
 class Scope:
 	_id: int
@@ -32,6 +36,18 @@ class Scope:
 	def id(self):
 		return self._id
 
+	@property
+	def is_user_scope(self):
+		return self._is_user
+
+	@property
+	def is_guild_scope(self):
+		return self._is_guild
+
+	@property
+	def is_channel_scope(self):
+		return self._is_channel
+
 class UserScope(Scope):
 	_is_user = True
 
@@ -46,14 +62,75 @@ class VariableSystem:
 	def __init__(self, col = None):
 		self.col = col
 
-		self._restore_info = []
-
 		if col is not None:
-			self._restore_info = col.find()
+			col.create_index({'scope_type': 1, 'scope_id': 1})
 
-	@property
-	def restore_info(self):
-		return iter(self._restore_info)
+		self._managed_scopes: dict[int, Scope] = {} # id: Scope
+		self._stored_value: dict[int, tuple[RWLock, dict[str, calcs.Constant]]] = {} # scope_id: (lock, {name: constant})
+		...
+
+	async def restore_info(self, bot):
+		# Injure all names in SymPy
+		for n in dir(sympy):
+			if not n.startswith('_'):
+				exec(f'{n}=sympy.{n}')
+
+		if col is None:
+			return
+
+		info = col.aggregate([
+			'$group': {
+				'_id': {'scope_type': '$scope_type', 'scope_id': '$scope_id'},
+				'vars': {'$push': {'name': '$name', 'type': '$type', 'value': '$value'}}
+			}
+		])
+		for scope_info in info:
+			scope_type, scope_id = scope_info['_id']['scope_type'], scope_info['_id']['scope_id']
+			try:
+				if scope_type == 'user':
+					obj = discord.utils.get_or_fetch(bot, 'user', scope_id)
+					scope = UserScope(obj)
+				elif scope_type == 'channel':
+					obj = discord.utils.get_or_fetch(bot, 'channel', scope_id)
+					scope = ChannelScope(obj)
+				elif scope_type == 'guild':
+					obj = discord.utils.get_or_fetch(bot, 'guild', scope_id)
+					scope = GuildScope(obj)
+				else:
+					# Unknown type in the db, but we choose to just omit without dropping.
+					continue
+
+				self._managed_scopes[scope_id] = scope
+				self._stored_value[scope_id] = (RWLock(), {})
+				d: dict[str, calcs.Constant] = self._stored_value[scope_id][1]
+
+				for var in scope_info['vars']:
+					name, type, value = var['name'], var['type'], var['value']
+					if type == 'number':
+						try:
+							value = eval(value)
+							d[name] = NumberConstant(value)
+						except:
+							# Unknown error
+							pass
+					elif type == 'boolean':
+						if value.lower() == 'true':
+							d[name] = BooleanConstant(True)
+						elif value.lower() == 'false':
+							d[name] = BooleanConstant(False)
+						else:
+							# Unknown
+							pass
+					elif type == 'string':
+						d[name] == StringConstant(value)
+					else:
+						# Unknown to omit
+						pass
+			except (discord.NotFound, discord.Forbidden):
+				# Only drop when the object is unavailable to the bot or disappeared in Discord
+				self.col.delete_many({'scope_type': scope_type, 'scope_id': scope_id})
+			except:
+				continue
 
 	def add_var(self, name, scope: discord.User | discord.Guild | ChannelType):
 		match scope:
@@ -68,9 +145,8 @@ class VariableSystem:
 	def retrieve_mapping(self,
 		caller: discord.User,
 		channel: ChannelType,
-		bookkeeping: dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]) -> dict[calcs.Var, calcs.LValue]:
-		# Member: in guild
-		# User: only user
+		bookkeeping: Optional[dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]] = None) -> dict[calcs.Var, calcs.LValue]:
+
 		...
 
 	...
@@ -104,13 +180,21 @@ class ToGuildOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
 		if is_DM(ctx.channel):
 			raise ValueError('Not in guild')
-		var.scope = GuildScope(channel.guild)
+		var.scope = GuildScope(ctx.channel.guild)
+
+class ToIndividualOperator(_ChangeScopeOperator):
+	def _cast_scope(self, var, bot, ctx):
+		var.scope = UserScope(ctx.user)
 
 class VarCommands(BaseCog, name = 'Var'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
 		self._parser = ...
 		self._varsystem = ...
+
+	@discord.Cog.listener()
+	async def on_ready(self):
+		self._varsystem.restore_info(self.bot)
 
 	@discord.slash_command(
 		description = 'Declare your own variable (no side-effects)',
