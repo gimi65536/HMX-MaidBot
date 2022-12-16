@@ -64,6 +64,9 @@ class BookKeeping(dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self._order = 0
+
+	def generate_order(self):
 		self._order = self._count.next()
 
 	@property
@@ -177,6 +180,9 @@ class VariableSystem:
 		caller: discord.User,
 		channel: ChannelType,
 		bookkeeping: Optional[dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]] = None) -> dict[calcs.Var, calcs.LValue]:
+
+		if isinstance(bookkeeping, BookKeeping):
+			bookkeeping.generate_order()
 
 		result: dict[calcs.Var, calcs.LValue] = {}
 
