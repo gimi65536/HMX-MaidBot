@@ -1,0 +1,25 @@
+__translation_table:
+  number:
+  	~: Number
+  	zh-TW: 數字
+  boolean:
+  	~: Boolean
+  	zh-TW: 真假值
+  boolean-true:
+  	~: "True"
+  	zh-TW: 真
+  boolean-false:
+  	~: "False"
+  	zh-TW: 假
+  string:
+  	~: String
+  	zh-TW: 字串
+  declare-success-user:
+    ~: "Successfully declare `{name}` of your own scope, and the value is:\n{n}"
+    zh-TW: "成功宣告自己的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-user:
+    ~: The variable `{name}` cannot be declared twice in your own scope.
+    zh-TW: 自己的變數`{name}`不能被重複宣告。
+  declare-failed-invalid:
+    ~: The name `{name}` is invalid.
+    zh-TW: "`{name}`不是合法的變數名稱。"

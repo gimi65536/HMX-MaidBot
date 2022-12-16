@@ -186,6 +186,18 @@ class VariableSystem:
 
 			return True
 
+	def exist_var(self, name, obj: discord.User | discord.Member | discord.Guild | ChannelType) -> bool:
+		match obj:
+			case discord.User() | discord.Member():
+				scope = self.add_scope(UserScope(obj))
+			case discord.Guild():
+				scope = self.add_scope(GuildScope(obj))
+			case _:
+				scope = self.add_scope(ChannelScope(obj))
+
+		_, d = self._stored_value[scope.id]
+		return name in d
+
 	async def retrieve_mapping(self,
 		caller: discord.User | discord.Member,
 		channel: ChannelType,
@@ -309,6 +321,7 @@ _eval_prefix = '=$'
 
 class VarCommands(BaseCog, name = 'Var'):
 	_backticks = re.compile('`(?=`)')
+	_varname = re.compile(r'\w+')
 
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
@@ -334,17 +347,26 @@ class VarCommands(BaseCog, name = 'Var'):
 	)
 	async def declare(self, ctx, name, value):
 		await ctx.defer()
-		success, n = await self._declare(ctx, name, value)
+		success, n = await self._declare(ctx, ctx.author, name, value)
 
 		if success:
-			...
+			s = self.to_response(n, ctx.locale)
+			await ctx.followup.send(self._trans(ctx, 'declare-success-user', format = {'name': name, 'n': s}), ephemeral = True)
 		else:
-			...
+			if self._varsystem.exist_var(name, obj):
+				await ctx.followup.send(self._trans(ctx, 'declare-failed-declared-user', format = {'name': name}), ephemeral = True)
+			else:
+				await ctx.followup.send(self._trans(ctx, 'declare-failed-invalid', format = {'name': name}), ephemeral = True)
 
-	async def _declare(self, ctx: discord.Message | QuasiContext, name: str, value: str) -> tuple[bool, Constant]:
+	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str) -> tuple[bool, Constant]:
+		if self._varsystem.exist_var(name, obj):
+			return False, calcs.NumberConstant(sympy.Integer(0))
+		if not self.can_be_varname(name):
+			return False, calcs.NumberConstant(sympy.Integer(0))
+
 		n, _ = await self._evaluate(ctx, value)
 
-		success = await self._varsystem.add_var(name, ctx.author, n)
+		success = await self._varsystem.add_var(name, obj, n)
 
 		return success, n
 
@@ -359,7 +381,7 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def evaluate(self, ctx, expression):
 		await ctx.defer()
 		n, _ = await self._evaluate(ctx, expression)
-		...
+		await ctx.followup.send(self.to_response(n, ctx.locale))
 
 	async def _evaluate(self, ctx: discord.Message | QuasiContext, value: str) -> tuple[Constant, BookKeeping]:
 		try:
@@ -409,20 +431,34 @@ class VarCommands(BaseCog, name = 'Var'):
 				await message.reply(f'```\n{e}```', delete_after = 30)
 				return
 
-			if n.is_number:
-				await message.reply('Number ' + f'`{n}`')
-			elif n.is_bool:
-				await message.reply('Boolean ' + f'`{n}`')
-			elif n.is_str:
-				s = n.value
-				if len(s) == 0:
-					await message.reply('String ""')
-				else:
-					await message.reply('String ' + f'''``"{self.escape(s)}"``''')
+			await message.reply(self.to_response(n))
+
+	@classmethod
+	def to_response(cls, n: calcs.Constant, locale: Optional[str] = None) -> str:
+		if n.is_number:
+			prefix = self._trans(locale, 'number')
+			return prefix + f' `{n}`'
+		elif n.is_bool:
+			prefix = self._trans(locale, 'boolean')
+			if n.value:
+				value = self._trans(locale, 'boolean-true')
+			else:
+				value = self._trans(locale, 'boolean-false')
+			return f'{prefix} {value}'
+		elif n.is_str:
+			prefix = self._trans(locale, 'string')
+			s = n.value
+			if len(s) == 0:
+				return prefix + ' ""'
+			else:
+				return prefix + f''' ``"{self.escape(s)}"``'''
 
 	@classmethod
 	def escape(cls, s):
 		return cls._backticks.sub('`' + EmptyCharacter, s)
+
+	def can_be_varname(self, name):
+		return self._varname.fullmatch(name) and not name[0].isdigit() and not self._parser.is_op_symbol(name)
 
 class ParseError(discord.ApplicationCommandError):
 	def __init__(self, e):
