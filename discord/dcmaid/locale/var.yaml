@@ -1,3 +1,7 @@
+dec:
+dec-channel:
+dec-guild:
+
 __translation_table:
   number:
   	~: Number
@@ -20,6 +24,18 @@ __translation_table:
   declare-failed-declared-user:
     ~: The variable `{name}` cannot be declared twice in your own scope.
     zh-TW: 自己的變數`{name}`不能被重複宣告。
+  declare-success-channel:
+    ~: "Successfully declare `{name}` of this channel, and the value is:\n{n}"
+    zh-TW: "成功宣告此頻道的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-channel:
+    ~: The variable `{name}` cannot be declared twice in this channel.
+    zh-TW: 頻道的變數`{name}`不能被重複宣告。
+  declare-success-guild:
+    ~: "Successfully declare `{name}` of this guild, and the value is:\n{n}"
+    zh-TW: "成功宣告此公會的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-guild:
+    ~: The variable `{name}` cannot be declared twice in this guild.
+    zh-TW: 公會的變數`{name}`不能被重複宣告。
   declare-failed-invalid:
     ~: The name `{name}` is invalid.
     zh-TW: "`{name}`不是合法的變數名稱。"

@@ -334,6 +334,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		self._varsystem.restore_info(self.bot)
 
 	@discord.slash_command(
+		name = 'dec',
 		description = 'Declare your own variable (no side-effects)',
 		options = [
 			discord.Option(str,
@@ -355,6 +356,62 @@ class VarCommands(BaseCog, name = 'Var'):
 		else:
 			if self._varsystem.exist_var(name, obj):
 				await ctx.followup.send(self._trans(ctx, 'declare-failed-declared-user', format = {'name': name}), ephemeral = True)
+			else:
+				await ctx.followup.send(self._trans(ctx, 'declare-failed-invalid', format = {'name': name}), ephemeral = True)
+
+	@discord.slash_command(
+		name = 'dec-channel',
+		description = 'Declare your own variable (no side-effects)',
+		options = [
+			discord.Option(str,
+				name = 'name',
+				description = 'Name of the variable'),
+			discord.Option(str,
+				name = 'value',
+				description = 'Value of the variable (Default to integer 0)',
+				default = '0')
+		],
+		guild_only = True,
+		default_member_permissions = discord.Permissions(manage_channels = True)
+	)
+	async def declare_channel(self, ctx, name, value):
+		await ctx.defer()
+		success, n = await self._declare(ctx, ctx.channel, name, value)
+
+		if success:
+			s = self.to_response(n, ctx.locale)
+			await ctx.followup.send(self._trans(ctx, 'declare-success-channel', format = {'name': name, 'n': s}))
+		else:
+			if self._varsystem.exist_var(name, obj):
+				await ctx.followup.send(self._trans(ctx, 'declare-failed-declared-channel', format = {'name': name}), ephemeral = True)
+			else:
+				await ctx.followup.send(self._trans(ctx, 'declare-failed-invalid', format = {'name': name}), ephemeral = True)
+
+	@discord.slash_command(
+		name = 'dec-guild',
+		description = 'Declare your own variable (no side-effects)',
+		options = [
+			discord.Option(str,
+				name = 'name',
+				description = 'Name of the variable'),
+			discord.Option(str,
+				name = 'value',
+				description = 'Value of the variable (Default to integer 0)',
+				default = '0')
+		],
+		guild_only = True,
+		default_member_permissions = discord.Permissions(manage_guild = True)
+	)
+	async def declare_guild(self, ctx, name, value):
+		await ctx.defer()
+		success, n = await self._declare(ctx, ctx.guild, name, value)
+
+		if success:
+			s = self.to_response(n, ctx.locale)
+			await ctx.followup.send(self._trans(ctx, 'declare-success-guild', format = {'name': name, 'n': s}))
+		else:
+			if self._varsystem.exist_var(name, obj):
+				await ctx.followup.send(self._trans(ctx, 'declare-failed-declared-guild', format = {'name': name}), ephemeral = True)
 			else:
 				await ctx.followup.send(self._trans(ctx, 'declare-failed-invalid', format = {'name': name}), ephemeral = True)
 
