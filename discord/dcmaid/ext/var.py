@@ -7,6 +7,7 @@ from ..basecog import BaseCog
 from ..typing import ChannelType
 from ..utils import *
 from aiorwlock import RWLock
+from itertools import count
 from sympy import *
 from typing import Optional
 
@@ -58,6 +59,17 @@ class GuildScope(Scope):
 class ChannelScope(Scope):
 	_is_channel = True
 
+class BookKeeping(dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]):
+	_count = count(1)
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self._order = self._count.next()
+
+	@property
+	def order(self):
+		return self._order
+
 class VariableSystem:
 	def __init__(self, col = None):
 		self.col = col
@@ -67,6 +79,7 @@ class VariableSystem:
 
 		self._managed_scopes: dict[int, Scope] = {} # id: Scope
 		self._stored_value: dict[int, tuple[RWLock, dict[str, calcs.Constant]]] = {} # scope_id: (lock, {name: constant})
+		self._update_record: dict[int, dict[str, int]] = {} # scope_id: {name: order}
 
 	async def restore_info(self, bot):
 		# Injure all names in SymPy
@@ -101,6 +114,7 @@ class VariableSystem:
 
 				self.add_scope(scope)
 				d: dict[str, calcs.Constant] = self._stored_value[scope_id][1]
+				r = self._update_record[scope_id]
 
 				for var in scope_info['vars']:
 					name, type, value = var['name'], var['type'], var['value']
@@ -108,19 +122,23 @@ class VariableSystem:
 						try:
 							value = eval(value)
 							d[name] = calcs.NumberConstant(value)
+							r[name] = 0
 						except:
 							# Unknown error
 							pass
 					elif type == 'boolean':
 						if value.lower() == 'true':
 							d[name] = calcs.BooleanConstant(True)
+							r[name] = 0
 						elif value.lower() == 'false':
 							d[name] = calcs.BooleanConstant(False)
+							r[name] = 0
 						else:
 							# Unknown
 							pass
 					elif type == 'string':
 						d[name] == calcs.StringConstant(value)
+						r[name] = 0
 					else:
 						# Unknown to omit
 						pass
@@ -136,19 +154,26 @@ class VariableSystem:
 
 		self._managed_scopes[scope.id] = scope
 		self._stored_value[scope.id] = (RWLock(), {})
+		self._update_record[scope.id] = {}
 		return scope
 
-	def add_var(self, name, scope: discord.User | discord.Guild | ChannelType):
-		match scope:
+	def add_var(self, name, obj: discord.User | discord.Guild | ChannelType, default: Constant = calcs.NumberConstant(sympy.Integer(0))):
+		match obj:
 			case discord.User():
-				...
+				scope = self.add_scope(UserScope(obj))
 			case discord.Guild():
-				...
+				scope = self.add_scope(GuildScope(obj))
 			case _:
-				...
-		...
+				scope = self.add_scope(ChannelScope(obj))
 
-	def retrieve_mapping(self,
+		if name in self._stored_value[scope.id][1]:
+			# raise ValueError(f'Variable {name} has been declared before!')
+			return
+
+		self._stored_value[scope.id][1][name] = default
+		self._update_record[scope.id][name] = 0
+
+	async def retrieve_mapping(self,
 		caller: discord.User,
 		channel: ChannelType,
 		bookkeeping: Optional[dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]] = None) -> dict[calcs.Var, calcs.LValue]:
@@ -173,7 +198,7 @@ class VariableSystem:
 		for scope in scopes:
 			d: dict[str, calcs.Constant]
 			lock, d = self._stored_value[scope.id]
-			with lock.read:
+			async with lock.read:
 				for name, constant in d.items():
 					var = calcs.Var(name, scope)
 					lv = calcs.LValue(var, constant, bookkeeping)
@@ -181,10 +206,10 @@ class VariableSystem:
 
 		return result
 
-	def update_bookkeeping(self, bookkeeping: dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]):
+	async def update_bookkeeping(self, bookkeeping: dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]):
 		# @Pre the permission checks are done
 		# The method only updates directly
-		# Also, the method does not handle theading or async, handle them in the caller
+		# If the bookkeeping is an original dict, the update is forcely done, or the BookKeeping.order is taken into account.
 		table: dict[int, list[calcs.LValue]] = {}
 		for lv in bookkeeping:
 			if lv.var.scope.id not in table:
@@ -193,10 +218,17 @@ class VariableSystem:
 
 		for scope_id, lvs in table.items():
 			lock, d = self._stored_value[scope_id]
-			with lock.write:
+			r = self._update_record[scope_id]
+			async with lock.write:
 				for lv in lvs:
+					name = lv.var.name
+					if isinstance(bookkeeping, BookKeeping) and r[name] >= bookkeeping.order:
+						continue
+
 					f, t = bookkeeping[lv]
-					d[lv.var.name] = t
+					d[name] = t
+					if isinstance(bookkeeping, BookKeeping):
+						r[name] = bookkeeping.order
 
 					if self.col is not None:
 						if t.is_number:
