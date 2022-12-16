@@ -160,28 +160,32 @@ class VariableSystem:
 		self._update_record[scope.id] = {}
 		return scope
 
-	def add_var(self, name, obj: discord.User | discord.Guild | ChannelType, default: calcs.Constant = calcs.NumberConstant(sympy.Integer(0))):
-		# Is this method needs writer lock?
+	async def add_var(self, name, obj: discord.User | discord.Member | discord.Guild | ChannelType, default: calcs.Constant = calcs.NumberConstant(sympy.Integer(0))) -> bool:
 		match obj:
-			case discord.User():
+			case discord.User() | discord.Member():
 				scope = self.add_scope(UserScope(obj))
 			case discord.Guild():
 				scope = self.add_scope(GuildScope(obj))
 			case _:
 				scope = self.add_scope(ChannelScope(obj))
 
-		if name in self._stored_value[scope.id][1]:
-			# raise ValueError(f'Variable {name} has been declared before!')
-			return
+		lock, d = self._stored_value[scope.id]
 
-		self._stored_value[scope.id][1][name] = default
-		self._update_record[scope.id][name] = 0
+		with lock.write:
+			if name in self._stored_value[scope.id][1]:
+				# raise ValueError(f'Variable {name} has been declared before!')
+				return False
 
-		if self.col is not None:
-			self.col.insert_one(self.scope_to_document(scope) | {'name': name} | self.constant_to_document(default))
+			d[1][name] = default
+			self._update_record[scope.id][name] = 0
+
+			if self.col is not None:
+				self.col.insert_one(self.scope_to_document(scope) | {'name': name} | self.constant_to_document(default))
+
+			return True
 
 	async def retrieve_mapping(self,
-		caller: discord.User,
+		caller: discord.User | discord.Member,
 		channel: ChannelType,
 		bookkeeping: Optional[dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]] = None) -> dict[calcs.Var, calcs.LValue]:
 
@@ -303,7 +307,8 @@ class VarCommands(BaseCog, name = 'Var'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
 		self._parser = ...
-		self._varsystem = ...
+		self._var_col = bot.db['var_system'] if config('EXT_VAR_DB_BASED', default = False, cast = bool) else None
+		self._varsystem: VariableSystem = VariableSystem(self._var_col)
 
 	@discord.Cog.listener()
 	async def on_ready(self):
@@ -328,11 +333,18 @@ class VarCommands(BaseCog, name = 'Var'):
 			raise ParseError(e)
 
 		try:
-			n = expr.eval(...)
+			bookkeeping = BookKeeping()
+			mapping = self._varsystem.retrieve_mapping(ctx.user, ctx.channel, bookkeeping)
+			n = expr.eval(mapping, bot = self.bot, ctx = ctx)
 		except Exception as e:
 			raise CalculatorError(e)
 
-		...
+		success = await self._varsystem.add_var(name, ctx.user, n)
+
+		if success:
+			...
+		else:
+			...
 
 	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
 		match exception:
