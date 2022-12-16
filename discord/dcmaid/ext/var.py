@@ -401,17 +401,14 @@ class VarCommands(BaseCog, name = 'Var'):
 
 	@discord.Cog.listener()
 	async def on_message(self, message):
-		'''
-		This provides a "message command" version of playing games.
-		We don't use the ext.commands, though, because that will cause more problems.
-		The error is silent since we don't have interaction to send ephermeral notification.
-
-		NOTE: Modal for variant number arguments is not supported since message command is not based on interactions.
-		NOTE: The performance is a neck since we need to parse arguments redundantly.
-		'''
 		if not message.author.bot and message.content.startswith(_eval_prefix):
 			expression = message.content[len(_eval_prefix):]
-			n, _ = await self._evaluate(message, expression)
+			try:
+				n, _ = await self._evaluate(message, expression)
+			except Exception as e:
+				await message.reply(f'```\n{e}```', delete_after = 30)
+				return
+
 			if n.is_number:
 				await message.reply('Number ' + f'`{n}`')
 			elif n.is_bool:
