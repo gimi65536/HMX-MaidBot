@@ -5,7 +5,7 @@ from ..basecog import BaseCog
 from ..utils import *
 from ..views import Button, Select, YesNoView
 from aiorwlock import RWLock
-from asyncio import get_running_loop, Lock, sleep, Task
+from asyncio import get_running_loop, sleep, Task
 from collections import Counter
 from collections.abc import Awaitable, Mapping, MutableMapping
 from dataclasses import dataclass
