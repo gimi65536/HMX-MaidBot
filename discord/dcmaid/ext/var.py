@@ -1,6 +1,7 @@
 # Let users handle variables for themselves...
 import calcs
 import discord
+import re
 import sympy
 from ..basebot import Bot
 from ..basecog import BaseCog
@@ -307,6 +308,8 @@ class ToIndividualOperator(_ChangeScopeOperator):
 _eval_prefix = '=$'
 
 class VarCommands(BaseCog, name = 'Var'):
+	_backticks = re.compile('`(?=`)')
+
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
 		self._parser = ...
@@ -330,8 +333,13 @@ class VarCommands(BaseCog, name = 'Var'):
 		]
 	)
 	async def declare(self, ctx, name, value):
+		await ctx.defer()
 		success, n = await self._declare(ctx, name, value)
-		...
+
+		if success:
+			...
+		else:
+			...
 
 	async def _declare(self, ctx: discord.Message | QuasiContext, name: str, value: str) -> tuple[bool, Constant]:
 		n, _ = await self._evaluate(ctx, value)
@@ -349,6 +357,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		]
 	)
 	async def evaluate(self, ctx, expression):
+		await ctx.defer()
 		n, _ = await self._evaluate(ctx, expression)
 		...
 
@@ -402,8 +411,21 @@ class VarCommands(BaseCog, name = 'Var'):
 		'''
 		if not message.author.bot and message.content.startswith(_eval_prefix):
 			expression = message.content[len(_eval_prefix):]
-			n = await self._evaluate(message, expression)
-			...
+			n, _ = await self._evaluate(message, expression)
+			if n.is_number:
+				await message.reply('Number ' + f'`{n}`')
+			elif n.is_bool:
+				await message.reply('Boolean ' + f'`{n}`')
+			elif n.is_str:
+				s = n.value
+				if len(s) == 0:
+					await message.reply('String ""')
+				else:
+					await message.reply('String ' + f'''``"{self.escape(s)}"``''')
+
+	@classmethod
+	def escape(cls, s):
+		return cls._backticks.sub('`' + EmptyCharacter, s)
 
 class ParseError(discord.ApplicationCommandError):
 	def __init__(self, e):
