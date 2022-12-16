@@ -304,6 +304,8 @@ class ToIndividualOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
 		var.scope = UserScope(ctx.user)
 
+_eval_prefix = '=$'
+
 class VarCommands(BaseCog, name = 'Var'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
@@ -337,6 +339,18 @@ class VarCommands(BaseCog, name = 'Var'):
 		success = await self._varsystem.add_var(name, ctx.author, n)
 
 		return success, n
+
+	@discord.slash_command(
+		description = 'Evaluate an expression (no side-effects)',
+		options = [
+			discord.Option(str,
+				name = 'expression',
+				description = 'Expression'),
+		]
+	)
+	async def evaluate(self, ctx, expression):
+		n, _ = await self._evaluate(ctx, expression)
+		...
 
 	async def _evaluate(self, ctx: discord.Message | QuasiContext, value: str) -> tuple[Constant, BookKeeping]:
 		try:
@@ -375,6 +389,21 @@ class VarCommands(BaseCog, name = 'Var'):
 			case _:
 				# Propagate
 				await super().cog_command_error(ctx, exception)
+
+	@discord.Cog.listener()
+	async def on_message(self, message):
+		'''
+		This provides a "message command" version of playing games.
+		We don't use the ext.commands, though, because that will cause more problems.
+		The error is silent since we don't have interaction to send ephermeral notification.
+
+		NOTE: Modal for variant number arguments is not supported since message command is not based on interactions.
+		NOTE: The performance is a neck since we need to parse arguments redundantly.
+		'''
+		if not message.author.bot and message.content.startswith(_eval_prefix):
+			expression = message.content[len(_eval_prefix):]
+			n = await self._evaluate(message, expression)
+			...
 
 class ParseError(discord.ApplicationCommandError):
 	def __init__(self, e):
