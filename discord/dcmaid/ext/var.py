@@ -160,7 +160,8 @@ class VariableSystem:
 		self._update_record[scope.id] = {}
 		return scope
 
-	def add_var(self, name, obj: discord.User | discord.Guild | ChannelType, default: Constant = calcs.NumberConstant(sympy.Integer(0))):
+	def add_var(self, name, obj: discord.User | discord.Guild | ChannelType, default: calcs.Constant = calcs.NumberConstant(sympy.Integer(0))):
+		# Is this method needs writer lock?
 		match obj:
 			case discord.User():
 				scope = self.add_scope(UserScope(obj))
@@ -175,6 +176,9 @@ class VariableSystem:
 
 		self._stored_value[scope.id][1][name] = default
 		self._update_record[scope.id][name] = 0
+
+		if self.col is not None:
+			self.col.insert_one(self.scope_to_document(scope) | {'name': name} | self.constant_to_document(default))
 
 	async def retrieve_mapping(self,
 		caller: discord.User,
@@ -237,14 +241,26 @@ class VariableSystem:
 						r[name] = bookkeeping.order
 
 					if self.col is not None:
-						if t.is_number:
-							value = {'type': 'number', 'value': sympy.srepr(t.value)}
-						elif t.is_bool:
-							value = {'type': 'boolean', 'value': str(t.value).lower()}
-						else:
-							value = {'type': 'string', 'value': t.value}
+						self.col.update_one({'scope_id': scope_id, 'name': name}, self.constant_to_document(t))
 
-						self.col.update_one({'scope_id': scope_id}, value)
+	@staticmethod
+	def scope_to_document(scope: Scope):
+		if scope.is_user:
+			return {'scope_id': scope.id, 'scope_type': 'user'}
+		elif scope.is_guild:
+			return {'scope_id': scope.id, 'scope_type': 'guild'}
+		elif scope.is_channel:
+			return {'scope_id': scope.id, 'scope_type': 'channel'}
+		raise ValueError('Unknown scope type when converting into document')
+
+	@staticmethod
+	def constant_to_document(const: calcs.Constant):
+		if const.is_number:
+			return {'type': 'number', 'value': sympy.srepr(const.value)}
+		elif const.is_bool:
+			return {'type': 'boolean', 'value': str(const.value).lower()}
+		else:
+			return {'type': 'string', 'value': const.value}
 
 	...
 
