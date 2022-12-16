@@ -7,6 +7,7 @@ from ..basecog import BaseCog
 from ..typing import ChannelType
 from ..utils import *
 from aiorwlock import RWLock
+from asyncio import get_running_loop
 from itertools import count
 from sympy import *
 from typing import Optional
@@ -335,7 +336,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		try:
 			bookkeeping = BookKeeping()
 			mapping = self._varsystem.retrieve_mapping(ctx.user, ctx.channel, bookkeeping)
-			n = expr.eval(mapping, bot = self.bot, ctx = ctx)
+			n = await get_running_loop().run_in_executor(None, self._eval, expr, mapping, ctx)
 		except Exception as e:
 			raise CalculatorError(e)
 
@@ -345,6 +346,9 @@ class VarCommands(BaseCog, name = 'Var'):
 			...
 		else:
 			...
+
+	def _eval(self, expr: calcs.Expr, mapping, ctx):
+		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
 	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
 		match exception:
