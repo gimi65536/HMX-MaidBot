@@ -78,7 +78,7 @@ class VariableSystem:
 		self.col = col
 
 		if col is not None:
-			col.create_index({'scope_type': 1, 'scope_id': 1})
+			col.create_index({'scope_type': 1, 'scope_id': 1, 'name': 1})
 
 		self._managed_scopes: dict[int, Scope] = {} # id: Scope
 		self._stored_value: dict[int, tuple[RWLock, dict[str, calcs.Constant]]] = {} # scope_id: (lock, {name: constant})
