@@ -4,7 +4,7 @@ import discord
 import sympy
 from ..basebot import Bot
 from ..basecog import BaseCog
-from ..typing import ChannelType
+from ..typing import ChannelType, QuasiContext
 from ..utils import *
 from aiorwlock import RWLock
 from asyncio import get_running_loop
@@ -328,6 +328,17 @@ class VarCommands(BaseCog, name = 'Var'):
 		]
 	)
 	async def declare(self, ctx, name, value):
+		success, n = await self._declare(ctx, name, value)
+		...
+
+	async def _declare(self, ctx: discord.Message | QuasiContext, name: str, value: str) -> tuple[bool, Constant]:
+		n, _ = await self._evaluate(ctx, value)
+
+		success = await self._varsystem.add_var(name, ctx.author, n)
+
+		return success, n
+
+	async def _evaluate(self, ctx: discord.Message | QuasiContext, value: str) -> tuple[Constant, BookKeeping]:
 		try:
 			expr = self._parser.parse(value)
 		except Exception as e:
@@ -335,17 +346,14 @@ class VarCommands(BaseCog, name = 'Var'):
 
 		try:
 			bookkeeping = BookKeeping()
-			mapping = self._varsystem.retrieve_mapping(ctx.user, ctx.channel, bookkeeping)
+			mapping = self._varsystem.retrieve_mapping(ctx.author, ctx.channel, bookkeeping)
 			n = await get_running_loop().run_in_executor(None, self._eval, expr, mapping, ctx)
 		except Exception as e:
 			raise CalculatorError(e)
 
-		success = await self._varsystem.add_var(name, ctx.user, n)
-
-		if success:
-			...
-		else:
-			...
+		if n.is_lvalue:
+			return n.content, bookkeeping
+		return n, bookkeeping
 
 	def _eval(self, expr: calcs.Expr, mapping, ctx):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
