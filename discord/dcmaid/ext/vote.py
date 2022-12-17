@@ -1082,20 +1082,12 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		atleast = config('EXT_VOTE_POLL_PERIOD_ATLEAST', default = 60, cast = int)
 		if (p := period_to_delta(period, period_unit)) and p.total_seconds() < atleast:
 			# Valid in semantics but too tricky to use
-			await send_error_embed(ctx,
-				name = self._trans(ctx, 'too-short-period-error'),
-				value = self._trans(ctx, 'too-short-period-error-value', format = {'period': period, 'default': atleast}),
-				ephemeral = True
-			)
+			raise TooShortPeriodError(period, atleast)
 
 		options: list[str] = StringArgumentParser.pick(options)
 		max_options = config('EXT_VOTE_POLL_MAXIMUM_OPTIONS', default = 20, cast = int)
 		if len(options) > max_options:
-			await send_error_embed(ctx,
-				name = self._trans(ctx, 'too-many-options-error'),
-				value = self._trans(ctx, 'too-many-options-error-value', format = {'default': max_options, 'n': len(options)}),
-				ephemeral = True
-			)
+			raise TooManyOptionsError(len(options), max_options)
 
 		poll = Poll(ctx.author, ctx.channel, title, options, ctx.locale, period, period_unit, realtime, show_name, show_name_voting, show_name_result, num_votes, min_votes, max_votes)
 		interaction = await ctx.send_response(content = self._trans(ctx, 'creating_poll_message'))
@@ -1229,6 +1221,18 @@ class VoteCommands(BaseCog, name = 'Vote'):
 					value = self._trans(ctx, 'zero-vote-error-value'),
 					ephemeral = True
 				)
+			case TooShortPeriodError():
+				await send_error_embed(ctx,
+					name = self._trans(ctx, 'too-short-period-error'),
+					value = self._trans(ctx, 'too-short-period-error-value', format = {'period': exception.period, 'default': exception.default}),
+					ephemeral = True
+				)
+			case TooManyOptionsError():
+				await send_error_embed(ctx,
+					name = self._trans(ctx, 'too-many-options-error'),
+					value = self._trans(ctx, 'too-many-options-error-value', format = {'default': exception.default, 'n': exception.n}),
+					ephemeral = True
+				)
 			case _:
 				# Propagate
 				await super().cog_command_error(ctx, exception)
@@ -1247,6 +1251,16 @@ class MinMaxError(discord.ApplicationCommandError):
 
 class ZeroVoteError(discord.ApplicationCommandError):
 	pass
+
+class TooShortPeriodError(discord.ApplicationCommandError):
+	def __init__(self, period, default):
+		self.period = period
+		self.default = default
+
+class TooManyOptionsError(discord.ApplicationCommandError):
+	def __init__(self, n, default):
+		self.n = n
+		self.default = default
 
 def setup(bot):
 	bot.add_cog(VoteCommands(bot))
