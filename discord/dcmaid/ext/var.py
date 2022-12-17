@@ -453,44 +453,39 @@ class VarCommands(BaseCog, name = 'Var'):
 		else:
 			locale = ctx.locale
 
-		if isinstance(ctx, QuasiContext) and ctx.response.is_done():
-			send = ctx.followup
-		else:
-			send = ctx
-
 		match exception:
 			case ParseError():
-				await send_error_embed(send,
+				await send_error_embed(ctx,
 					name = self._trans(locale, 'parse-error'),
 					value = self._trans(locale, 'parse-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
 					**self._ephemeral(ctx)
 				)
 			case CalculatorError():
-				await send_error_embed(send,
+				await send_error_embed(ctx,
 					name = self._trans(locale, 'calcs-error'),
 					value = self._trans(locale, 'calcs-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
 					**self._ephemeral(ctx)
 				)
 			case RedeclareError():
-				await send_error_embed(send,
+				await send_error_embed(ctx,
 					name = self._trans(locale, f'declare-failed-declared'),
 					value = self._trans(locale, f'declare-failed-declared-{exception.scope}', format = {'name': exception.name}),
 					**self._ephemeral(ctx)
 				)
 			case InvalidVariableNameError():
-				await send_error_embed(send,
+				await send_error_embed(ctx,
 					name = self._trans(locale, 'declare-failed-invalid'),
 					value = self._trans(locale, 'declare-failed-invalid-value', format = {'name': exception.name}),
 					**self._ephemeral(ctx)
 				)
 			case InvalidVariableNameError():
-				await send_error_embed(send,
+				await send_error_embed(ctx,
 					name = self._trans(locale, 'permission-denied'),
 					value = self._trans(locale, f'permission-denied-{exception.scope}'),
 					**self._ephemeral(ctx)
 				)
 			case NotInGuildError():
-				await send_error_embed(send,
+				await send_error_embed(ctx,
 					name = self._trans(locale, f'not-in-guild'),
 					value = self._trans(locale, f'not-in-guild'),
 					**self._ephemeral(ctx)

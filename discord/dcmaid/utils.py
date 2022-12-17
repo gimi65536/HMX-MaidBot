@@ -38,6 +38,7 @@ def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 
 # A simple function to send an embed to indicate an error.
 # The embed contains one field only.
+# This method automatically detect whether the response is done or not to use followup.
 # ApplicationContext: send_response()
 # Interaction: response.send_message()
 # Webhook (this is followup): send()
@@ -49,9 +50,15 @@ async def send_error_embed(ctx: QuasiContext | discord.Webhook | discord.Message
 		value = value
 	)
 	if isinstance(ctx, discord.ApplicationContext):
-		await ctx.send_response(embed = embed, **kwargs)
+		if ctx.response.is_done():
+			await ctx.send_followup(embed = embed, **kwargs)
+		else:
+			await ctx.send_response(embed = embed, **kwargs)
 	elif isinstance(ctx, discord.Interaction):
-		await ctx.response.send_message(embed = embed, **kwargs)
+		if ctx.response.is_done():
+			await ctx.followup.send(embed = embed, **kwargs)
+		else:
+			await ctx.response.send_message(embed = embed, **kwargs)
 	elif isinstance(ctx, discord.Webhook):
 		await ctx.send(embed = embed, **kwargs)
 	else:
