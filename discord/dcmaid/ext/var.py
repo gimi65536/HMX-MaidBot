@@ -371,18 +371,12 @@ class VarCommands(BaseCog, name = 'Var'):
 			scope = 'guild'
 			obj = channel.guild
 
-		success, n = await self._declare(ctx, obj, name, value)
+		n = await self._declare(ctx, obj, name, value)
 
-		if success:
-			s = self.to_response(n, ctx.locale)
-			await ctx.followup.send(self._trans(ctx, f'declare-success-{scope}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
-		else:
-			if self._varsystem.exist_var(name, obj):
-				raise RedeclareError(scope, name)
-			else:
-				raise InvalidVariableNameError(name)
+		s = self.to_response(n, ctx.locale)
+		await ctx.followup.send(self._trans(ctx, f'declare-success-{scope}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 
-	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> tuple[bool, Constant]:
+	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> Constant:
 		# Premission check
 		if scope == 'channel' and not is_DM(obj):
 			assert isinstance(ctx.author, discord.Member)
@@ -403,15 +397,18 @@ class VarCommands(BaseCog, name = 'Var'):
 			await ctx.defer()
 
 		if self._varsystem.exist_var(name, obj):
-			return False, calcs.NumberConstant(sympy.Integer(0))
+			raise RedeclareError(scope, name)
 		if not self.can_be_varname(name):
-			return False, calcs.NumberConstant(sympy.Integer(0))
+			raise InvalidVariableNameError(name)
 
 		n, _ = await self._evaluate(ctx, value)
 
+		# If another attempt to add var with the same name is done after we have done the checks, the below returns False.
 		success = await self._varsystem.add_var(name, obj, n)
+		if not success:
+			raise RedeclareError(scope, name)
 
-		return success, n
+		return n
 
 	@discord.slash_command(
 		description = 'Evaluate an expression (no side-effects)',
