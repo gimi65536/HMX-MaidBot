@@ -215,10 +215,7 @@ class VariableSystem:
 		if isinstance(channel, discord.Thread):
 			scopes.append(self.add_scope(ChannelScope(channel)))
 		# channel scope
-		if isinstance(channel, discord.Thread):
-			scopes.append(self.add_scope(ChannelScope(channel.channel)))
-		else:
-			scopes.append(self.add_scope(ChannelScope(channel)))
+		scopes.append(self.add_scope(ChannelScope(get_guild_channel(channel))))
 		# guild scope
 		if not is_DM(channel):
 			scopes.append(self.add_scope(GuildScope(channel.guild)))
@@ -302,10 +299,7 @@ class ToThreadOperator(_ChangeScopeOperator):
 
 class ToChannelOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
-		if isinstance(ctx.channel, discord.Thread):
-			var.scope = ChannelScope(ctx.channel.channel)
-		else:
-			var.scope = ChannelScope(ctx.channel)
+		var.scope = ChannelScope(get_guild_channel(ctx.channel))
 
 class ToGuildOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
@@ -343,12 +337,40 @@ class VarCommands(BaseCog, name = 'Var'):
 			discord.Option(str,
 				name = 'value',
 				description = 'Value of the variable (Default to integer 0)',
-				default = '0')
+				default = '0'),
+			discord.Option(str,
+				name = 'scope',
+				description = 'Where scope is this variable in (Default to "individual")',
+				choices = [
+					discord.OptionChoice('individual', 'user'),
+					discord.OptionChoice('this thread (this channel if not in a thread)', 'this'),
+					discord.OptionChoice('the channel (the outer channel if in a thread)', 'channel'),
+					discord.OptionChoice('this guild', 'guild')
+				],
+				default = 'h'),
 		]
 	)
-	async def declare(self, ctx, name, value):
+	async def declare(self, ctx, name, value, scope_option):
+		channel = ctx.channel
+		if scope_option == 'user':
+			scope, obj = 'user', ctx.author
+		elif scope_option == 'this':
+			scope, obj = 'channel', channel
+		elif scope_option == 'channel':
+			scope = 'channel'
+			obj = get_guild_channel(channel)
+		else:
+			if is_DM(channel):
+				await ctx.send_response(self._trans(ctx, 'not-in-guild'), ephemeral = True)
+			scope = 'guild'
+			obj = channel.guild
+
+		if scope != 'user':
+			# Premission check
+			...
+
 		await ctx.defer()
-		success, n = await self._declare(ctx, ctx.author, name, value)
+		success, n = await self._declare(ctx, obj, name, value)
 
 		if success:
 			s = self.to_response(n, ctx.locale)

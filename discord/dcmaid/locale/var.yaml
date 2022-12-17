@@ -18,6 +18,9 @@ __translation_table:
   string:
   	~: String
   	zh-TW: 字串
+  not-in-guild:
+    ~: Not in a guild.
+    zh-TW: 並非位於公會。
   declare-success-user:
     ~: "Successfully declare `{name}` of your own scope, and the value is:\n{n}"
     zh-TW: "成功宣告自己的變數`{name}`，其值為：\n{n}"
