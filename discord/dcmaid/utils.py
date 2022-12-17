@@ -1,4 +1,5 @@
 import discord
+from asyncio import get_running_loop
 from functools import wraps
 from pathlib import PurePath
 from typing import Any, Optional
@@ -30,7 +31,7 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 	if isinstance(ch, discord.Thread):
 		if ch.parent is None:
-			return discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id)
+			return get_running_loop().run_until_complete(discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id))
 		return ch.parent
 
 	return ch
