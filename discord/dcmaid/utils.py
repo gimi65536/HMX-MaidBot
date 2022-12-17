@@ -29,6 +29,8 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 # is a thread, otherwise returns the argument itself.
 def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 	if isinstance(ch, discord.Thread):
+		if ch.parent is None:
+			return discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id)
 		return ch.parent
 
 	return ch
