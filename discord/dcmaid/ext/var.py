@@ -335,7 +335,6 @@ class VarCommands(BaseCog, name = 'Var'):
 			return {'ephemeral': True}
 
 	@discord.slash_command(
-		name = 'dec',
 		description = 'Declare your own variable (no side-effects)',
 		options = [
 			discord.Option(str,
