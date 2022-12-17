@@ -21,6 +21,21 @@ __translation_table:
   not-in-guild:
     ~: Not in a guild.
     zh-TW: 並非位於公會。
+  permission-denied:
+    ~: Permission denied
+    zh-TW: 權限不足
+  permission-denied-thread:
+    ~: You are neither the manager of this channel nor the owner of this thread.
+    zh-TW: 並非是此頻道的管理員，亦非此討論串的擁有者。
+  permission-denied-channel:
+    ~: You are not the manager of this channel.
+    zh-TW: 並非是此頻道的管理員。
+  permission-denied-guild:
+    ~: You are not the manager of this guild.
+    zh-TW: 並非是此公會的管理員。
+  declare-failed-declared:
+    ~: Re-declare variable
+    zh-TW: 重複宣告
   declare-success-user:
     ~: "Successfully declare `{name}` of your own scope, and the value is:\n{n}"
     zh-TW: "成功宣告自己的變數`{name}`，其值為：\n{n}"
@@ -40,5 +55,18 @@ __translation_table:
     ~: The variable `{name}` cannot be declared twice in this guild.
     zh-TW: 公會的變數`{name}`不能被重複宣告。
   declare-failed-invalid:
+    ~: Invalid name
+    zh-TW: 錯誤的變數名稱
+  declare-failed-invalid-value:
     ~: The name `{name}` is invalid.
     zh-TW: "`{name}`不是合法的變數名稱。"
+  parse-error:
+    ~: Parse error
+    zh-TW: 編譯錯誤
+  parse-error-value:
+    ~: "{type}: {text}"
+  calcs-error:
+    ~: Calculate error
+    zh-TW: 運算錯誤
+  calcs-error-value:
+    ~: "{type}: {text}"

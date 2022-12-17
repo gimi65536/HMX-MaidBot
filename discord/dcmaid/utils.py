@@ -38,7 +38,11 @@ def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 
 # A simple function to send an embed to indicate an error.
 # The embed contains one field only.
-async def send_error_embed(ctx: QuasiContext, name, value, title = discord.Embed.Empty, description = discord.Embed.Empty, **kwargs):
+# ApplicationContext: send_response()
+# Interaction: response.send_message()
+# Webhook (this is followup): send()
+# Message: reply()
+async def send_error_embed(ctx: QuasiContext | discord.Webhook | discord.Message, name, value, title = discord.Embed.Empty, description = discord.Embed.Empty, **kwargs):
 	embed = discord.Embed(color = discord.Color.red(), title = title, description = description)
 	embed.add_field(
 		name = name,
@@ -46,8 +50,12 @@ async def send_error_embed(ctx: QuasiContext, name, value, title = discord.Embed
 	)
 	if isinstance(ctx, discord.ApplicationContext):
 		await ctx.send_response(embed = embed, **kwargs)
-	else:
+	elif isinstance(ctx, discord.Interaction):
 		await ctx.response.send_message(embed = embed, **kwargs)
+	elif isinstance(ctx, discord.Webhook):
+		await ctx.send(embed = embed, **kwargs)
+	else:
+		await ctx.reply(embed = embed, **kwargs)
 
 def trim(string: Optional[str]):
 	if string is not None:

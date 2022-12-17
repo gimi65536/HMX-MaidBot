@@ -327,6 +327,13 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def on_ready(self):
 		self._varsystem.restore_info(self.bot)
 
+	@staticmethod
+	def _ephemeral(ctx: discord.Message | QuasiContext) -> dict:
+		if isinstance(ctx, discord.Message):
+			return {'delete_after': 30}
+		else:
+			return {'ephemeral': True}
+
 	@discord.slash_command(
 		name = 'dec',
 		description = 'Declare your own variable (no side-effects)',
@@ -357,87 +364,69 @@ class VarCommands(BaseCog, name = 'Var'):
 		elif scope_option == 'this':
 			scope, obj = 'channel', channel
 		elif scope_option == 'channel':
-			scope = 'channel'
-			obj = get_guild_channel(channel)
+			scope, obj = 'channel', get_guild_channel(channel)
 		else:
 			if is_DM(channel):
-				await ctx.send_response(self._trans(ctx, 'not-in-guild'), ephemeral = True)
+				await send_error_embed(ctx,
+					name = self._trans(ctx, f'not-in-guild'),
+					value = self._trans(ctx, f'not-in-guild'),
+					ephemeral = True
+				)
+				return
 			scope = 'guild'
 			obj = channel.guild
 
-		if scope != 'user':
-			# Premission check
-			...
-
-		await ctx.defer()
 		success, n = await self._declare(ctx, obj, name, value)
 
 		if success:
 			s = self.to_response(n, ctx.locale)
-			await ctx.followup.send(self._trans(ctx, 'declare-success-user', format = {'name': name, 'n': s}), ephemeral = True)
+			await ctx.followup.send(self._trans(ctx, f'declare-success-{scope}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 		else:
 			if self._varsystem.exist_var(name, obj):
-				await ctx.followup.send(self._trans(ctx, 'declare-failed-declared-user', format = {'name': name}), ephemeral = True)
+				await send_error_embed(ctx.followup,
+					name = self._trans(ctx, f'declare-failed-declared'),
+					value = self._trans(ctx, f'declare-failed-declared-{scope}', format = {'name': name}),
+					ephemeral = True
+				)
 			else:
-				await ctx.followup.send(self._trans(ctx, 'declare-failed-invalid', format = {'name': name}), ephemeral = True)
+				await send_error_embed(ctx.followup,
+					name = self._trans(ctx, 'declare-failed-invalid'),
+					value = self._trans(ctx, 'declare-failed-invalid-value', format = {'name': name}),
+					ephemeral = True
+				)
 
-	@discord.slash_command(
-		name = 'dec-channel',
-		description = 'Declare your own variable (no side-effects)',
-		options = [
-			discord.Option(str,
-				name = 'name',
-				description = 'Name of the variable'),
-			discord.Option(str,
-				name = 'value',
-				description = 'Value of the variable (Default to integer 0)',
-				default = '0')
-		],
-		guild_only = True,
-		default_member_permissions = discord.Permissions(manage_channels = True)
-	)
-	async def declare_channel(self, ctx, name, value):
-		await ctx.defer()
-		success, n = await self._declare(ctx, ctx.channel, name, value)
+	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> tuple[bool, Constant]:
+		# Premission check
+		if scope == 'channel' and not is_DM(obj):
+			assert isinstance(ctx.author, discord.Member)
+			p = get_guild_channel(obj).permissions_for(ctx.author)
+			if not p.manage_channels:
+				if isinstance(obj, discord.Thread):
+					if ctx.author.id != obj.owner_id:
+						await send_error_embed(ctx,
+							name = self._trans(ctx, f'permission-denied'),
+							value = self._trans(ctx, f'permission-denied-thread'),
+							**self._ephemeral(ctx)
+						)
+				else:
+					await send_error_embed(ctx,
+						name = self._trans(ctx, f'permission-denied'),
+						value = self._trans(ctx, f'permission-denied-channel'),
+						**self._ephemeral(ctx)
+					)
+		elif scope == 'guild':
+			assert isinstance(ctx.author, discord.Member)
+			p = obj.permissions_for(ctx.author)
+			if not p.manage_guild:
+				await send_error_embed(ctx,
+					name = self._trans(ctx, f'permission-denied'),
+					value = self._trans(ctx, f'permission-denied-guild'),
+					**self._ephemeral(ctx)
+				)
 
-		if success:
-			s = self.to_response(n, ctx.locale)
-			await ctx.followup.send(self._trans(ctx, 'declare-success-channel', format = {'name': name, 'n': s}))
-		else:
-			if self._varsystem.exist_var(name, obj):
-				await ctx.followup.send(self._trans(ctx, 'declare-failed-declared-channel', format = {'name': name}), ephemeral = True)
-			else:
-				await ctx.followup.send(self._trans(ctx, 'declare-failed-invalid', format = {'name': name}), ephemeral = True)
+		if not isinstance(ctx, discord.Message):
+			await ctx.defer()
 
-	@discord.slash_command(
-		name = 'dec-guild',
-		description = 'Declare your own variable (no side-effects)',
-		options = [
-			discord.Option(str,
-				name = 'name',
-				description = 'Name of the variable'),
-			discord.Option(str,
-				name = 'value',
-				description = 'Value of the variable (Default to integer 0)',
-				default = '0')
-		],
-		guild_only = True,
-		default_member_permissions = discord.Permissions(manage_guild = True)
-	)
-	async def declare_guild(self, ctx, name, value):
-		await ctx.defer()
-		success, n = await self._declare(ctx, ctx.guild, name, value)
-
-		if success:
-			s = self.to_response(n, ctx.locale)
-			await ctx.followup.send(self._trans(ctx, 'declare-success-guild', format = {'name': name, 'n': s}))
-		else:
-			if self._varsystem.exist_var(name, obj):
-				await ctx.followup.send(self._trans(ctx, 'declare-failed-declared-guild', format = {'name': name}), ephemeral = True)
-			else:
-				await ctx.followup.send(self._trans(ctx, 'declare-failed-invalid', format = {'name': name}), ephemeral = True)
-
-	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str) -> tuple[bool, Constant]:
 		if self._varsystem.exist_var(name, obj):
 			return False, calcs.NumberConstant(sympy.Integer(0))
 		if not self.can_be_varname(name):
@@ -463,6 +452,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		await ctx.followup.send(self.to_response(n, ctx.locale))
 
 	async def _evaluate(self, ctx: discord.Message | QuasiContext, value: str) -> tuple[Constant, BookKeeping]:
+		# @pre ctx is already deferred or ctx is message
 		try:
 			expr = self._parser.parse(value)
 		except Exception as e:
@@ -482,20 +472,25 @@ class VarCommands(BaseCog, name = 'Var'):
 	def _eval(self, expr: calcs.Expr, mapping, ctx):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
-	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
+	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception: discord.ApplicationCommandError):
 		match exception:
 			case ParseError():
 				await send_error_embed(ctx,
 					name = self._trans(ctx, 'parse-error'),
 					value = self._trans(ctx, 'parse-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
-					ephemeral = True
+					**self._ephemeral(ctx)
 				)
 			case CalculatorError():
 				await send_error_embed(ctx,
 					name = self._trans(ctx, 'calcs-error'),
 					value = self._trans(ctx, 'calcs-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
-					ephemeral = True
+					**self._ephemeral(ctx)
 				)
+
+	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
+		match exception:
+			case ParseError() | CalculatorError():
+				await self._error_handle(ctx, exception)
 			case _:
 				# Propagate
 				await super().cog_command_error(ctx, exception)
@@ -506,8 +501,11 @@ class VarCommands(BaseCog, name = 'Var'):
 			expression = message.content[len(_eval_prefix):]
 			try:
 				n, _ = await self._evaluate(message, expression)
+			except (ParseError, CalculatorError) as e:
+				await self._error_handle(message, e)
+				return
 			except Exception as e:
-				await message.reply(f'```\n{e}```', delete_after = 30)
+				await message.reply(f'```\n{e}```', **self._ephemeral(message))
 				return
 
 			await message.reply(self.to_response(n))
