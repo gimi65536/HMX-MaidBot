@@ -367,12 +367,7 @@ class VarCommands(BaseCog, name = 'Var'):
 			scope, obj = 'channel', get_guild_channel(channel)
 		else:
 			if is_DM(channel):
-				await send_error_embed(ctx,
-					name = self._trans(ctx, f'not-in-guild'),
-					value = self._trans(ctx, f'not-in-guild'),
-					ephemeral = True
-				)
-				return
+				raise NotInGuildError()
 			scope = 'guild'
 			obj = channel.guild
 
@@ -383,17 +378,9 @@ class VarCommands(BaseCog, name = 'Var'):
 			await ctx.followup.send(self._trans(ctx, f'declare-success-{scope}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 		else:
 			if self._varsystem.exist_var(name, obj):
-				await send_error_embed(ctx.followup,
-					name = self._trans(ctx, f'declare-failed-declared'),
-					value = self._trans(ctx, f'declare-failed-declared-{scope}', format = {'name': name}),
-					ephemeral = True
-				)
+				raise RedeclareError(scope, name)
 			else:
-				await send_error_embed(ctx.followup,
-					name = self._trans(ctx, 'declare-failed-invalid'),
-					value = self._trans(ctx, 'declare-failed-invalid-value', format = {'name': name}),
-					ephemeral = True
-				)
+				raise InvalidVariableNameError(name)
 
 	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> tuple[bool, Constant]:
 		# Premission check
@@ -403,26 +390,14 @@ class VarCommands(BaseCog, name = 'Var'):
 			if not p.manage_channels:
 				if isinstance(obj, discord.Thread):
 					if ctx.author.id != obj.owner_id:
-						await send_error_embed(ctx,
-							name = self._trans(ctx, f'permission-denied'),
-							value = self._trans(ctx, f'permission-denied-thread'),
-							**self._ephemeral(ctx)
-						)
+						raise PermissionDenied('thread')
 				else:
-					await send_error_embed(ctx,
-						name = self._trans(ctx, f'permission-denied'),
-						value = self._trans(ctx, f'permission-denied-channel'),
-						**self._ephemeral(ctx)
-					)
+					raise PermissionDenied('channel')
 		elif scope == 'guild':
 			assert isinstance(ctx.author, discord.Member)
 			p = obj.permissions_for(ctx.author)
 			if not p.manage_guild:
-				await send_error_embed(ctx,
-					name = self._trans(ctx, f'permission-denied'),
-					value = self._trans(ctx, f'permission-denied-guild'),
-					**self._ephemeral(ctx)
-				)
+				raise PermissionDenied('guild')
 
 		if not isinstance(ctx, discord.Message):
 			await ctx.defer()
@@ -473,17 +448,51 @@ class VarCommands(BaseCog, name = 'Var'):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
 	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception: discord.ApplicationCommandError):
+		if isinstance(ctx, discord.Message):
+			locale = None
+		else:
+			locale = ctx.locale
+
+		if isinstance(ctx, QuasiContext) and ctx.response.is_done():
+			send = ctx.followup
+		else:
+			send = ctx
+
 		match exception:
 			case ParseError():
-				await send_error_embed(ctx,
-					name = self._trans(ctx, 'parse-error'),
-					value = self._trans(ctx, 'parse-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
+				await send_error_embed(send,
+					name = self._trans(locale, 'parse-error'),
+					value = self._trans(locale, 'parse-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
 					**self._ephemeral(ctx)
 				)
 			case CalculatorError():
-				await send_error_embed(ctx,
-					name = self._trans(ctx, 'calcs-error'),
-					value = self._trans(ctx, 'calcs-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
+				await send_error_embed(send,
+					name = self._trans(locale, 'calcs-error'),
+					value = self._trans(locale, 'calcs-error-value', format = {'type': type(exception.e).__name__, 'text': str(exception.e)}),
+					**self._ephemeral(ctx)
+				)
+			case RedeclareError():
+				await send_error_embed(send,
+					name = self._trans(locale, f'declare-failed-declared'),
+					value = self._trans(locale, f'declare-failed-declared-{exception.scope}', format = {'name': exception.name}),
+					**self._ephemeral(ctx)
+				)
+			case InvalidVariableNameError():
+				await send_error_embed(send,
+					name = self._trans(locale, 'declare-failed-invalid'),
+					value = self._trans(locale, 'declare-failed-invalid-value', format = {'name': exception.name}),
+					**self._ephemeral(ctx)
+				)
+			case InvalidVariableNameError():
+				await send_error_embed(send,
+					name = self._trans(locale, 'permission-denied'),
+					value = self._trans(locale, f'permission-denied-{exception.scope}'),
+					**self._ephemeral(ctx)
+				)
+			case NotInGuildError():
+				await send_error_embed(send,
+					name = self._trans(locale, f'not-in-guild'),
+					value = self._trans(locale, f'not-in-guild'),
 					**self._ephemeral(ctx)
 				)
 
@@ -544,6 +553,22 @@ class ParseError(discord.ApplicationCommandError):
 class CalculatorError(discord.ApplicationCommandError):
 	def __init__(self, e):
 		self.e = e
+
+class RedeclareError(discord.ApplicationCommandError):
+	def __init__(self, scope, name):
+		self.scope = scope
+		self.name = name
+
+class InvalidVariableNameError(discord.ApplicationCommandError):
+	def __init__(self, name):
+		self.name = name
+
+class PermissionDenied(discord.ApplicationCommandError):
+	def __init__(self, scope):
+		self.scope = scope
+
+class NotInGuildError(discord.ApplicationCommandError):
+	pass
 
 def setup(bot):
 	bot.add_cog(VarCommands(bot))
