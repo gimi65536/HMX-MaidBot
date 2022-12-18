@@ -386,7 +386,7 @@ class VarCommands(BaseCog, name = 'Var'):
 					raise PermissionDenied('channel')
 		elif scope == 'guild':
 			assert isinstance(ctx.author, discord.Member)
-			p = obj.permissions_for(ctx.author)
+			p = ctx.author.guild_permissions
 			if not p.manage_guild:
 				raise PermissionDenied('guild')
 
