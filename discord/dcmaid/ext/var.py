@@ -369,6 +369,20 @@ class VarCommands(BaseCog, name = 'Var'):
 			case _:
 				return False
 
+	@staticmethod
+	def _scope_option_process(ctx: discord.ApplicationContext, scope_option: str):
+		channel = ctx.channel
+		if scope_option == 'user':
+			return 'user', ctx.author
+		elif scope_option == 'this':
+			return 'channel', channel
+		elif scope_option == 'channel':
+			return 'channel', get_guild_channel(channel)
+		else:
+			if is_DM(channel):
+				raise NotInGuildError()
+			return 'guild', channel.guild
+
 	@discord.slash_command(
 		description = 'Declare your own variable (no side-effects)',
 		options = [
@@ -392,18 +406,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		]
 	)
 	async def declare(self, ctx, name, value, scope_option):
-		channel = ctx.channel
-		if scope_option == 'user':
-			scope, obj = 'user', ctx.author
-		elif scope_option == 'this':
-			scope, obj = 'channel', channel
-		elif scope_option == 'channel':
-			scope, obj = 'channel', get_guild_channel(channel)
-		else:
-			if is_DM(channel):
-				raise NotInGuildError()
-			scope = 'guild'
-			obj = channel.guild
+		scope, obj = self._scope_option_process(ctx, scope_option)
 
 		n = await self._declare(ctx, obj, name, value)
 
