@@ -314,7 +314,7 @@ class ToIndividualOperator(_ChangeScopeOperator):
 _eval_prefix = '=$'
 
 class VarCommands(BaseCog, name = 'Var'):
-	_backticks = re.compile('`(?=`)')
+	_backticks = re.compile('`(?=`)|`$')
 	_varname = re.compile(r'\w+')
 
 	def __init__(self, bot: Bot):
