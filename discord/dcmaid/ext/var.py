@@ -332,6 +332,43 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def on_ready(self):
 		self._varsystem.restore_info(self.bot)
 
+	@staticmethod
+	def _check_permission(ctx: discord.Message | QuasiContext, obj, scope: str):
+		# Premission check
+		if scope == 'channel' and not is_DM(obj):
+			assert isinstance(ctx.author, discord.Member)
+			p = get_guild_channel(obj).permissions_for(ctx.author)
+			if not p.manage_channels:
+				if isinstance(obj, discord.Thread):
+					if ctx.author.id != obj.owner_id:
+						raise PermissionDenied('thread')
+				else:
+					raise PermissionDenied('channel')
+		elif scope == 'guild':
+			assert isinstance(ctx.author, discord.Member)
+			p = ctx.author.guild_permissions
+			if not p.manage_guild:
+				raise PermissionDenied('guild')
+
+	async def _has_permission(self, var_or_scope: calcs.Var | Scope, user: discord.Member | discord.User) -> bool:
+		if isinstance(var_or_scope, calcs.Var):
+			scope = var_or_scope.scope
+		else:
+			scope = var_or_scope
+
+		match scope:
+			case UserScope():
+				return scope.id == user.id
+			case ChannelScope():
+				assert isinstance(user, discord.Member)
+				p = (await discord.utils.get_or_fetch(self.bot, 'channel', scope.id)).permissions_for(user)
+				return p.manage_channels
+			case GuildScope():
+				assert isinstance(user, discord.Member)
+				return user.guild_permissions.manage_guild
+			case _:
+				return False
+
 	@discord.slash_command(
 		description = 'Declare your own variable (no side-effects)',
 		options = [
@@ -374,21 +411,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		await ctx.followup.send(self._trans(ctx, f'declare-success-{scope}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 
 	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> Constant:
-		# Premission check
-		if scope == 'channel' and not is_DM(obj):
-			assert isinstance(ctx.author, discord.Member)
-			p = get_guild_channel(obj).permissions_for(ctx.author)
-			if not p.manage_channels:
-				if isinstance(obj, discord.Thread):
-					if ctx.author.id != obj.owner_id:
-						raise PermissionDenied('thread')
-				else:
-					raise PermissionDenied('channel')
-		elif scope == 'guild':
-			assert isinstance(ctx.author, discord.Member)
-			p = ctx.author.guild_permissions
-			if not p.manage_guild:
-				raise PermissionDenied('guild')
+		self._check_permission(ctx, obj, scope)
 
 		if not isinstance(ctx, discord.Message):
 			await ctx.defer()
