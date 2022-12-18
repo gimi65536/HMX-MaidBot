@@ -443,7 +443,7 @@ class VarCommands(BaseCog, name = 'Var'):
 	def _eval(self, expr: calcs.Expr, mapping, ctx):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
-	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception: discord.ApplicationCommandError):
+	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception: _VarExtError):
 		if isinstance(ctx, discord.Message):
 			locale = None
 		else:
@@ -489,7 +489,7 @@ class VarCommands(BaseCog, name = 'Var'):
 
 	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
 		match exception:
-			case ParseError() | CalculatorError():
+			case _VarExtError(): 
 				await self._error_handle(ctx, exception)
 			case _:
 				# Propagate
@@ -537,28 +537,31 @@ class VarCommands(BaseCog, name = 'Var'):
 	def can_be_varname(self, name):
 		return self._varname.fullmatch(name) and not name[0].isdigit() and not self._parser.is_op_symbol(name)
 
-class ParseError(discord.ApplicationCommandError):
+class _VarExtError(discord.ApplicationCommandError):
+	pass
+
+class ParseError(_VarExtError):
 	def __init__(self, e):
 		self.e = e
 
-class CalculatorError(discord.ApplicationCommandError):
+class CalculatorError(_VarExtError):
 	def __init__(self, e):
 		self.e = e
 
-class RedeclareError(discord.ApplicationCommandError):
+class RedeclareError(_VarExtError):
 	def __init__(self, scope, name):
 		self.scope = scope
 		self.name = name
 
-class InvalidVariableNameError(discord.ApplicationCommandError):
+class InvalidVariableNameError(_VarExtError):
 	def __init__(self, name):
 		self.name = name
 
-class PermissionDenied(discord.ApplicationCommandError):
+class PermissionDenied(_VarExtError):
 	def __init__(self, scope):
 		self.scope = scope
 
-class NotInGuildError(discord.ApplicationCommandError):
+class NotInGuildError(_VarExtError):
 	pass
 
 def setup(bot):
