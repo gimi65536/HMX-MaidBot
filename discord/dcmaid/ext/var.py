@@ -501,7 +501,7 @@ class VarCommands(BaseCog, name = 'Var'):
 			expression = message.content[len(_eval_prefix):]
 			try:
 				n, _ = await self._evaluate(message, expression)
-			except (ParseError, CalculatorError) as e:
+			except _VarExtError as e:
 				await self._error_handle(message, e)
 				return
 			except Exception as e:
