@@ -498,7 +498,7 @@ class VarCommands(BaseCog, name = 'Var'):
 				await message.reply(f'```\n{e}```', **self._ephemeral(message))
 				return
 
-			await message.reply(self.to_response(n))
+			await message.reply(self.to_response(n), self._pick_locale(message))
 
 	@classmethod
 	def to_response(cls, n: calcs.Constant, locale: Optional[str] = None) -> str:
