@@ -327,13 +327,6 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def on_ready(self):
 		self._varsystem.restore_info(self.bot)
 
-	@staticmethod
-	def _ephemeral(ctx: discord.Message | QuasiContext) -> dict:
-		if isinstance(ctx, discord.Message):
-			return {'delete_after': 30}
-		else:
-			return {'ephemeral': True}
-
 	@discord.slash_command(
 		description = 'Declare your own variable (no side-effects)',
 		options = [
@@ -444,10 +437,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
 	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception: _VarExtError):
-		if isinstance(ctx, discord.Message):
-			locale = None
-		else:
-			locale = ctx.locale
+		locale = self._pick_locale(ctx)
 
 		match exception:
 			case ParseError():
