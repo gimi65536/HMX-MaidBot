@@ -388,7 +388,7 @@ class VarCommands(BaseCog, name = 'Var'):
 					discord.OptionChoice('the channel (the outer channel if in a thread)', 'channel'),
 					discord.OptionChoice('this guild', 'guild')
 				],
-				default = 'h'),
+				default = 'user'),
 		]
 	)
 	async def declare(self, ctx, name, value, scope_option):
