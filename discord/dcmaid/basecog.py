@@ -4,7 +4,6 @@ before a cog class is created.
 '''
 import discord
 from collections.abc import Sequence
-from decouple import config
 from importlib.resources import files
 from reader import load
 from typing import Optional
@@ -13,6 +12,11 @@ from .exception import DependentCogNotLoaded, MaidNotFound
 from .helper import get_help, update_help
 from .typing import Localeable, QuasiContext
 from .utils import *
+
+config = generate_config(
+	MESSAGE_EPHEMERAL_DELETE_AFTER = {'default': 30, 'cast': float},
+	DEFAULT_LOCALE = {'default': None}
+)
 
 def _replace_localization(obj, attr: str, attr_locale: str, key: str, cmd_locale: dict):
 	table = cmd_locale.get(key, {})
@@ -163,14 +167,14 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 	@staticmethod
 	def _ephemeral(ctx: discord.Message | QuasiContext) -> dict:
 		if isinstance(ctx, discord.Message):
-			return {'delete_after': config('MESSAGE_EPHEMERAL_DELETE_AFTER', default = 30, cast = float)}
+			return {'delete_after': config['MESSAGE_EPHEMERAL_DELETE_AFTER']}
 		else:
 			return {'ephemeral': True}
 
 	@staticmethod
 	def _pick_locale(ctx: discord.Message | QuasiContext) -> Optional[str]:
 		if isinstance(ctx, discord.Message):
-			return config('DEFAULT_LOCALE', default = None)
+			return config['DEFAULT_LOCALE']
 		return ctx.locale
 
 __all__ = ('BaseCogMeta', 'BaseCog')

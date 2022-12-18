@@ -1,5 +1,6 @@
 import discord
 from asyncio import get_running_loop
+from decouple import config, Csv
 from functools import wraps
 from pathlib import PurePath
 from typing import Any, Optional
@@ -164,3 +165,12 @@ def int_to_emoji(i: int) -> str:
 				l.append(':nine:')
 
 	return ''.join(l)
+
+def generate_config(**kwargs: dict[str, Any]) -> dict[str, Any]:
+	result = {}
+	for key, d in kwargs.items():
+		if d.get('set_csv', None):
+			csv_kwargs = d.get('csv_kwargs', {})
+			d['cast'] = Csv(**csv_kwargs)
+		result[key] = config(key, **d)
+	return result

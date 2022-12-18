@@ -13,6 +13,11 @@ from itertools import count
 from sympy import *
 from typing import Optional
 
+config = generate_config(
+	EXT_VAR_DB_BASED = {'default': False, 'cast': bool},
+	EXT_VAR_DB_COLLECTION = {'default': 'var_system'},
+)
+
 class Scope:
 	_id: int
 	_is_user: bool = False
@@ -320,7 +325,7 @@ class VarCommands(BaseCog, name = 'Var'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
 		self._parser = ...
-		self._var_col = bot.db['var_system'] if config('EXT_VAR_DB_BASED', default = False, cast = bool) else None
+		self._var_col = bot.db[config['EXT_VAR_DB_COLLECTION']] if config['EXT_VAR_DB_BASED'] else None
 		self._varsystem: VariableSystem = VariableSystem(self._var_col)
 
 	@discord.Cog.listener()
