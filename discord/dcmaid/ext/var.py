@@ -280,6 +280,10 @@ class VariableSystem:
 					if isinstance(bookkeeping, BookKeeping) and r[name] >= bookkeeping.order:
 						result[var] = False
 						continue
+					if name not in d:
+						# The variable is deleted
+						result[var] = False
+						continue
 					result[var] = True
 
 					f, t = bookkeeping[var]
@@ -519,10 +523,10 @@ class VarCommands(BaseCog, name = 'Var'):
 			# If declare, the checks are done already. We only check if not declare.
 			self._check_permission(ctx, obj, scope)
 
-		# Below is the main parts of _assign
+			if not self._varsystem.exist_var(name, obj):
+				raise VarUndefinedError(self._scope_to_readable(obj, scope), name)
 
-		if not self._varsystem.exist_var(name, obj):
-			raise VarUndefinedError(self._scope_to_readable(obj, scope), name)
+		# Below is the main parts of _assign
 
 		if not isinstance(ctx, discord.Message):
 			await ctx.defer()
