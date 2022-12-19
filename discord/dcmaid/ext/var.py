@@ -5,6 +5,7 @@ import re
 import sympy
 from ..basebot import Bot
 from ..basecog import BaseCog
+from ..helper import set_help
 from ..typing import ChannelType, QuasiContext
 from ..utils import *
 from aiorwlock import RWLock
@@ -467,7 +468,17 @@ class VarCommands(BaseCog, name = 'Var'):
 				raise NotInGuildError()
 			return 'guild', channel.guild
 
-	@discord.slash_command(
+	var_cmd_group = discord.SlashCommandGroup(
+		name = "var",
+		description = "Variable management"
+	)
+	set_help(var_cmd_group,
+		'''
+		These commands manages variable information.
+		'''
+	)
+
+	@var_cmd_group.command(
 		description = 'Declare your own variable (no side-effects)',
 		options = [
 			discord.Option(str,
@@ -517,7 +528,7 @@ class VarCommands(BaseCog, name = 'Var'):
 
 		return n
 
-	@discord.slash_command(
+	@var_cmd_group.command(
 		description = 'Assign your variable with a value (no side-effects)',
 		options = [
 			discord.Option(str,
@@ -584,6 +595,37 @@ class VarCommands(BaseCog, name = 'Var'):
 			raise UpdateFailedError(self._scope_to_readable(obj, scope), name, n)
 
 		return n
+
+	@var_cmd_group.command(
+		description = 'Remove a variable',
+		options = [
+			discord.Option(str,
+				name = 'name',
+				description = 'Name of the variable'),
+			discord.Option(str,
+				name = 'scope',
+				description = 'Where scope is this variable in (Default to "individual")',
+				choices = [
+					discord.OptionChoice('individual', 'user'),
+					discord.OptionChoice('this thread (this channel if not in a thread)', 'this'),
+					discord.OptionChoice('the channel (the outer channel if in a thread)', 'channel'),
+					discord.OptionChoice('this guild', 'guild')
+				],
+				default = 'user'),
+		]
+	)
+	async def remove(self, ctx, name, scope_option):
+		scope, obj = self._scope_option_process(ctx, scope_option)
+
+		await self._remove(ctx, obj, name, scope)
+
+	async def _remove(self, ctx: discord.Message | QuasiContext, obj, name: str, scope: str):
+		self._check_permission(ctx, obj, scope)
+
+		var = self._varsystem.to_var(name, obj)
+		success = self._varsystem.delete_var(var)
+		if not success:
+			raise RemoveVariableFailedError(self._scope_to_readable(obj, scope), name)
 
 	@discord.slash_command(
 		description = 'Evaluate an expression (no side-effects)',
@@ -669,6 +711,12 @@ class VarCommands(BaseCog, name = 'Var'):
 				await send_error_embed(ctx,
 					name = self._trans(locale, 'update-failed'),
 					value = self._trans(locale, f'update-failed-{exception.scope}', format = {'name': exception.name, 'n': exception.n}),
+					**self._ephemeral(ctx)
+				)
+			case RemoveVariableFailedError():
+				await send_error_embed(ctx,
+					name = self._trans(locale, 'remove-failed'),
+					value = self._trans(locale, f'remove-failed-{exception.scope}', format = {'name': exception.name}),
 					**self._ephemeral(ctx)
 				)
 
@@ -761,6 +809,11 @@ class UpdateFailedError(_VarExtError):
 		self.scope = scope
 		self.name = name
 		self.n
+
+class RemoveVariableFailedError(_VarExtError):
+	def __init__(self, scope, name):
+		self.scope = scope
+		self.name = name
 
 def setup(bot):
 	bot.add_cog(VarCommands(bot))
