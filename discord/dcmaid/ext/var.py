@@ -451,13 +451,13 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> calcs.Constant:
 		self._check_permission(ctx, obj, scope)
 
-		if not isinstance(ctx, discord.Message):
-			await ctx.defer()
-
 		if self._varsystem.exist_var(name, obj):
 			raise RedeclareError(self._scope_to_readable(obj, scope), name)
 		if not self.can_be_varname(name):
 			raise InvalidVariableNameError(name)
+
+		if not isinstance(ctx, discord.Message):
+			await ctx.defer()
 
 		n, _ = await self._evaluate(ctx, value)
 
@@ -507,7 +507,7 @@ class VarCommands(BaseCog, name = 'Var'):
 					# Some other process takes the lead to declare the variable...
 					raise UpdateFailedError(self._scope_to_readable(obj, scope), name, e.n)
 				else:
-					# If declared, then continue to assign
+					# If declared, then continue to assign (the ctx has not deferred)
 					pass
 			# The other exceptions are propagated
 			else:
