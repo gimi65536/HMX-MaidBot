@@ -91,3 +91,18 @@ __translation_table:
   var-undefined-guild:
     ~: Variable `{name}` is not declared in this guild.
     zh-TW: 變數`{name}`尚未宣告於此公會。
+  update-failed:
+    ~: Assign failed
+    zh-TW: 變數更改失敗
+  update-failed-user:
+    ~: Failed to update your variable `{name}`.
+    zh-TW: 更改自己的變數`{name}`時發生了問題。
+  update-failed-channel:
+    ~: Failed to update variable `{name}` of this channel.
+    zh-TW: 更改此頻道的變數`{name}`時發生了問題。
+  update-failed-thread:
+    ~: Failed to update variable `{name}` of this thread.
+    zh-TW: 更改此討論串的變數`{name}`時發生了問題。
+  update-failed-guild:
+    ~: Failed to update variable `{name}` of this guild.
+    zh-TW: 更改此公會的變數`{name}`時發生了問題。

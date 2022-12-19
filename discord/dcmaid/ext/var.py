@@ -448,7 +448,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		s = self.to_response(n, ctx.locale)
 		await ctx.followup.send(self._trans(ctx, f'declare-success-{self._scope_to_readable(obj, scope)}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 
-	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> Constant:
+	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> calcs.Constant:
 		self._check_permission(ctx, obj, scope)
 
 		if not isinstance(ctx, discord.Message):
@@ -464,7 +464,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		# If another attempt to add var with the same name is done after we have done the checks, the below returns False.
 		success = await self._varsystem.add_var(name, obj, n)
 		if not success:
-			raise RedeclareError(self._scope_to_readable(obj, scope), name)
+			raise RedeclareError(self._scope_to_readable(obj, scope), name, n)
 
 		return n
 
@@ -487,17 +487,39 @@ class VarCommands(BaseCog, name = 'Var'):
 					discord.OptionChoice('this guild', 'guild')
 				],
 				default = 'user'),
+			discord.Option(bool,
+				name = 'declare',
+				description = 'Declare the variable if the variable does not exist (Default to false)',
+				default = False),
 		]
 	)
-	async def assign(self, ctx, name, value, scope_option):
+	async def assign(self, ctx, name, value, scope_option, declare):
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
-		n = await self._assign(ctx, obj, name, value, scope)
+		await self._assign(ctx, obj, name, value, scope)
 
-		...
+	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str, declare: bool) -> calcs.Constant:
+		if declare:
+			try:
+				n = await self._declare(ctx, obj, name, value)
+			except RedeclareError as e:
+				if e.n is not None:
+					# Some other process takes the lead to declare the variable...
+					raise UpdateFailedError(self._scope_to_readable(obj, scope), name, e.n)
+				else:
+					# If declared, then continue to assign
+					pass
+			# The other exceptions are propagated
+			else:
+				# The declaration completes
+				return n
 
-	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> bool:
-		self._check_permission(ctx, obj, scope)
+			# You get here if RedeclareError and e.n is None, and the permission checks are done.
+		else:
+			# If declare, the checks are done already. We only check if not declare.
+			self._check_permission(ctx, obj, scope)
+
+		# Below is the main parts of _assign
 
 		if not self._varsystem.exist_var(name, obj):
 			raise VarUndefinedError(self._scope_to_readable(obj, scope), name)
@@ -508,7 +530,11 @@ class VarCommands(BaseCog, name = 'Var'):
 		n, bookkeeping = await self._evaluate(ctx, value)
 		var = self._varsystem.to_var(name, obj)
 
-		return self._varsystem.update_var(var, n, bookkeeping.order)
+		success = self._varsystem.update_var(var, n, bookkeeping.order)
+		if not success:
+			raise UpdateFailedError(self._scope_to_readable(obj, scope), name, n)
+
+		return n
 
 	@discord.slash_command(
 		description = 'Evaluate an expression (no side-effects)',
@@ -523,7 +549,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		n, _ = await self._evaluate(ctx, expression)
 		await ctx.followup.send(self.to_response(n, ctx.locale))
 
-	async def _evaluate(self, ctx: discord.Message | QuasiContext, value: str) -> tuple[Constant, BookKeeping]:
+	async def _evaluate(self, ctx: discord.Message | QuasiContext, value: str) -> tuple[calcs.Constant, BookKeeping]:
 		# @pre ctx is already deferred or ctx is message
 		try:
 			expr = self._parser.parse(value)
@@ -590,6 +616,12 @@ class VarCommands(BaseCog, name = 'Var'):
 					value = self._trans(locale, f'var-undefined-{exception.scope}', format = {'name': exception.name}),
 					**self._ephemeral(ctx)
 				)
+			case UpdateFailedError():
+				await send_error_embed(ctx,
+					name = self._trans(locale, 'update-failed'),
+					value = self._trans(locale, f'update-failed-{exception.scope}', format = {'name': exception.name, 'n': exception.n}),
+					**self._ephemeral(ctx)
+				)
 
 	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
 		match exception:
@@ -653,9 +685,11 @@ class CalculatorError(_VarExtError):
 		self.e = e
 
 class RedeclareError(_VarExtError):
-	def __init__(self, scope, name):
+	def __init__(self, scope, name, n: Optional[calcs.Constant] = None):
+		# None n indicates the value has not been evaluated
 		self.scope = scope
 		self.name = name
+		self.n = n
 
 class InvalidVariableNameError(_VarExtError):
 	def __init__(self, name):
@@ -672,6 +706,12 @@ class VarUndefinedError(_VarExtError):
 	def __init__(self, scope, name):
 		self.scope = scope
 		self.name = name
+
+class UpdateFailedError(_VarExtError):
+	def __init__(self, scope, name, n):
+		self.scope = scope
+		self.name = name
+		self.n
 
 def setup(bot):
 	bot.add_cog(VarCommands(bot))
