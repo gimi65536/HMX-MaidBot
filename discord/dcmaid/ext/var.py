@@ -66,7 +66,7 @@ class GuildScope(Scope):
 class ChannelScope(Scope):
 	_is_channel = True
 
-class BookKeeping(dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]):
+class BookKeeping(dict[calcs.Var, tuple[calcs.Constant, calcs.Constant]]):
 	_count = count(1)
 
 	def __init__(self, *args, **kwargs):
@@ -206,7 +206,7 @@ class VariableSystem:
 	async def retrieve_mapping(self,
 		caller: discord.User | discord.Member,
 		channel: ChannelType,
-		bookkeeping: Optional[dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]] = None) -> dict[calcs.Var, calcs.LValue]:
+		bookkeeping: Optional[dict[calcs.Var, tuple[calcs.Constant, calcs.Constant]]] = None) -> dict[calcs.Var, calcs.LValue]:
 
 		if isinstance(bookkeeping, BookKeeping):
 			bookkeeping.generate_order()
@@ -236,32 +236,49 @@ class VariableSystem:
 
 		return result
 
-	async def update_bookkeeping(self, bookkeeping: dict[calcs.LValue, tuple[calcs.Constant, calcs.Constant]]):
+	# This method is valid ONLY IF the "from" value in bookkeeping is not meaningful in update_bookkeeping()
+	async def update_var(self, var: calcs.Var, value: calcs.Constant, bookkeeping_order: Optional[int] = None):
+		if bookkeeping_order is None:
+			bookkeeping = {}
+		else:
+			bookkeeping = BookKeeping()
+			bookkeeping._order = bookkeeping_order
+
+		bookkeeping[var] = (calcs.NumberConstant(sympy.Integer(0)), value)
+		result = await self.update_bookkeeping(bookkeeping)
+		return result[var]
+
+	async def update_bookkeeping(self, bookkeeping: dict[calcs.Var, tuple[calcs.Constant, calcs.Constant]]) -> dict[calcs.Var, bool]:
 		# @Pre the permission checks are done
 		# The method only updates directly
 		# If the bookkeeping is an original dict, the update is forcely done, or the BookKeeping.order is taken into account.
-		table: dict[int, list[calcs.LValue]] = {}
-		for lv in bookkeeping:
-			if lv.var.scope.id not in table:
-				table[lv.var.scope.id] = []
-			table[lv.var.scope.id].append(lv)
+		table: dict[int, list[calcs.Var]] = {}
+		for var in bookkeeping:
+			if var.scope.id not in table:
+				table[var.scope.id] = []
+			table[var.scope.id].append(var)
 
-		for scope_id, lvs in table.items():
+		result: dict[calcs.Var, bool] = {}
+		for scope_id, vars in table.items():
 			lock, d = self._stored_value[scope_id]
 			r = self._update_record[scope_id]
 			async with lock.write:
-				for lv in lvs:
-					name = lv.var.name
+				for var in vars:
+					name = var.name
 					if isinstance(bookkeeping, BookKeeping) and r[name] >= bookkeeping.order:
+						result[var] = False
 						continue
+					result[var] = True
 
-					f, t = bookkeeping[lv]
+					f, t = bookkeeping[var]
 					d[name] = t
 					if isinstance(bookkeeping, BookKeeping):
 						r[name] = bookkeeping.order
 
 					if self.col is not None:
 						self.col.update_one({'scope_id': scope_id, 'name': name}, self.constant_to_document(t))
+
+		return result
 
 	@staticmethod
 	def scope_to_document(scope: Scope):
