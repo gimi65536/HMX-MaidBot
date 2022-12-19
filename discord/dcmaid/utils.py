@@ -1,5 +1,6 @@
 import discord
 from asyncio import get_running_loop
+from decouple import config, Csv
 from functools import wraps
 from pathlib import PurePath
 from typing import Any, Optional
@@ -38,16 +39,31 @@ def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 
 # A simple function to send an embed to indicate an error.
 # The embed contains one field only.
-async def send_error_embed(ctx: QuasiContext, name, value, title = discord.Embed.Empty, description = discord.Embed.Empty, **kwargs):
+# This method automatically detect whether the response is done or not to use followup.
+# ApplicationContext: send_response()
+# Interaction: response.send_message()
+# Webhook (this is followup): send()
+# Message: reply()
+async def send_error_embed(ctx: QuasiContext | discord.Webhook | discord.Message, name, value, title = discord.Embed.Empty, description = discord.Embed.Empty, **kwargs):
 	embed = discord.Embed(color = discord.Color.red(), title = title, description = description)
 	embed.add_field(
 		name = name,
 		value = value
 	)
 	if isinstance(ctx, discord.ApplicationContext):
-		await ctx.send_response(embed = embed, **kwargs)
+		if ctx.response.is_done():
+			await ctx.send_followup(embed = embed, **kwargs)
+		else:
+			await ctx.send_response(embed = embed, **kwargs)
+	elif isinstance(ctx, discord.Interaction):
+		if ctx.response.is_done():
+			await ctx.followup.send(embed = embed, **kwargs)
+		else:
+			await ctx.response.send_message(embed = embed, **kwargs)
+	elif isinstance(ctx, discord.Webhook):
+		await ctx.send(embed = embed, **kwargs)
 	else:
-		await ctx.response.send_message(embed = embed, **kwargs)
+		await ctx.reply(embed = embed, **kwargs)
 
 def trim(string: Optional[str]):
 	if string is not None:
@@ -113,7 +129,7 @@ def proxy(f_or_attr, /):
 		return wrapper
 
 def is_DM(channel):
-	return isinstance(channel, (discord.PartialMessageable, discord.DMChannel, discord.GroupChannel))
+	return isinstance(channel, (discord.PartialMessageable, discord.abc.PrivateChannel))
 
 def get_bot_name_in_ctx(ctx: QuasiContext) -> str:
 	guild = ctx.guild
@@ -149,3 +165,12 @@ def int_to_emoji(i: int) -> str:
 				l.append(':nine:')
 
 	return ''.join(l)
+
+def generate_config(**kwargs: dict[str, Any]) -> dict[str, Any]:
+	result = {}
+	for key, d in kwargs.items():
+		if d.get('set_csv', None):
+			csv_kwargs = d.get('csv_kwargs', {})
+			d['cast'] = Csv(**csv_kwargs)
+		result[key] = config(key, **d)
+	return result

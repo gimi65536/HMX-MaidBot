@@ -1,0 +1,258 @@
+__reference:
+  name.name: &name
+    zh-TW: 名稱
+  name.description: &name-description:
+    zh-TW: 變數名稱
+  value.name: &value
+    zh-TW: 值
+  value.description: &value-description
+    zh-TW: 變數的值
+  value.description-default: &value-description-default
+    zh-TW: 變數的值（預設為0）
+  scope.name: &scope-name
+    zh-TW: 範圍
+  scope.name.description: &scope-description
+    zh-TW: 指定變數的範圍（預設為個人）
+  scope.choice.individual: &scope-individual
+    zh-TW: 個人
+  scope.choice.here: &scope-here
+    zh-TW: 此處
+  scope.choice.channel: &scope-channel
+    zh-TW: 頻道
+  scope.choice.group: &scope-group
+    zh-TW: 公會
+
+var:
+  help:
+    zh-TW: >
+      這些指令用於管理變數的資訊。
+  name:
+    zh-TW: 變數
+  description:
+    zh-TW: 管理變數
+
+var declare:
+  help:
+    zh-TW: >
+      `/{cmd_name} <名稱> <?值> <?範圍>`
+      於指定範圍內宣告新的變數。
+
+      預設值為`0`，預設範圍為個人。
+  name:
+    zh-TW: 宣告變數
+  description:
+    zh-TW: 宣告一個新變數（運算無副作用）
+  name.name: *name
+  name.description: *name-description
+  value.name: *value
+  value.description: *value-description-default
+  scope.name: *scope-name
+  scope.description: *scope-description
+  scope.choice.individual: *scope-individual
+  scope.choice.here: *scope-here
+  scope.choice.channel: *scope-channel
+  scope.choice.group: *scope-group
+
+var assign:
+  help:
+    zh-TW: >
+      `/{cmd_name} <名稱> <值> <?範圍> <?宣告>`
+      於指定範圍內更改變數。
+
+      預設範圍為個人。
+  name:
+    zh-TW: 更改變數
+  description:
+    zh-TW: 更改一個變數（運算無副作用）
+  name.name: *name
+  name.description: *name-description
+  value.name: *value
+  value.description: *value-description
+  scope.name: *scope-name
+  scope.description: *scope-description
+  scope.choice.individual: *scope-individual
+  scope.choice.here: *scope-here
+  scope.choice.channel: *scope-channel
+  scope.choice.group: *scope-group
+  declare.name:
+    zh-TW: 宣告
+  declare.description:
+    zh-TW: 如果變數不存在則自行宣告新變數（預設不宣告）
+
+var remove:
+  help:
+    zh-TW: >
+      `/{cmd_name} <名稱> <?範圍>`
+      於指定範圍內刪除變數。
+
+      預設範圍為個人。
+  name:
+    zh-TW: 刪除變數
+  description:
+    zh-TW: 刪除一個變數
+  name.name: *name
+  name.description: *name-description
+  scope.name: *scope-name
+  scope.description: *scope-description
+  scope.choice.individual: *scope-individual
+  scope.choice.here: *scope-here
+  scope.choice.channel: *scope-channel
+  scope.choice.group: *scope-group
+
+evaluate:
+  help:
+    zh-TW: >
+      `/{cmd_name} <算式>`
+      計算算式。
+  name:
+    zh-TW: 運算
+  description:
+    zh-TW: 計算一個算式（無副作用）
+  expression.name:
+    zh-TW: 算式
+  expression.description:
+    zh-TW: 算式
+
+__translation_table:
+  number:
+  	~: Number
+  	zh-TW: 數字
+  boolean:
+  	~: Boolean
+  	zh-TW: 真假值
+  boolean-true:
+  	~: "True"
+  	zh-TW: 真
+  boolean-false:
+  	~: "False"
+  	zh-TW: 假
+  string:
+  	~: String
+  	zh-TW: 字串
+  not-in-guild:
+    ~: Not in a guild.
+    zh-TW: 並非位於公會。
+  permission-denied:
+    ~: Permission denied
+    zh-TW: 權限不足
+  permission-denied-thread:
+    ~: You are neither the manager of this channel nor the owner of this thread.
+    zh-TW: 並非是此頻道的管理員，亦非此討論串的擁有者。
+  permission-denied-channel:
+    ~: You are not the manager of this channel.
+    zh-TW: 並非是此頻道的管理員。
+  permission-denied-guild:
+    ~: You are not the manager of this guild.
+    zh-TW: 並非是此公會的管理員。
+  declare-failed-declared:
+    ~: Re-declare variable
+    zh-TW: 重複宣告
+  declare-success-user:
+    ~: "Successfully declare `{name}` of your own scope, and the value is:\n{n}"
+    zh-TW: "成功宣告自己的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-user:
+    ~: The variable `{name}` cannot be declared twice in your own scope.
+    zh-TW: 自己的變數`{name}`不能被重複宣告。
+  declare-success-channel:
+    ~: "Successfully declare `{name}` of this channel, and the value is:\n{n}"
+    zh-TW: "成功宣告此頻道的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-channel:
+    ~: The variable `{name}` cannot be declared twice in this channel.
+    zh-TW: 頻道的變數`{name}`不能被重複宣告。
+  declare-success-thread:
+    ~: "Successfully declare `{name}` of this thread, and the value is:\n{n}"
+    zh-TW: "成功宣告此討論串的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-thread:
+    ~: The variable `{name}` cannot be declared twice in this thread.
+    zh-TW: 討論串的變數`{name}`不能被重複宣告。
+  declare-success-guild:
+    ~: "Successfully declare `{name}` of this guild, and the value is:\n{n}"
+    zh-TW: "成功宣告此公會的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-guild:
+    ~: The variable `{name}` cannot be declared twice in this guild.
+    zh-TW: 公會的變數`{name}`不能被重複宣告。
+  declare-failed-invalid:
+    ~: Invalid name
+    zh-TW: 錯誤的變數名稱
+  declare-failed-invalid-value:
+    ~: The name `{name}` is invalid.
+    zh-TW: "`{name}`不是合法的變數名稱。"
+  parse-error:
+    ~: Parse error
+    zh-TW: 編譯錯誤
+  parse-error-value:
+    ~: "{type}: {text}"
+  calcs-error:
+    ~: Calculate error
+    zh-TW: 運算錯誤
+  calcs-error-value:
+    ~: "{type}: {text}"
+  var-undefined:
+    ~: Variable undefined
+    zh-TW: 變數未宣告
+  var-undefined-user:
+    ~: You have not declared variable `{name}`.
+    zh-TW: 你尚未宣告變數`{name}`。
+  var-undefined-channel:
+    ~: Variable `{name}` is not declared in this channel.
+    zh-TW: 變數`{name}`尚未宣告於此頻道。
+  var-undefined-thread:
+    ~: Variable `{name}` is not declared in this thread.
+    zh-TW: 變數`{name}`尚未宣告於此討論串。
+  var-undefined-guild:
+    ~: Variable `{name}` is not declared in this guild.
+    zh-TW: 變數`{name}`尚未宣告於此公會。
+  update-failed:
+    ~: Assign failed
+    zh-TW: 變數更改失敗
+  update-success-user:
+    ~: "Successfully update `{name}` of your own scope, and the value is:\n{n}"
+    zh-TW: "成功更改自己的變數`{name}`，其值為：\n{n}"
+  update-failed-user:
+    ~: Failed to update your variable `{name}`.
+    zh-TW: 更改自己的變數`{name}`時發生了問題。
+  update-success-channel:
+    ~: "Successfully update `{name}` of this channel, and the value is:\n{n}"
+    zh-TW: "成功更改此頻道的變數`{name}`，其值為：\n{n}"
+  update-failed-channel:
+    ~: Failed to update variable `{name}` of this channel.
+    zh-TW: 更改此頻道的變數`{name}`時發生了問題。
+  update-success-thread:
+    ~: "Successfully update `{name}` of this thread, and the value is:\n{n}"
+    zh-TW: "成功更改此討論串的變數`{name}`，其值為：\n{n}"
+  update-failed-thread:
+    ~: Failed to update variable `{name}` of this thread.
+    zh-TW: 更改此討論串的變數`{name}`時發生了問題。
+  update-success-guild:
+    ~: "Successfully update `{name}` of this guild, and the value is:\n{n}"
+    zh-TW: "成功更改此公會的變數`{name}`，其值為：\n{n}"
+  update-failed-guild:
+    ~: Failed to update variable `{name}` of this guild.
+    zh-TW: 更改此公會的變數`{name}`時發生了問題。
+  remove-failed:
+    ~: Remove failed
+    zh-TW: 變數刪除失敗
+  remove-success-user:
+    ~: Successfully remove `{name}` of your own scope.
+    zh-TW: 成功刪除自己的變數`{name}`。
+  remove-failed-user:
+    ~: Failed to remove your variable `{name}`.
+    zh-TW: 刪除自己的變數`{name}`時發生了問題。
+  remove-success-channel:
+    ~: Successfully remove `{name}` of this channel.
+    zh-TW: 成功刪除此頻道的變數`{name}`。
+  remove-failed-channel:
+    ~: Failed to remove variable `{name}` of this channel.
+    zh-TW: 刪除此頻道的變數`{name}`時發生了問題。
+  remove-success-thread:
+    ~: Successfully remove `{name}` of this thread.
+    zh-TW: 成功刪除此討論串的變數`{name}`。
+  remove-failed-thread:
+    ~: Failed to remove variable `{name}` of this thread.
+    zh-TW: 刪除此討論串的變數`{name}`時發生了問題。
+  remove-success-guild:
+    ~: Successfully remove `{name}` of this guild.
+    zh-TW: 成功刪除此公會的變數`{name}`。
+  remove-failed-guild:
+    ~: Failed to remove variable `{name}` of this guild.
+    zh-TW: 刪除此公會的變數`{name}`時發生了問題。

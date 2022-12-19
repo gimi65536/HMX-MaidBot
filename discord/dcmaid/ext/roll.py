@@ -1,6 +1,5 @@
 import discord
 import random
-from decouple import config, Csv
 from discord.ext.pages import Paginator
 from importlib import import_module
 from more_itertools import chunked
@@ -19,6 +18,10 @@ from ..mixin import MaidMixin, RandomMixin
 from ..perm import admin_only
 from ..typing import QuasiContext
 from ..utils import *
+
+config = generate_config(
+	EXT_ROLL_GAME = {'default': '', 'set_csv': True},
+)
 
 _play_prefix = '~'
 
@@ -416,5 +419,5 @@ ext_roll = import_module('.ext-roll', __package__)
 
 def setup(bot):
 	cog = RollCommands(bot)
-	cog.load_game_exts(config('EXT_ROLL_GAME', default = '', cast = Csv()))
+	cog.load_game_exts(config['EXT_ROLL_GAME'])
 	bot.add_cog(RollCommands(bot))

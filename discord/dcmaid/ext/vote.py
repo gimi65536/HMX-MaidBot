@@ -5,16 +5,25 @@ from ..basecog import BaseCog
 from ..utils import *
 from ..views import Button, Select, YesNoView
 from aiorwlock import RWLock
-from asyncio import get_running_loop, Lock, sleep, Task
+from asyncio import get_running_loop, sleep, Task
 from collections import Counter
 from collections.abc import Awaitable, Mapping, MutableMapping
 from dataclasses import dataclass
-from decouple import config
 from datetime import datetime, timedelta, timezone
 from hashlib import sha1 as _hash
 from proxy_types import CounterProxyType
 from simple_parsers.string_argument_parser import StringArgumentParser
 from typing import Generic, Optional, overload, Self, TypeVar
+
+config = generate_config(
+	EXT_VOTE_CUSTOM_PREFIX = {'default': 'HMX-vote-cog'},
+	EXT_VOTE_POLL_DB_BASED = {'default': False, 'cast': bool},
+	EXT_VOTE_POLL_DB_COLLECTION = {'default': 'poll_system'},
+	EXT_VOTE_POLL_PERIOD_ATLEAST = {'default': 60, 'cast': int},
+	EXT_VOTE_POLL_MAXIMUM_OPTIONS = {'default': 20, 'cast': int},
+	EXT_VOTE_BET_DB_BASED = {'default': False, 'cast': bool},
+	EXT_VOTE_BET_DB_COLLECTION = {'default': 'bet_system'},
+)
 
 time_units = [
 	('second', 's'),
@@ -595,7 +604,7 @@ class BetHoldSystem(HoldSystem[Bet]):
 
 class VoteOptionView(discord.ui.View):
 	# Presistent during the lifetime of the poll
-	prefix: str = config('EXT_VOTE_CUSTOM_PREFIX', default = 'HMX-vote-cog')
+	prefix: str = config['EXT_VOTE_CUSTOM_PREFIX']
 
 	def __init__(
 		self,
@@ -966,9 +975,10 @@ class VoteCommands(BaseCog, name = 'Vote'):
 	'''
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
-		self._poll_col = bot.db['poll_system'] if config('EXT_VOTE_POLL_DB_BASED', default = False, cast = bool) else None
+		self._poll_col = bot.db[config['EXT_VOTE_POLL_DB_COLLECTION']] if config['EXT_VOTE_POLL_DB_BASED'] else None
 		self.poll_system = PollHoldSystem(self._poll_col)
-		# self.bet_system = BetHoldSystem(db['bet_system'] if config('EXT_VOTE_BET_DB_BASED', default = False, cast = bool) else None)
+		# self._bet_col = bot.db[config['EXT_VOTE_BET_DB_COLLECTION']] if config['EXT_VOTE_BET_DB_BASED'] else None
+		# self.bet_system = BetHoldSystem(self._bet_col)
 
 	@discord.Cog.listener()
 	async def on_ready(self):
@@ -1079,13 +1089,13 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		By default, this command generates a one-hour poll with single vote without showing details.
 		Can be only called in a server channel.
 		'''
-		atleast = config('EXT_VOTE_POLL_PERIOD_ATLEAST', default = 60, cast = int)
+		atleast = config['EXT_VOTE_POLL_PERIOD_ATLEAST']
 		if (p := period_to_delta(period, period_unit)) and p.total_seconds() < atleast:
 			# Valid in semantics but too tricky to use
 			raise TooShortPeriodError(period, atleast)
 
 		options: list[str] = StringArgumentParser.pick(options)
-		max_options = config('EXT_VOTE_POLL_MAXIMUM_OPTIONS', default = 20, cast = int)
+		max_options = config['EXT_VOTE_POLL_MAXIMUM_OPTIONS']
 		if len(options) > max_options:
 			raise TooManyOptionsError(len(options), max_options)
 
