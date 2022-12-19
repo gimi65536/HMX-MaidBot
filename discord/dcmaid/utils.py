@@ -169,8 +169,8 @@ def int_to_emoji(i: int) -> str:
 def generate_config(**kwargs: dict[str, Any]) -> dict[str, Any]:
 	result = {}
 	for key, d in kwargs.items():
-		if d.get('set_csv', None):
-			csv_kwargs = d.get('csv_kwargs', {})
+		if d.pop('set_csv', None):
+			csv_kwargs = d.pop('csv_kwargs', {})
 			d['cast'] = Csv(**csv_kwargs)
 		result[key] = config(key, **d)
 	return result
