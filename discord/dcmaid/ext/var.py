@@ -261,8 +261,7 @@ class VariableSystem:
 		return result[var]
 
 	async def update_bookkeeping(self, bookkeeping: dict[calcs.Var, tuple[calcs.Constant, calcs.Constant]]) -> dict[calcs.Var, bool]:
-		# @Pre the permission checks are done
-		# The method only updates directly
+		# Methods in VarSystem do not restrict permissions.
 		# If the bookkeeping is an original dict, the update is forcely done, or the BookKeeping.order is taken into account.
 		table: dict[int, list[calcs.Var]] = {}
 		for var in bookkeeping:
@@ -272,6 +271,12 @@ class VariableSystem:
 
 		result: dict[calcs.Var, bool] = {}
 		for scope_id, vars in table.items():
+			# Not exists
+			if scope_id not in self._stored_value:
+				for var in vars:
+					result[var] = False
+				continue
+
 			lock, d = self._stored_value[scope_id]
 			r = self._update_record[scope_id]
 			async with lock.write:
@@ -293,6 +298,46 @@ class VariableSystem:
 
 					if self.col is not None:
 						self.col.update_one({'scope_id': scope_id, 'name': name}, self.constant_to_document(t))
+
+		return result
+
+	async def delete_var(self, var: calcs.Var) -> bool:
+		result = await self.bulk_delete([var])
+		return result[var]
+
+	async def bulk_delete(self, var_list: list[calcs.Var]) -> dict[calcs.Var, bool]:
+		# Methods in VarSystem do not restrict permissions.
+		# Scopes are never deleted.
+		table: dict[int, list[calcs.Var]] = {}
+		for var in var_list:
+			if var.scope.id not in table:
+				table[var.scope.id] = []
+			table[var.scope.id].append(var)
+
+		result: dict[calcs.Var, bool] = {}
+		for scope_id, vars in table.items():
+			# Not exists
+			if scope_id not in self._stored_value:
+				for var in vars:
+					result[var] = False
+				continue
+
+			lock, d = self._stored_value[scope_id]
+			r = self._update_record[scope_id]
+			async with lock.write:
+				for var in vars:
+					name = var.name
+					if name not in d:
+						# The variable is deleted
+						result[var] = False
+						continue
+					result[var] = True
+
+					d.pop(name)
+					r.pop(name)
+
+					if self.col is not None:
+						self.col.delete_one({'scope_id': scope_id, 'name': name})
 
 		return result
 
