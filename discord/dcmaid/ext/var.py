@@ -397,6 +397,17 @@ class ToIndividualOperator(_ChangeScopeOperator):
 
 _eval_prefix = '=$'
 
+scope_option = discord.Option(str,
+	name = 'scope',
+	description = 'Where scope is this variable in (Default to "individual")',
+	choices = [
+		discord.OptionChoice('individual', 'user'),
+		discord.OptionChoice('here', 'this'),
+		discord.OptionChoice('channel', 'channel'),
+		discord.OptionChoice('guild', 'guild')
+	],
+	default = 'user')
+
 class VarCommands(BaseCog, name = 'Var'):
 	_backticks = re.compile('`(?=`)|`$')
 	_varname = re.compile(r'\w+')
@@ -479,7 +490,7 @@ class VarCommands(BaseCog, name = 'Var'):
 	)
 
 	@var_cmd_group.command(
-		description = 'Declare your own variable (no side-effects)',
+		description = 'Declare a variable (no side-effects)',
 		options = [
 			discord.Option(str,
 				name = 'name',
@@ -488,19 +499,14 @@ class VarCommands(BaseCog, name = 'Var'):
 				name = 'value',
 				description = 'Value of the variable (Default to integer 0)',
 				default = '0'),
-			discord.Option(str,
-				name = 'scope',
-				description = 'Where scope is this variable in (Default to "individual")',
-				choices = [
-					discord.OptionChoice('individual', 'user'),
-					discord.OptionChoice('this thread (this channel if not in a thread)', 'this'),
-					discord.OptionChoice('the channel (the outer channel if in a thread)', 'channel'),
-					discord.OptionChoice('this guild', 'guild')
-				],
-				default = 'user'),
+			scope_option,
 		]
 	)
 	async def declare(self, ctx, name, value, scope_option):
+		'''
+		`/{cmd_name} <name> <?value> <?scope>` declares a variable with a value in the scope.
+		By default, value is 0 and scope is individual.
+		'''
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
 		n = await self._declare(ctx, obj, name, value)
@@ -529,7 +535,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		return n
 
 	@var_cmd_group.command(
-		description = 'Assign your variable with a value (no side-effects)',
+		description = 'Assign a variable with a value (no side-effects)',
 		options = [
 			discord.Option(str,
 				name = 'name',
@@ -537,16 +543,7 @@ class VarCommands(BaseCog, name = 'Var'):
 			discord.Option(str,
 				name = 'value',
 				description = 'Value of the variable'),
-			discord.Option(str,
-				name = 'scope',
-				description = 'Where scope is this variable in (Default to "individual")',
-				choices = [
-					discord.OptionChoice('individual', 'user'),
-					discord.OptionChoice('this thread (this channel if not in a thread)', 'this'),
-					discord.OptionChoice('the channel (the outer channel if in a thread)', 'channel'),
-					discord.OptionChoice('this guild', 'guild')
-				],
-				default = 'user'),
+			scope_option,
 			discord.Option(bool,
 				name = 'declare',
 				description = 'Declare the variable if the variable does not exist (Default to false)',
@@ -554,6 +551,10 @@ class VarCommands(BaseCog, name = 'Var'):
 		]
 	)
 	async def assign(self, ctx, name, value, scope_option, declare):
+		'''
+		`/{cmd_name} <name> <value> <?scope> <?declare>` updates a variable with a value in the scope.
+		By default, scope is individual and auto-declaration is disabled.
+		'''
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
 		n = await self._assign(ctx, obj, name, value, scope, declare)
@@ -605,19 +606,14 @@ class VarCommands(BaseCog, name = 'Var'):
 			discord.Option(str,
 				name = 'name',
 				description = 'Name of the variable'),
-			discord.Option(str,
-				name = 'scope',
-				description = 'Where scope is this variable in (Default to "individual")',
-				choices = [
-					discord.OptionChoice('individual', 'user'),
-					discord.OptionChoice('this thread (this channel if not in a thread)', 'this'),
-					discord.OptionChoice('the channel (the outer channel if in a thread)', 'channel'),
-					discord.OptionChoice('this guild', 'guild')
-				],
-				default = 'user'),
+			scope_option,
 		]
 	)
 	async def remove(self, ctx, name, scope_option):
+		'''
+		`/{cmd_name} <name> <?scope>` removes a variable in the scope.
+		By default, scope is individual.
+		'''
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
 		await self._remove(ctx, obj, name, scope)
@@ -640,6 +636,9 @@ class VarCommands(BaseCog, name = 'Var'):
 		]
 	)
 	async def evaluate(self, ctx, expression):
+		'''
+		`/{cmd_name} <expression>` evaluates the expression.
+		'''
 		await ctx.defer()
 		n, _ = await self._evaluate(ctx, expression)
 		await ctx.followup.send(self.to_response(n, ctx.locale))

@@ -1,6 +1,117 @@
-dec:
-dec-channel:
-dec-guild:
+__reference:
+  name.name: &name
+    zh-TW: 名稱
+  name.description: &name-description:
+    zh-TW: 變數名稱
+  value.name: &value
+    zh-TW: 值
+  value.description: &value-description
+    zh-TW: 變數的值
+  value.description-default: &value-description-default
+    zh-TW: 變數的值（預設為0）
+  scope.name: &scope-name
+    zh-TW: 範圍
+  scope.name.description: &scope-description
+    zh-TW: 指定變數的範圍（預設為個人）
+  scope.choice.individual: &scope-individual
+    zh-TW: 個人
+  scope.choice.here: &scope-here
+    zh-TW: 此處
+  scope.choice.channel: &scope-channel
+    zh-TW: 頻道
+  scope.choice.group: &scope-group
+    zh-TW: 公會
+
+var:
+  help:
+    zh-TW: >
+      這些指令用於管理變數的資訊。
+  name:
+    zh-TW: 變數
+  description:
+    zh-TW: 管理變數
+
+var declare:
+  help:
+    zh-TW: >
+      `/{cmd_name} <名稱> <?值> <?範圍>`
+      於指定範圍內宣告新的變數。
+
+      預設值為`0`，預設範圍為個人。
+  name:
+    zh-TW: 宣告變數
+  description:
+    zh-TW: 宣告一個新變數（運算無副作用）
+  name.name: *name
+  name.description: *name-description
+  value.name: *value
+  value.description: *value-description-default
+  scope.name: *scope-name
+  scope.description: *scope-description
+  scope.choice.individual: *scope-individual
+  scope.choice.here: *scope-here
+  scope.choice.channel: *scope-channel
+  scope.choice.group: *scope-group
+
+var assign:
+  help:
+    zh-TW: >
+      `/{cmd_name} <名稱> <值> <?範圍> <?宣告>`
+      於指定範圍內更改變數。
+
+      預設範圍為個人。
+  name:
+    zh-TW: 更改變數
+  description:
+    zh-TW: 更改一個變數（運算無副作用）
+  name.name: *name
+  name.description: *name-description
+  value.name: *value
+  value.description: *value-description
+  scope.name: *scope-name
+  scope.description: *scope-description
+  scope.choice.individual: *scope-individual
+  scope.choice.here: *scope-here
+  scope.choice.channel: *scope-channel
+  scope.choice.group: *scope-group
+  declare.name:
+    zh-TW: 宣告
+  declare.description:
+    zh-TW: 如果變數不存在則自行宣告新變數（預設不宣告）
+
+var remove:
+  help:
+    zh-TW: >
+      `/{cmd_name} <名稱> <?範圍>`
+      於指定範圍內刪除變數。
+
+      預設範圍為個人。
+  name:
+    zh-TW: 刪除變數
+  description:
+    zh-TW: 刪除一個變數
+  name.name: *name
+  name.description: *name-description
+  scope.name: *scope-name
+  scope.description: *scope-description
+  scope.choice.individual: *scope-individual
+  scope.choice.here: *scope-here
+  scope.choice.channel: *scope-channel
+  scope.choice.group: *scope-group
+
+evaluate:
+  help:
+    zh-TW: >
+      `/{cmd_name} <算式>`
+      計算算式。
+  name:
+    zh-TW: 運算
+  description:
+    zh-TW: 計算一個算式（無副作用）
+  expression.name:
+    zh-TW: 算式
+  expression.description:
+    zh-TW: 算式
 
 __translation_table:
   number:
