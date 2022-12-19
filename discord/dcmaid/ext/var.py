@@ -496,9 +496,9 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def assign(self, ctx, name, value, scope_option, declare):
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
-		await self._assign(ctx, obj, name, value, scope)
+		await self._assign(ctx, obj, name, value, scope, declare)
 
-	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str, declare: bool) -> calcs.Constant:
+	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str, declare: bool = False) -> calcs.Constant:
 		if declare:
 			try:
 				n = await self._declare(ctx, obj, name, value)
