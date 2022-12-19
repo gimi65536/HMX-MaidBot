@@ -94,30 +94,54 @@ __translation_table:
   update-failed:
     ~: Assign failed
     zh-TW: 變數更改失敗
+  update-success-user:
+    ~: "Successfully update `{name}` of your own scope, and the value is:\n{n}"
+    zh-TW: "成功更改自己的變數`{name}`，其值為：\n{n}"
   update-failed-user:
     ~: Failed to update your variable `{name}`.
     zh-TW: 更改自己的變數`{name}`時發生了問題。
+  update-success-channel:
+    ~: "Successfully update `{name}` of this channel, and the value is:\n{n}"
+    zh-TW: "成功更改此頻道的變數`{name}`，其值為：\n{n}"
   update-failed-channel:
     ~: Failed to update variable `{name}` of this channel.
     zh-TW: 更改此頻道的變數`{name}`時發生了問題。
+  update-success-thread:
+    ~: "Successfully update `{name}` of this thread, and the value is:\n{n}"
+    zh-TW: "成功更改此討論串的變數`{name}`，其值為：\n{n}"
   update-failed-thread:
     ~: Failed to update variable `{name}` of this thread.
     zh-TW: 更改此討論串的變數`{name}`時發生了問題。
+  update-success-guild:
+    ~: "Successfully update `{name}` of this guild, and the value is:\n{n}"
+    zh-TW: "成功更改此公會的變數`{name}`，其值為：\n{n}"
   update-failed-guild:
     ~: Failed to update variable `{name}` of this guild.
     zh-TW: 更改此公會的變數`{name}`時發生了問題。
   remove-failed:
     ~: Remove failed
     zh-TW: 變數刪除失敗
+  remove-success-user:
+    ~: Successfully remove `{name}` of your own scope.
+    zh-TW: 成功刪除自己的變數`{name}`。
   remove-failed-user:
     ~: Failed to remove your variable `{name}`.
     zh-TW: 刪除自己的變數`{name}`時發生了問題。
+  remove-success-channel:
+    ~: Successfully remove `{name}` of this channel.
+    zh-TW: 成功刪除此頻道的變數`{name}`。
   remove-failed-channel:
     ~: Failed to remove variable `{name}` of this channel.
     zh-TW: 刪除此頻道的變數`{name}`時發生了問題。
+  remove-success-thread:
+    ~: Successfully remove `{name}` of this thread.
+    zh-TW: 成功刪除此討論串的變數`{name}`。
   remove-failed-thread:
     ~: Failed to remove variable `{name}` of this thread.
     zh-TW: 刪除此討論串的變數`{name}`時發生了問題。
+  remove-success-guild:
+    ~: Successfully remove `{name}` of this guild.
+    zh-TW: 成功刪除此公會的變數`{name}`。
   remove-failed-guild:
     ~: Failed to remove variable `{name}` of this guild.
     zh-TW: 刪除此公會的變數`{name}`時發生了問題。

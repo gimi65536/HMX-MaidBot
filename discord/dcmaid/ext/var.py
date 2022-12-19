@@ -556,7 +556,10 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def assign(self, ctx, name, value, scope_option, declare):
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
-		await self._assign(ctx, obj, name, value, scope, declare)
+		n = await self._assign(ctx, obj, name, value, scope, declare)
+
+		s = self.to_response(n, ctx.locale)
+		await ctx.followup.send(self._trans(ctx, f'update-success-{self._scope_to_readable(obj, scope)}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 
 	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str, declare: bool = False) -> calcs.Constant:
 		if declare:
@@ -618,6 +621,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
 		await self._remove(ctx, obj, name, scope)
+		await ctx.send_response(self._trans(ctx, f'remove-success-{self._scope_to_readable(obj, scope)}', format = {'name': name}), ephemeral = (scope != 'user'))
 
 	async def _remove(self, ctx: discord.Message | QuasiContext, obj, name: str, scope: str):
 		self._check_permission(ctx, obj, scope)
