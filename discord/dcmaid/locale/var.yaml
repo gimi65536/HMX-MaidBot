@@ -48,6 +48,12 @@ __translation_table:
   declare-failed-declared-channel:
     ~: The variable `{name}` cannot be declared twice in this channel.
     zh-TW: 頻道的變數`{name}`不能被重複宣告。
+  declare-success-thread:
+    ~: "Successfully declare `{name}` of this thread, and the value is:\n{n}"
+    zh-TW: "成功宣告此討論串的變數`{name}`，其值為：\n{n}"
+  declare-failed-declared-thread:
+    ~: The variable `{name}` cannot be declared twice in this thread.
+    zh-TW: 討論串的變數`{name}`不能被重複宣告。
   declare-success-guild:
     ~: "Successfully declare `{name}` of this guild, and the value is:\n{n}"
     zh-TW: "成功宣告此公會的變數`{name}`，其值為：\n{n}"
@@ -70,3 +76,18 @@ __translation_table:
     zh-TW: 運算錯誤
   calcs-error-value:
     ~: "{type}: {text}"
+  var-undefined:
+    ~: Variable undefined
+    zh-TW: 變數未宣告
+  var-undefined-user:
+    ~: You have not declared variable `{name}`.
+    zh-TW: 你尚未宣告變數`{name}`。
+  var-undefined-channel:
+    ~: Variable `{name}` is not declared in this channel.
+    zh-TW: 變數`{name}`尚未宣告於此頻道。
+  var-undefined-thread:
+    ~: Variable `{name}` is not declared in this thread.
+    zh-TW: 變數`{name}`尚未宣告於此討論串。
+  var-undefined-guild:
+    ~: Variable `{name}` is not declared in this guild.
+    zh-TW: 變數`{name}`尚未宣告於此公會。

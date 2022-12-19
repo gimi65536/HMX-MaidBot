@@ -370,6 +370,12 @@ class VarCommands(BaseCog, name = 'Var'):
 				return False
 
 	@staticmethod
+	def _scope_to_readable(obj, scope: str) -> str:
+		if scope == 'channel' and isinstance(obj, discord.Thread):
+			return 'thread'
+		return scope
+
+	@staticmethod
 	def _scope_option_process(ctx: discord.ApplicationContext, scope_option: str):
 		channel = ctx.channel
 		if scope_option == 'user':
@@ -411,7 +417,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		n = await self._declare(ctx, obj, name, value)
 
 		s = self.to_response(n, ctx.locale)
-		await ctx.followup.send(self._trans(ctx, f'declare-success-{scope}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
+		await ctx.followup.send(self._trans(ctx, f'declare-success-{self._scope_to_readable(obj, scope)}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 
 	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> Constant:
 		self._check_permission(ctx, obj, scope)
@@ -420,7 +426,7 @@ class VarCommands(BaseCog, name = 'Var'):
 			await ctx.defer()
 
 		if self._varsystem.exist_var(name, obj):
-			raise RedeclareError(scope, name)
+			raise RedeclareError(self._scope_to_readable(obj, scope), name)
 		if not self.can_be_varname(name):
 			raise InvalidVariableNameError(name)
 
@@ -429,9 +435,50 @@ class VarCommands(BaseCog, name = 'Var'):
 		# If another attempt to add var with the same name is done after we have done the checks, the below returns False.
 		success = await self._varsystem.add_var(name, obj, n)
 		if not success:
-			raise RedeclareError(scope, name)
+			raise RedeclareError(self._scope_to_readable(obj, scope), name)
 
 		return n
+
+	@discord.slash_command(
+		description = 'Assign your variable with a value (no side-effects)',
+		options = [
+			discord.Option(str,
+				name = 'name',
+				description = 'Name of the variable'),
+			discord.Option(str,
+				name = 'value',
+				description = 'Value of the variable'),
+			discord.Option(str,
+				name = 'scope',
+				description = 'Where scope is this variable in (Default to "individual")',
+				choices = [
+					discord.OptionChoice('individual', 'user'),
+					discord.OptionChoice('this thread (this channel if not in a thread)', 'this'),
+					discord.OptionChoice('the channel (the outer channel if in a thread)', 'channel'),
+					discord.OptionChoice('this guild', 'guild')
+				],
+				default = 'user'),
+		]
+	)
+	async def assign(self, ctx, name, value, scope_option):
+		scope, obj = self._scope_option_process(ctx, scope_option)
+
+		n = await self._assign(ctx, obj, name, value, scope)
+
+		...
+
+	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> Constant:
+		self._check_permission(ctx, obj, scope)
+
+		if not self._varsystem.exist_var(name, obj):
+			raise VarUndefinedError(self._scope_to_readable(obj, scope), name)
+
+		if not isinstance(ctx, discord.Message):
+			await ctx.defer()
+
+		n, _ = await self._evaluate(ctx, value)
+
+		...
 
 	@discord.slash_command(
 		description = 'Evaluate an expression (no side-effects)',
@@ -485,7 +532,7 @@ class VarCommands(BaseCog, name = 'Var'):
 				)
 			case RedeclareError():
 				await send_error_embed(ctx,
-					name = self._trans(locale, f'declare-failed-declared'),
+					name = self._trans(locale, 'declare-failed-declared'),
 					value = self._trans(locale, f'declare-failed-declared-{exception.scope}', format = {'name': exception.name}),
 					**self._ephemeral(ctx)
 				)
@@ -495,7 +542,7 @@ class VarCommands(BaseCog, name = 'Var'):
 					value = self._trans(locale, 'declare-failed-invalid-value', format = {'name': exception.name}),
 					**self._ephemeral(ctx)
 				)
-			case InvalidVariableNameError():
+			case PermissionDenied():
 				await send_error_embed(ctx,
 					name = self._trans(locale, 'permission-denied'),
 					value = self._trans(locale, f'permission-denied-{exception.scope}'),
@@ -503,8 +550,14 @@ class VarCommands(BaseCog, name = 'Var'):
 				)
 			case NotInGuildError():
 				await send_error_embed(ctx,
-					name = self._trans(locale, f'not-in-guild'),
-					value = self._trans(locale, f'not-in-guild'),
+					name = self._trans(locale, 'not-in-guild'),
+					value = self._trans(locale, 'not-in-guild'),
+					**self._ephemeral(ctx)
+				)
+			case VarUndefinedError():
+				await send_error_embed(ctx,
+					name = self._trans(locale, 'var-undefined'),
+					value = self._trans(locale, f'var-undefined-{exception.scope}', format = {'name': exception.name}),
 					**self._ephemeral(ctx)
 				)
 
@@ -584,6 +637,11 @@ class PermissionDenied(_VarExtError):
 
 class NotInGuildError(_VarExtError):
 	pass
+
+class VarUndefinedError(_VarExtError):
+	def __init__(self, scope, name):
+		self.scope = scope
+		self.name = name
 
 def setup(bot):
 	bot.add_cog(VarCommands(bot))
