@@ -91,6 +91,18 @@ class VariableSystem:
 		self._stored_value: dict[int, tuple[RWLock, dict[str, calcs.Constant]]] = {} # scope_id: (lock, {name: constant})
 		self._update_record: dict[int, dict[str, int]] = {} # scope_id: {name: order}
 
+	@staticmethod
+	def to_var(name: str, obj) -> calcs.Var:
+		match obj:
+			case discord.User() | discord.Member():
+				scope = self.add_scope(UserScope(obj))
+			case discord.Guild():
+				scope = self.add_scope(GuildScope(obj))
+			case _:
+				scope = self.add_scope(ChannelScope(obj))
+
+		return calcs.Var(name, scope)
+
 	async def restore_info(self, bot):
 		# Injure all names in SymPy
 		for n in dir(sympy):
@@ -237,7 +249,7 @@ class VariableSystem:
 		return result
 
 	# This method is valid ONLY IF the "from" value in bookkeeping is not meaningful in update_bookkeeping()
-	async def update_var(self, var: calcs.Var, value: calcs.Constant, bookkeeping_order: Optional[int] = None):
+	async def update_var(self, var: calcs.Var, value: calcs.Constant, bookkeeping_order: Optional[int] = None) -> bool:
 		if bookkeeping_order is None:
 			bookkeeping = {}
 		else:
@@ -484,7 +496,7 @@ class VarCommands(BaseCog, name = 'Var'):
 
 		...
 
-	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> Constant:
+	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> bool:
 		self._check_permission(ctx, obj, scope)
 
 		if not self._varsystem.exist_var(name, obj):
@@ -493,9 +505,10 @@ class VarCommands(BaseCog, name = 'Var'):
 		if not isinstance(ctx, discord.Message):
 			await ctx.defer()
 
-		n, _ = await self._evaluate(ctx, value)
+		n, bookkeeping = await self._evaluate(ctx, value)
+		var = self._varsystem.to_var(name, obj)
 
-		...
+		return self._varsystem.update_var(var, n, bookkeeping.order)
 
 	@discord.slash_command(
 		description = 'Evaluate an expression (no side-effects)',
