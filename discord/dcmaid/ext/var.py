@@ -408,7 +408,7 @@ class VarCommands(BaseCog, name = 'Var'):
 
 	@discord.Cog.listener()
 	async def on_ready(self):
-		self._varsystem.restore_info(self.bot)
+		await self._varsystem.restore_info(self.bot)
 
 	@staticmethod
 	def _check_permission(ctx: discord.Message | QuasiContext, obj, scope: str):
