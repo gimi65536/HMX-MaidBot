@@ -117,7 +117,7 @@ class BasePoll:
 			return self._until
 
 		if self._time is not None:
-			self._until = datetime.now(timezone.utc) + self._time
+			self._until = discord.utils.utcnow() + self._time
 		else:
 			self._until = None
 		return self._until
@@ -155,7 +155,8 @@ class BasePoll:
 			'locale': self.locale,
 			'vote_casted': {member.id: c for member, c in self._vote_casted.items()},
 			'uuid': self.uuid,
-			'msg': None if self.msg is None else self.msg.id
+			'msg': None if self.msg is None else self.msg.id,
+			'until': self.until
 		}
 
 	@classmethod
@@ -188,6 +189,8 @@ class BasePoll:
 		poll.uuid = d['uuid']
 
 		poll.msg = await channel.fetch_message(d['msg'])
+
+		poll._until = d['until']
 
 		# Out of dict
 		poll._option_set = set(poll.options)
