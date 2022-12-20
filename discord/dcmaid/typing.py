@@ -1,3 +1,4 @@
+import discord.abc
 from discord import (
 	ApplicationContext,
 	DMChannel,
@@ -19,10 +20,15 @@ class _Localeable2(Protocol):
 	def locale(self) -> Optional[str]:
 		...
 
-class Channelable(Protocol):
+class _Channelable1(Protocol):
+	channel: discord.abc.MessageableChannel
+
+class _Channelable2(Protocol):
 	@property
 	def channel(self):
 		...
+
+Channelable: TypeAlias = _Channelable1 | _Channelable2
 
 QuasiContext: TypeAlias = ApplicationContext | Interaction
 

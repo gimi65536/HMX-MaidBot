@@ -14,8 +14,10 @@ class MaidMixin:
 		if is_DM(ctx.channel):
 			return
 
-		maid_webhook = await self.bot.get_cog('Base').fetch_maids(get_guild_channel(ctx.channel))
-		maid_weights = self.bot.get_cog('Base').fetch_weight(get_guild_channel(ctx.channel))
+		base_cog = self.bot.get_cog('Base')
+		assert isinstance(base_cog, BasicCommands)
+		maid_webhook = await base_cog.fetch_maids(get_guild_channel(ctx.channel))
+		maid_weights = base_cog.fetch_weight(get_guild_channel(ctx.channel))
 		setattr(ctx, 'maid_webhook', maid_webhook)
 		setattr(ctx, 'maid_weights', maid_weights)
 

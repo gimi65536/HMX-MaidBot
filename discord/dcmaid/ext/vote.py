@@ -8,7 +8,7 @@ from ..views import Button, Select, YesNoView
 from aiorwlock import RWLock
 from asyncio import get_running_loop, Task
 from collections import Counter
-from collections.abc import Awaitable, MutableMapping
+from collections.abc import Coroutine, MutableMapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from hashlib import sha1 as _hash
@@ -51,6 +51,8 @@ def period_to_delta(period: int, period_unit) -> Optional[timedelta]:
 			time_delta = timedelta(weeks = period)
 		case 'f':
 			time_delta = None
+		case _:
+			raise ValueError("Unknown time unit")
 
 	return time_delta
 
@@ -224,8 +226,8 @@ class Poll(BasePoll):
 	max_votes: int
 
 	def __init__(self,
-		author: discord.User,
-		channel: discord.abc.Messageable,
+		author: discord.Member,
+		channel: MessageableGuildChannel,
 		title: str,
 		options: list[str],
 		locale: str,
@@ -302,6 +304,8 @@ class Poll(BasePoll):
 		poll.min_votes = d['min_votes']
 		poll.max_votes = d['max_votes']
 
+		return poll
+
 @dataclass(init = True, repr = True, eq = False, frozen = True)
 class Event:
 	poll: BasePoll
@@ -324,7 +328,7 @@ class BaseHoldSystem(Generic[T]):
 	Use db column to restore or not...
 	'''
 	def __init__(self, name: str, type: type[T], col = None):
-		self._on_process: dict[uuid.UUID, tuple[T, Task, Awaitable]] = {}
+		self._on_process: dict[uuid.UUID, tuple[T, Task, Coroutine]] = {}
 		self.name = name
 		self.type = type
 		self.col = col
@@ -354,8 +358,8 @@ class BaseHoldSystem(Generic[T]):
 
 		return self._on_process.get(u)[0]
 
-	async def register(self, poll: T, awaitable: Awaitable, restore: bool = False):
-		# awaitable will be awaited within the writer lock (see wait_for_timeout)
+	async def register(self, poll: T, Coroutine: Coroutine, restore: bool = False):
+		# Coroutine will be awaited within the writer lock (see wait_for_timeout)
 		async with poll.writer:
 			if self._contain(poll):
 				return
@@ -364,7 +368,7 @@ class BaseHoldSystem(Generic[T]):
 
 			loop = get_running_loop()
 			task = loop.create_task(self.wait_for_timeout(poll))
-			self._on_process[poll.uuid] = (poll, task, awaitable)
+			self._on_process[poll.uuid] = (poll, task, Coroutine)
 
 			if self.col is not None and not restore:
 				self.col.insert_one(poll.to_dict())
@@ -378,7 +382,7 @@ class BaseHoldSystem(Generic[T]):
 		t = self._on_process.get(u, None)
 		if t is None:
 			return False
-		poll, task, awaitable = t
+		poll, task, Coroutine = t
 
 		async with poll.writer:
 			if not self._contain(poll):
@@ -387,7 +391,7 @@ class BaseHoldSystem(Generic[T]):
 			self._on_process.pop(u)
 			poll.processed_order += 1 # To prevent late information update after the poll is canceled
 			task.cancel()
-			awaitable.close()
+			Coroutine.close()
 
 			if self.col is not None:
 				self.col.delete_one({'uuid': poll.uuid})
@@ -400,14 +404,14 @@ class BaseHoldSystem(Generic[T]):
 			if not self._contain(poll):
 				return
 
-			_, _, awaitable = self._on_process.pop(poll.uuid)
+			_, _, Coroutine = self._on_process.pop(poll.uuid)
 			poll.processed_order += 1 # To prevent late information update after due
 
 			if self.col is not None:
 				self.col.delete_one({'uuid': poll.uuid})
 
-			# awaitable is called after the processed order increased
-			await awaitable
+			# Coroutine is called after the processed order increased
+			await Coroutine
 
 	def _update_db(self, events):
 		if self.col is not None:
@@ -1156,6 +1160,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			total_votes = sum(votes.values())
 		else:
 			votes = {o: 0 for o in poll.options}
+			total_votes = 0 # For consistence
 
 		kwargs = {'content': None}
 
@@ -1192,6 +1197,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		kwargs['embed'] = embed
 
 		if not end and len(message.components) == 0:
+			# noinspection PyTypedDict
 			kwargs['view'] = VoteOptionView(poll,
 				self._trans(locale, 'vote'),
 				PollController.vote_action(self, self.poll_system, poll),
@@ -1215,7 +1221,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		# This method is called in writer lock
 		#...
 
-	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
+	async def cog_command_error(self, ctx, exception):
 		match exception:
 			case NonPositivePeriodError():
 				await send_error_embed(ctx,

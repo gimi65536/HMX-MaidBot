@@ -1,4 +1,5 @@
 # Let users handle variables for themselves...
+from __future__ import annotations
 import calcs
 import discord
 import re
@@ -11,7 +12,6 @@ from ..utils import *
 from aiorwlock import RWLock
 from asyncio import get_running_loop
 from itertools import count
-from sympy import *
 from typing import Optional
 
 config = generate_config(
@@ -25,7 +25,7 @@ class Scope:
 	_is_guild: bool = False
 	_is_channel: bool = False
 
-	def __init__(self, id_or_obj: int | discord.Snowflake, /):
+	def __init__(self, id_or_obj: int | discord.abc.Snowflake, /):
 		if isinstance(id_or_obj, int):
 			self._id = id_or_obj
 		else:
@@ -75,7 +75,7 @@ class BookKeeping(dict[calcs.Var, tuple[calcs.Constant, calcs.Constant]]):
 		self._order = 0
 
 	def generate_order(self):
-		self._order = self._count.next()
+		self._order = next(self._count)
 
 	@property
 	def order(self):
@@ -96,11 +96,11 @@ class VariableSystem:
 	def to_var(name: str, obj) -> calcs.Var:
 		match obj:
 			case discord.User() | discord.Member():
-				scope = self.add_scope(UserScope(obj))
+				scope = UserScope(obj)
 			case discord.Guild():
-				scope = self.add_scope(GuildScope(obj))
+				scope = GuildScope(obj)
 			case _:
-				scope = self.add_scope(ChannelScope(obj))
+				scope = ChannelScope(obj)
 
 		return calcs.Var(name, scope)
 
@@ -110,26 +110,26 @@ class VariableSystem:
 			if not n.startswith('_'):
 				exec(f'{n}=sympy.{n}')
 
-		if col is None:
+		if self.col is None:
 			return
 
-		info = col.aggregate([
+		info = self.col.aggregate([{
 			'$group': {
 				'_id': {'scope_type': '$scope_type', 'scope_id': '$scope_id'},
 				'vars': {'$push': {'name': '$name', 'type': '$type', 'value': '$value'}}
 			}
-		])
+		}])
 		for scope_info in info:
 			scope_type, scope_id = scope_info['_id']['scope_type'], scope_info['_id']['scope_id']
 			try:
 				if scope_type == 'user':
-					obj = discord.utils.get_or_fetch(bot, 'user', scope_id)
+					obj = await discord.utils.get_or_fetch(bot, 'user', scope_id)
 					scope = UserScope(obj)
 				elif scope_type == 'channel':
-					obj = discord.utils.get_or_fetch(bot, 'channel', scope_id)
+					obj = await discord.utils.get_or_fetch(bot, 'channel', scope_id)
 					scope = ChannelScope(obj)
 				elif scope_type == 'guild':
-					obj = discord.utils.get_or_fetch(bot, 'guild', scope_id)
+					obj = await discord.utils.get_or_fetch(bot, 'guild', scope_id)
 					scope = GuildScope(obj)
 				else:
 					# Unknown type in the db, but we choose to just omit without dropping.
@@ -160,7 +160,7 @@ class VariableSystem:
 							# Unknown
 							pass
 					elif type == 'string':
-						d[name] == calcs.StringConstant(value)
+						d[name] = calcs.StringConstant(value)
 						r[name] = 0
 					else:
 						# Unknown to omit
@@ -191,12 +191,12 @@ class VariableSystem:
 
 		lock, d = self._stored_value[scope.id]
 
-		with lock.write:
+		with lock.writer:
 			if name in self._stored_value[scope.id][1]:
 				# raise ValueError(f'Variable {name} has been declared before!')
 				return False
 
-			d[1][name] = default
+			d[name] = default
 			self._update_record[scope.id][name] = 0
 
 			if self.col is not None:
@@ -241,7 +241,7 @@ class VariableSystem:
 		for scope in scopes:
 			d: dict[str, calcs.Constant]
 			lock, d = self._stored_value[scope.id]
-			async with lock.read:
+			async with lock.reader:
 				for name, constant in d.items():
 					var = calcs.Var(name, scope)
 					lv = calcs.LValue(var, constant, bookkeeping)
@@ -280,7 +280,7 @@ class VariableSystem:
 
 			lock, d = self._stored_value[scope_id]
 			r = self._update_record[scope_id]
-			async with lock.write:
+			async with lock.writer:
 				for var in vars:
 					name = var.name
 					if isinstance(bookkeeping, BookKeeping) and r[name] >= bookkeeping.order:
@@ -325,7 +325,7 @@ class VariableSystem:
 
 			lock, d = self._stored_value[scope_id]
 			r = self._update_record[scope_id]
-			async with lock.write:
+			async with lock.writer:
 				for var in vars:
 					name = var.name
 					if name not in d:
@@ -344,11 +344,11 @@ class VariableSystem:
 
 	@staticmethod
 	def scope_to_document(scope: Scope):
-		if scope.is_user:
+		if scope.is_user_scope:
 			return {'scope_id': scope.id, 'scope_type': 'user'}
-		elif scope.is_guild:
+		elif scope.is_guild_scope:
 			return {'scope_id': scope.id, 'scope_type': 'guild'}
-		elif scope.is_channel:
+		elif scope.is_channel_scope:
 			return {'scope_id': scope.id, 'scope_type': 'channel'}
 		raise ValueError('Unknown scope type when converting into document')
 
@@ -509,7 +509,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		'''
 		scope, obj = self._scope_option_process(ctx, scope_option)
 
-		n = await self._declare(ctx, obj, name, value)
+		n = await self._declare(ctx, obj, name, value, scope)
 
 		s = self.to_response(n, ctx.locale)
 		await ctx.followup.send(self._trans(ctx, f'declare-success-{self._scope_to_readable(obj, scope)}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
@@ -565,7 +565,7 @@ class VarCommands(BaseCog, name = 'Var'):
 	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str, declare: bool = False) -> calcs.Constant:
 		if declare:
 			try:
-				n = await self._declare(ctx, obj, name, value)
+				n = await self._declare(ctx, obj, name, value, scope)
 			except RedeclareError as e:
 				if e.n is not None:
 					# Some other process takes the lead to declare the variable...
@@ -661,10 +661,10 @@ class VarCommands(BaseCog, name = 'Var'):
 			return n.content, bookkeeping
 		return n, bookkeeping
 
-	def _eval(self, expr: calcs.Expr, mapping, ctx):
+	def _eval(self, expr: sympy.Expr, mapping, ctx):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
-	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception: _VarExtError):
+	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception):
 		locale = self._pick_locale(ctx)
 
 		match exception:
@@ -723,7 +723,7 @@ class VarCommands(BaseCog, name = 'Var'):
 					**self._ephemeral(ctx)
 				)
 
-	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
+	async def cog_command_error(self, ctx, exception):
 		match exception:
 			case _VarExtError(): 
 				await self._error_handle(ctx, exception)
@@ -749,22 +749,22 @@ class VarCommands(BaseCog, name = 'Var'):
 	@classmethod
 	def to_response(cls, n: calcs.Constant, locale: Optional[str] = None) -> str:
 		if n.is_number:
-			prefix = self._trans(locale, 'number')
+			prefix = cls._trans(locale, 'number')
 			return prefix + f' `{n}`'
 		elif n.is_bool:
-			prefix = self._trans(locale, 'boolean')
+			prefix = cls._trans(locale, 'boolean')
 			if n.value:
-				value = self._trans(locale, 'boolean-true')
+				value = cls._trans(locale, 'boolean-true')
 			else:
-				value = self._trans(locale, 'boolean-false')
+				value = cls._trans(locale, 'boolean-false')
 			return f'{prefix} {value}'
 		elif n.is_str:
-			prefix = self._trans(locale, 'string')
+			prefix = cls._trans(locale, 'string')
 			s = n.value
 			if len(s) == 0:
 				return prefix + ' ""'
 			else:
-				return prefix + f''' ``"{self.escape(s)}"``'''
+				return prefix + f''' ``"{cls.escape(s)}"``'''
 
 	@classmethod
 	def escape(cls, s):
@@ -811,7 +811,7 @@ class UpdateFailedError(_VarExtError):
 	def __init__(self, scope, name, n):
 		self.scope = scope
 		self.name = name
-		self.n
+		self.n = n
 
 class RemoveVariableFailedError(_VarExtError):
 	def __init__(self, scope, name):
