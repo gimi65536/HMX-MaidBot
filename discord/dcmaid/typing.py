@@ -10,7 +10,7 @@ from discord import (
 	VoiceChannel,
 )
 from discord.abc import GuildChannel, PrivateChannel
-from typing import Optional, Protocol, TypeAlias
+from typing import Any, Optional, Protocol, TypeAlias
 
 class _Localeable1(Protocol):
 	locale: Optional[str]
@@ -21,7 +21,7 @@ class _Localeable2(Protocol):
 		...
 
 class _Channelable1(Protocol):
-	channel: discord.abc.MessageableChannel
+	channel: Any
 
 class _Channelable2(Protocol):
 	@property
