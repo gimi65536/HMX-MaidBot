@@ -1,7 +1,7 @@
 import json
 from collections.abc import Sequence
 from importlib.resources import as_file
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import TextIO
 
 def add_suffix(path: PurePath, suffix: str):
@@ -17,7 +17,7 @@ class BaseReader:
 			path_with_suffix = add_suffix(path, suffix)
 			try:
 				# Compatible in zip...
-				with as_file(path_with_suffix) as real_path:
+				with as_file(Path(path_with_suffix)) as real_path:
 					with open(real_path) as f:
 						obj = cls.process(f)
 			except:

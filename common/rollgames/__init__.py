@@ -171,7 +171,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 				ellipsis = True
 				start_ellipsis = len(cls.options[...])
 			else:
-				raise ArgumentLengthError(expect = list((f'{len(cls.options[i])-1}+' if i is ... else str(i)) for i in cls.options.keys()), got = len_args)
+				raise ArgumentLengthError(expect = list((f'{len(options) - 1}+' if i is ... else str(i)) for i, options in cls.options.items()), got = len_args)
 
 		processed: dict[str, Any] = {}
 
@@ -181,6 +181,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 			ellipsis_attr = cls.options[...][-1][0]
 		else:
 			args_option = iter(cls.options[len_args])
+			ellipsis_attr = '' # For consistence
 
 		for i, ((attr, t), arg) in enumerate(zip(args_option, args), 1):
 			try:

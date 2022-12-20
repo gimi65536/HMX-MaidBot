@@ -1,7 +1,6 @@
 from collections import Counter
 from collections.abc import Mapping
-from types import MappingProxyType
-from typing import Mapping, TypeVar
+from typing import TypeVar
 
 KT = TypeVar('KT')
 VT = TypeVar('VT')
@@ -10,6 +9,8 @@ VT = TypeVar('VT')
 # It is not recommended to use this directly since there
 # is the built-in version and that performs better.
 class _MappingProxyType(Mapping[KT, VT]):
+	_d: Mapping[KT, VT]
+
 	def __init__(self, mapping: Mapping):
 		self._d = mapping
 
@@ -26,7 +27,7 @@ class _MappingProxyType(Mapping[KT, VT]):
 		return self._d.__len__()
 
 	def copy(self):
-		return self._d.copy()
+		return {k: v for k, v in self.items()}
 
 	def get(self, key, default = None):
 		return self._d.get(key, default)
@@ -41,9 +42,11 @@ class _MappingProxyType(Mapping[KT, VT]):
 		return self._d.values()
 
 	def __reversed__(self):
-		return self._d.__reversed__()
+		return reversed(self.keys())
 
 class CounterProxyType(_MappingProxyType[KT, int]):
+	_d: Counter
+
 	def __init__(self, counter: Counter):
 		super().__init__(counter)
 
