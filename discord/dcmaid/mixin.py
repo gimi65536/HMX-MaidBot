@@ -6,13 +6,9 @@ from .state import State
 from .typing import Channelable, QuasiContext
 from .utils import *
 
-class _MixinWithBot(Protocol):
+class MaidMixin:
 	bot: Bot
 
-class _MixinWithState(Protocol):
-	state: State
-
-class MaidMixin(_MixinWithBot):
 	# You need to override cog_before_invoke manually when inherit the mixin
 	async def _cog_before_invoke(self, ctx):
 		if is_DM(ctx.channel):
@@ -65,7 +61,8 @@ class MaidMixin(_MixinWithBot):
 
 		return maid
 
-class RandomMixin(_MixinWithState):
+class RandomMixin:
+	state: State
 	__state_random_key__ = 'random_generator_{}'
 
 	def _get_random_generator(self, ctx: Channelable) -> random.Random:
