@@ -59,7 +59,7 @@ class TOMLReader(BaseReader):
 	@classmethod
 	def process(cls, f: TextIO):
 		import tomllib
-		return tomllib.load(f)
+		return tomllib.loads(f.read())
 
 # This class is here for future implemetation...
 class CUEReader(BaseReader):

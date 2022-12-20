@@ -5,7 +5,7 @@ from more_itertools import repeat_last, SequenceView
 from reader import load
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import EllipsisType, MappingProxyType
-from typing import Any
+from typing import Any, Optional
 
 class GameData:
 	def __init__(self, d):
@@ -49,7 +49,7 @@ class GameData:
 		return SequenceView(self._d.get('alias', []))
 
 class BaseRollGameMeta(ABCMeta):
-	base_game_data: dict = None
+	base_game_data: Optional[dict] = None
 	processed_options: set = set()
 	def __new__(mcls, *args, name = None):
 		if mcls.base_game_data is None:
@@ -171,9 +171,9 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 				ellipsis = True
 				start_ellipsis = len(cls.options[...])
 			else:
-				raise ArgumentLengthError(expect = list(cls.options.keys()), got = len_args)
+				raise ArgumentLengthError(expect = list((f'{len(cls.options[i])-1}+' if i is ... else str(i)) for i in cls.options.keys()), got = len_args)
 
-		processed = {}
+		processed: dict[str, Any] = {}
 
 		args_option: Iterator[tuple[str, type]]
 		if ellipsis:
@@ -208,7 +208,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		await self._send(content)
 
 class ArgumentLengthError(ValueError):
-	def __init__(self, expect: list[int], got: int):
+	def __init__(self, expect: list[str], got: int):
 		self.expect = expect
 		self.got = got
 
