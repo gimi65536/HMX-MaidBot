@@ -6,7 +6,7 @@ import discord
 from collections.abc import Sequence
 from importlib.resources import files
 from reader import load
-from typing import Optional
+from typing import Any, Optional
 from .basebot import Bot
 from .exception import DependentCogNotLoaded, MaidNotFound
 from .helper import get_help, update_help
@@ -134,7 +134,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 	# a string or a complex dictionary and given keys, return the string if any.
 	# If a key does not exist, the function tries to retrieve None key.
 	@staticmethod
-	def _get_nested_str(d: dict, *args: str, default: Optional[str] = None, format: dict[str, str] = {}) -> Optional[str]:
+	def _get_nested_str(d: dict, *args: Optional[str], default: Optional[str] = None, format: dict[str, Any] = {}) -> Optional[str]:
 		now = d
 		l = list(reversed(args)) # Reversed because pop() remove the last element
 		while len(l) > 0:
@@ -153,13 +153,13 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 
 	@classmethod
 	def _trans(cls,
-		locale_or_localeable: str | Localeable,
+		locale_or_localeable: Optional[str] | Localeable,
 		*args: str,
 		default: Optional[str] = None,
-		format: dict[str, str] = {}) -> Optional[str]:
+		format: dict[str, Any] = {}) -> Optional[str]:
 
 		table = cls.__cog_translation_table__  # type: ignore[attr-defined]
-		if isinstance(locale_or_localeable, str):
+		if isinstance(locale_or_localeable, str) or locale_or_localeable is None:
 			return cls._get_nested_str(table, *args, locale_or_localeable, default = default, format = format)
 		else:
 			return cls._get_nested_str(table, *args, locale_or_localeable.locale, default = default, format = format)
