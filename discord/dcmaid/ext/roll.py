@@ -1,5 +1,4 @@
 import discord
-import random
 from discord.ext.pages import Paginator
 from importlib import import_module
 from more_itertools import chunked
@@ -42,7 +41,8 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 
 	@classmethod
 	def _build_box_message(cls, ctx: QuasiContext, tran_key, l, /, **kwargs):
-		return f'<@{ctx.author.id}>\n```\n{cls._trans(ctx, tran_key, format = kwargs)}\n{cls._list_message(l)}```'
+		assert ctx.user is not None
+		return f'<@{ctx.user.id}>\n```\n{cls._trans(ctx, tran_key, format = kwargs)}\n{cls._list_message(l)}```'
 
 	_exec_time_option = discord.Option(int,
 		name = 'number',
@@ -192,7 +192,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 	async def weibull(self, ctx, a, b, n):
 		NotImplemented
 
-	async def cog_command_error(self, ctx, exception: discord.ApplicationCommandError):
+	async def cog_command_error(self, ctx, exception):
 		match exception:
 			case ArgumentLengthError():
 				lens = ', '.join([str(i) for i in exception.expect])
@@ -276,7 +276,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 			embed = discord.Embed(title = game_data.get_name(locale), description = game_data.get_description(locale))
 			embed.add_field(name = self._trans(ctx, 'game-code-name'), value = game_cls.game_name, inline = False)
 			for n, table in game_data.get_help_dict().items(): # n may be ...
-				field_name: str
+				field_name: str  # type: ignore[annotation-unchecked]
 				if n is not ...:
 					field_name = self._trans(ctx, 'game-rule-on', format = {'n': n})
 				else:
@@ -359,6 +359,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 		else:
 			# Slash command
 			try:
+				assert ctx.user is not None
 				game = game_cls(
 					ctx,
 					webhook,

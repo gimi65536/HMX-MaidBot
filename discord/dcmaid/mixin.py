@@ -1,5 +1,5 @@
 import random
-from typing import Optional, Protocol
+from typing import Optional
 from .basebot import Bot
 from .basecmd import BasicCommands
 from .state import State

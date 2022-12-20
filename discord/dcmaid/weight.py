@@ -1,3 +1,4 @@
+from __future__ import annotations
 import discord
 import random
 from threading import Lock
@@ -10,7 +11,7 @@ class Weight:
 	col_name = 'channel-maids-weight'
 	field_name = 'weights'
 	bot_key = '____bot'
-	d: dict[tuple[Bot, discord.abc.GuildChannel], 'Weight'] = {}
+	d: dict[tuple[Bot, discord.abc.GuildChannel], Weight] = {}
 
 	@staticmethod
 	def _get_key(bot, channel):
@@ -76,7 +77,7 @@ class Weight:
 					self._random = random.Random()
 
 		if not assigned:
-			self._proxy: 'Weight' = d[(bot, channel)]
+			self._proxy: Weight = d[(bot, channel)]
 
 	@proxy
 	def get_maid_weight(self, maid_name: str) -> int:
@@ -130,7 +131,7 @@ class Weight:
 		if random_generator is None:
 			random_generator = self._random
 
-		items = list(self._weights.items())
+		items: list[tuple[str, int]] = list(self._weights.items())
 		try:
 			result = random_generator.choices([i[0] for i in items], [i[1] for i in items])[0]
 		except ValueError:

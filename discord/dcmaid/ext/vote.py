@@ -2,14 +2,15 @@ import discord
 import uuid
 from ..basebot import Bot
 from ..basecog import BaseCog
+from ..typing import ChannelType, MessageableGuildChannel
 from ..utils import *
 from ..views import Button, Select, YesNoView
 from aiorwlock import RWLock
-from asyncio import get_running_loop, sleep, Task
+from asyncio import get_running_loop, Task
 from collections import Counter
-from collections.abc import Awaitable, Mapping, MutableMapping
+from collections.abc import Awaitable, MutableMapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from hashlib import sha1 as _hash
 from proxy_types import CounterProxyType
 from simple_parsers.string_argument_parser import StringArgumentParser
@@ -36,6 +37,7 @@ time_units = [
 time_units_choices = [discord.OptionChoice(name, value) for name, value in time_units]
 
 def period_to_delta(period: int, period_unit) -> Optional[timedelta]:
+	time_delta: Optional[timedelta]
 	match period_unit:
 		case 's':
 			time_delta = timedelta(seconds = period)
@@ -57,23 +59,28 @@ def period_to_delta(period: int, period_unit) -> Optional[timedelta]:
 # _vote_* dictionaries are designed to be manipulated by hold systems.
 class BasePoll:
 	author: discord.Member
-	channel: discord.abc.Messageable
+	channel: MessageableGuildChannel
 	title: str
 	options: list[str]
 	_option_set: set[str] # Not in db
 	locale: str
-	vote_receive: Mapping[str, CounterProxyType[discord.Member]] # Not in db
-	vote_casted: Mapping[discord.Member, CounterProxyType[str]]
+	vote_receive: MutableMapping[str, CounterProxyType[discord.Member]] # Not in db
+	vote_casted: MutableMapping[discord.Member, CounterProxyType[str]]
 	_vote_receive: MutableMapping[str, Counter[discord.Member]] # Not in db
 	_vote_casted: MutableMapping[discord.Member, Counter[str]]
 	uuid: uuid.UUID
 	msg: Optional[discord.Message] = None # Inserted by the Cog
 	processed_order: int # Not in db. Used by the Cog to refresh information correctly.
 	rwlock: RWLock # Not in db, of course
+	_until: Optional[datetime]
 
-	def __init__(self, author: discord.Member, channel: discord.abc.Messageable, title: str, options: list[str], locale: str, period: int, period_unit):
+	def __init__(self, author: discord.Member, channel: ChannelType, title: str, options: list[str], locale: str, period: int, period_unit):
 		if period <= 0:
 			raise NonPositivePeriodError(period)
+
+		# Only used in guild channel...
+		# Mypy complains if I write 'CommonTextGuildChannel'... Related to #11673, not fixed yet in v0.991
+		assert isinstance(channel, MessageableGuildChannel)
 
 		time_delta: Optional[timedelta] = period_to_delta(period, period_unit)
 		self._time = time_delta
@@ -188,7 +195,7 @@ class BasePoll:
 
 		poll.uuid = d['uuid']
 
-		poll.msg = await channel.fetch_message(d['msg'])
+		poll.msg = await poll.channel.fetch_message(d['msg'])
 
 		poll._until = d['until']
 
@@ -307,7 +314,7 @@ class Event:
 		return {
 			'uuid': self.poll.uuid
 		},{
-			f'vote_casted.{member.id}.{option}': self.modification[1]
+			f'vote_casted.{self.member.id}.{self.option}': self.modification[1]
 		}
 
 T = TypeVar('T', bound = BasePoll)
@@ -360,7 +367,7 @@ class BaseHoldSystem(Generic[T]):
 			self._on_process[poll.uuid] = (poll, task, awaitable)
 
 			if self.col is not None and not restore:
-				col.insert_one(poll.to_dict())
+				self.col.insert_one(poll.to_dict())
 
 	async def cancel(self, poll_or_u: T | uuid.UUID) -> bool:
 		if isinstance(poll_or_u, BasePoll):
@@ -383,7 +390,7 @@ class BaseHoldSystem(Generic[T]):
 			awaitable.close()
 
 			if self.col is not None:
-				col.delete_one({'uuid': poll.uuid})
+				self.col.delete_one({'uuid': poll.uuid})
 
 			return True # Canceled by this method
 
@@ -397,7 +404,7 @@ class BaseHoldSystem(Generic[T]):
 			poll.processed_order += 1 # To prevent late information update after due
 
 			if self.col is not None:
-				col.delete_one({'uuid': poll.uuid})
+				self.col.delete_one({'uuid': poll.uuid})
 
 			# awaitable is called after the processed order increased
 			await awaitable
@@ -433,7 +440,7 @@ class BaseHoldSystem(Generic[T]):
 		return await self._remove_votes(poll, member, options)
 
 	async def add_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
-		if not self._contain(poll):
+		if not self._contain(uuid):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
@@ -451,7 +458,7 @@ class BaseHoldSystem(Generic[T]):
 		return await self._replace_votes(self.retrieve(uuid), member, options)
 
 	async def remove_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: Optional[list[str] | Counter[str]] = None) -> Optional[list[Event]]:
-		if not self._contain(poll):
+		if not self._contain(uuid):
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
@@ -799,8 +806,8 @@ class PollController(VoteController[Poll]):
 
 			if poll.author != member:
 				await send_error_embed(interaction,
-					name = self._trans(interaction, 'early-permission-denied'),
-					value = self._trans(interaction, 'early-permission-denied-value'),
+					name = cog._trans(interaction, 'early-permission-denied'),
+					value = cog._trans(interaction, 'early-permission-denied-value'),
 					ephemeral = True
 				)
 			else:
@@ -844,8 +851,8 @@ class PollController(VoteController[Poll]):
 
 			if poll.author != member or not poll.channel.permissions_for(member).manage_messages:
 				await send_error_embed(interaction,
-					name = self._trans(interaction, 'cancel-permission-denied'),
-					value = self._trans(interaction, 'cancel-permission-denied-value'),
+					name = cog._trans(interaction, 'cancel-permission-denied'),
+					value = cog._trans(interaction, 'cancel-permission-denied-value'),
 					ephemeral = True
 				)
 			else:
@@ -996,7 +1003,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				# Drop the poll from the database if the channel/author/message disappeared, or the bot is forbidden
 				self._poll_col.delete_one({'uuid': poll_info['uuid']})
 				continue
-			except _:
+			except:
 				# Other http exceptions...
 				continue
 
@@ -1008,14 +1015,14 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			# since each actions ensures the polls are in the system,
 			# and the expired polls are already dropped in the above step.
 			self.bot.add_view(VoteOptionView(poll,
-				self._trans(locale, 'vote'),
-				PollController.vote_action(self, poll_system, poll),
-				self._trans(locale, 'lookup'),
-				PollController.lookup_action(self, poll_system, poll),
-				self._trans(locale, 'early'),
-				PollController.early_action(self, poll_system, poll),
-				self._trans(locale, 'cancel'),
-				PollController.cancel_action(self, poll_system, poll)
+				self._trans(None, 'vote'),
+				PollController.vote_action(self, self.poll_system, poll),
+				self._trans(None, 'lookup'),
+				PollController.lookup_action(self, self.poll_system, poll),
+				self._trans(None, 'early'),
+				PollController.early_action(self, self.poll_system, poll),
+				self._trans(None, 'cancel'),
+				PollController.cancel_action(self, self.poll_system, poll)
 			))
 
 	@discord.slash_command(

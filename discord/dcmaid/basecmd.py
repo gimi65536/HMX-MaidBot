@@ -7,7 +7,7 @@ from typing import Optional
 from .basebot import Bot
 from .basecog import BaseCog
 from .exception import MaidNotFound
-from .helper import get_help
+from .helper import get_help, set_help
 from .perm import admin_only
 from .utils import *
 from .views import YesNoView
