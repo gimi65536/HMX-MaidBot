@@ -4,7 +4,7 @@ from threading import Lock
 from typing import Optional
 
 class State:
-	def __init__(self):
+	def __init__(self) -> None:
 		# To ensure that each update is handled by mutex lock,
 		# the "object" part is recommended to be immutable.
 		self._real_dict: dict[str, tuple[Lock, object]] = {}

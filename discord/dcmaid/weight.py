@@ -103,7 +103,7 @@ class Weight:
 	@proxy
 	def set_maid_weight(self, maid_name: str, i: int):
 		ori_i = self._weights[maid_name]
-		if ori == i:
+		if ori_i == i:
 			return
 		if i < 0:
 			i = 0
@@ -112,7 +112,7 @@ class Weight:
 	@proxy
 	def set_bot_weight(self, i: int):
 		ori_i = self._weights[self.bot_key]
-		if ori == i:
+		if ori_i == i:
 			return
 		if i < 0:
 			i = 0

@@ -1,6 +1,6 @@
 import discord
 from asyncio import get_running_loop
-from decouple import config, Csv
+from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
 from pathlib import PurePath
 from typing import Any, Optional
@@ -12,7 +12,7 @@ EmptyCharacter = '\u200b'
 # When creating commands, 'guild_only' does the same thing as what this fundtion does.
 # But for convenience, we preserve this function.
 def check_server_text_channel(ctx: QuasiContext):
-	if isinstance(ctx.channel, discord.TextChannel):
+	if isinstance(ctx.channel, discord.TextChannel):  # type: ignore[arg-type]
 		return True
 	raise discord.CheckFailure('This command is only for text channels in servers.')
 
@@ -20,10 +20,10 @@ def check_server_text_channel(ctx: QuasiContext):
 # If the cog does not have "maids" dict, then an empty list is returned.
 def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 	cog = ctx.cog
-	try:
-		maids: dict[str, Any] = cog.maids
-	except:
+	if cog is None or not hasattr(cog, 'maids'):
 		return []
+
+	maids: dict[str, Any] = cog.maids
 
 	return list(maids.keys())
 
@@ -78,7 +78,7 @@ async def remove_thinking(ctx: QuasiContext):
 			await ctx.delete()
 		else:
 			await ctx.response.defer()
-			await ctx.delete_original_message()
+			await ctx.delete_original_response()
 	except discord.HTTPException:
 		# Defer error: There is no "thinking" to remove
 		# Delete error: No thinking message to delete
@@ -134,7 +134,12 @@ def is_DM(channel):
 def get_bot_name_in_ctx(ctx: QuasiContext) -> str:
 	guild = ctx.guild
 	if guild is None:
-		return ctx.bot.user.display_name
+		if isinstance(ctx, discord.ApplicationContext):
+			assert ctx.bot.user is not None # You have already logged in
+			return ctx.bot.user.display_name
+		else:
+			# Interaction without guild
+			raise ValueError('Interaction in DM has no information about bot name, call bot.display_name directly.')
 	else:
 		return guild.me.display_name
 

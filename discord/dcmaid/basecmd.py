@@ -1,7 +1,9 @@
 import discord
 import re
+from collections.abc import Mapping
 from functools import partial
 from types import MappingProxyType
+from typing import Optional
 from .basebot import Bot
 from .basecog import BaseCog
 from .exception import MaidNotFound
@@ -31,14 +33,14 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 	# After fetch, the state "installed_hooks" should match the maid mapping.
 	# Also, note that we don't store webhook tokens in our db but store the
 	# full webhooks (containing tokens) in the server state.
-	async def _fetch_maids(self, channel, force = False):
+	async def _fetch_maids(self, channel, force = False) -> Mapping[str, discord.Webhook]:
 		channel_id = channel.id
 
 		col = self.db['channel-installed-maids']
 
 		# Here, we use "hook" to indicate the webhooks we know from our db,
 		# and "webhook" to the real webhooks in the channel.
-		installed_hooks = self.state.get_installed_hooks(channel_id)
+		installed_hooks: Optional[Mapping[str, discord.Webhook]] = self.state.get_installed_hooks(channel_id)
 
 		if force or installed_hooks is None:
 			installed_hooks_dict: dict[str, discord.Webhook] = {}
@@ -85,8 +87,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				installed_hooks_dict[maid_name] = webhook
 
 			# Reorder the installed_hooks to match the maids order
-			installed_hooks: Mapping[str, discord.Webhook] = \
-				MappingProxyType({maid_name: installed_hooks_dict[maid_name] for maid_name in self.maids.keys()})
+			installed_hooks = MappingProxyType({maid_name: installed_hooks_dict[maid_name] for maid_name in self.maids.keys()})
 			self.state.set_installed_hooks(channel_id, installed_hooks)
 
 		return installed_hooks

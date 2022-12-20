@@ -132,3 +132,5 @@ dmypy.json
 docker-compose.yml
 secret.json
 restart.sh
+
+*.sublime-*

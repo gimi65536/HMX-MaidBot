@@ -1,9 +1,18 @@
 import random
-from typing import Optional
+from typing import Optional, Protocol
+from .basebot import Bot
+from .basecmd import BasicCommands
+from .state import State
 from .typing import Channelable, QuasiContext
 from .utils import *
 
-class MaidMixin:
+class _MixinWithBot(Protocol):
+	bot: Bot
+
+class _MixinWithState(Protocol):
+	state: State
+
+class MaidMixin(_MixinWithBot):
 	# You need to override cog_before_invoke manually when inherit the mixin
 	async def _cog_before_invoke(self, ctx):
 		if is_DM(ctx.channel):
@@ -21,7 +30,9 @@ class MaidMixin:
 			if hasattr(ctx, 'maid_webhook'):
 				maid_webhook = ctx.maid_webhook
 			else:
-				maid_webhook = await self.bot.get_cog('Base').fetch_maids(get_guild_channel(ctx.channel))
+				base_cog = self.bot.get_cog('Base')
+				assert isinstance(base_cog, BasicCommands)
+				maid_webhook = await base_cog.fetch_maids(get_guild_channel(ctx.channel))
 
 			webhook = maid_webhook.get(maid_name, None)
 
@@ -43,7 +54,9 @@ class MaidMixin:
 		if hasattr(ctx, 'maid_weights'):
 			maid_weights = ctx.maid_weights
 		else:
-			maid_weights = self.bot.get_cog('Base').fetch_weight(get_guild_channel(ctx.channel))
+			base_cog = self.bot.get_cog('Base')
+			assert isinstance(base_cog, BasicCommands)
+			maid_weights = base_cog.fetch_weight(get_guild_channel(ctx.channel))
 
 		if isinstance(self, RandomMixin):
 			maid = maid_weights.random_get(self._get_random_generator(ctx))
@@ -52,7 +65,7 @@ class MaidMixin:
 
 		return maid
 
-class RandomMixin:
+class RandomMixin(_MixinWithState):
 	__state_random_key__ = 'random_generator_{}'
 
 	def _get_random_generator(self, ctx: Channelable) -> random.Random:
@@ -61,7 +74,7 @@ class RandomMixin:
 			if not hasattr(self, '_common_random'):
 				setattr(self, '_common_random', random.Random()) # Used in DM
 
-			return self._common_random
+			return self._common_random  # type: ignore[attr-defined]
 
 		channel = get_guild_channel(channel)
 		generator = self.state.get(self.__state_random_key__.format(channel.id))

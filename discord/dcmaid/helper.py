@@ -22,6 +22,7 @@ def get_help(cmd) -> dict[Optional[str], str]:
 	if hasattr(cmd, _help_attr):
 		return getattr(cmd, _help_attr)
 
+	doc: dict[Optional[str], str]
 	if hasattr(cmd, 'callback'):
 		doc = {None: cleandoc(cmd.callback.__doc__)}
 	else:

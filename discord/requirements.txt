@@ -2,6 +2,7 @@ py-cord>=2.3
 pymongo>=4.3
 python-decouple
 pyyaml>=5
+types-PyYAML>=5
 pyjson5>=1.6.2
 more-itertools>=9
 case-insensitive-dictionary>=0.2.1

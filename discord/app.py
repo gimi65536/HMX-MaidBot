@@ -1,6 +1,6 @@
 from dcmaid.basebot import Bot
 from dcmaid.state import State
-from decouple import config
+from decouple import config  # type: ignore[import]
 from discord import Intents
 
 from load_secrets import secret
@@ -17,7 +17,7 @@ async def on_ready():
 	print(f'Successfully logged in as Bot {bot.user}.')
 
 try:
-	import uvloop
+	import uvloop  # type: ignore[import]
 except:
 	pass
 else:

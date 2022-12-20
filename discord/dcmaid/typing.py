@@ -6,7 +6,9 @@ class Localeable(Protocol):
 	locale: str
 
 class Channelable(Protocol):
-	channel: Any
+	@property
+	def channel(self):
+		...
 
 QuasiContext: TypeAlias = ApplicationContext | Interaction
 

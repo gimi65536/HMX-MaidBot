@@ -1,4 +1,4 @@
-from decouple import config, Csv
+from decouple import config, Csv  # type: ignore[import]
 
 secret = {
 	"app_id": config('APP_ID', cast = int),
