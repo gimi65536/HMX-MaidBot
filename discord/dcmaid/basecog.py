@@ -6,12 +6,15 @@ import discord
 from collections.abc import Sequence
 from importlib.resources import files
 from reader import load
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 from .basebot import Bot
 from .exception import DependentCogNotLoaded, MaidNotFound
 from .helper import get_help, update_help
-from .typing import Localeable, QuasiContext
+from .typing import QuasiContext
 from .utils import *
+
+if TYPE_CHECKING:
+	from .typing import Localeable
 
 config = generate_config(
 	MESSAGE_EPHEMERAL_DELETE_AFTER = {'default': 30, 'cast': float},
