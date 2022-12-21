@@ -22,7 +22,7 @@ else:
 
 class DiscordRollGameMeta(BaseRollGameMeta):
 	def __new__(mcls, *args, reg = False, **kwargs):
-		cls = cast(type[DiscordRollGame], super().__new__(mcls, *args, **kwargs))
+		cls = cast(type['DiscordRollGame'], super().__new__(mcls, *args, **kwargs))
 		if reg:
 			assert cls.game_name is not None
 			_registered_games[cls.game_name] = cls
