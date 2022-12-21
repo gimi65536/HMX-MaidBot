@@ -1,20 +1,20 @@
-import discord.abc
 from discord import (
 	ApplicationContext,
 	DMChannel,
 	GroupChannel,
 	Interaction,
+	Message,
 	PartialMessageable,
 	TextChannel,
 	Thread,
 	VoiceChannel,
 )
 from discord.abc import GuildChannel, PrivateChannel
-from typing import Any, Optional, Protocol, runtime_checkable, TypeAlias, TYPE_CHECKING
+from typing import Optional, Protocol, runtime_checkable, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
 	# MessageableChannel is also a useful type in runtime...
-	MessageableChannel: TypeAlias = discord.abc.MessageableChannel
+	from discord.abc import MessageableChannel
 else:
 	MessageableChannel: TypeAlias = TextChannel | VoiceChannel | Thread | DMChannel | PartialMessageable | GroupChannel
 
@@ -27,18 +27,6 @@ class _Localeable2(Protocol):
 	@property
 	def locale(self) -> Optional[str]:
 		...
-
-@runtime_checkable
-class _Channelable1(Protocol):
-	channel: MessageableChannel
-
-@runtime_checkable
-class _Channelable2(Protocol):
-	@property
-	def channel(self):
-		...
-
-Channelable: TypeAlias = _Channelable1 | _Channelable2
 
 # I know it is weird to force QuasiContext localeable instead of just let protocols do everything
 # but there are really a few problems... I cannot stop warnings instead of adding this.
@@ -53,6 +41,9 @@ ChannelType: TypeAlias = GuildChannel | PrivateChannel | PartialMessageable | Th
 GuildChannelType: TypeAlias = GuildChannel | Thread
 
 MessageableGuildChannel: TypeAlias = TextChannel | VoiceChannel | Thread
+
+# Since the type of .channel is too complex, we use positive list instead of Protocols
+Channelable: TypeAlias = QuasiContext | Message
 
 __all__ = (
 	'Channelable',
