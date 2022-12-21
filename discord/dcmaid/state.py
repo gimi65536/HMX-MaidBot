@@ -1,7 +1,7 @@
 import discord
 from collections.abc import Mapping
 from threading import Lock
-from typing import Optional
+from typing import cast, Optional
 
 class State:
 	def __init__(self) -> None:
@@ -30,7 +30,7 @@ class State:
 			with lock:
 				del self._real_dict[key]
 	def get_installed_hooks(self, channel_id: int) -> Optional[Mapping[str, discord.Webhook]]:
-		return self.get(f'installed_hooks_{channel_id}')
+		return cast(Optional[Mapping[str, discord.Webhook]], self.get(f'installed_hooks_{channel_id}'))
 	def set_installed_hooks(self, channel_id: int, immutable_map: Mapping[str, discord.Webhook]):
 		self.set(f'installed_hooks_{channel_id}', immutable_map)
 	def remove_installed_hooks(self, channel_id):

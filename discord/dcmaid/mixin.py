@@ -1,10 +1,13 @@
+import discord
 import random
-from typing import Optional
+from collections.abc import Mapping
+from typing import cast, Optional
 from .basebot import Bot
 from .basecmd import BasicCommands
 from .state import State
 from .typing import Channelable, QuasiContext
 from .utils import *
+from .weight import Weight
 
 class MaidMixin:
 	bot: Bot
@@ -22,17 +25,17 @@ class MaidMixin:
 		setattr(ctx, 'maid_weights', maid_weights)
 
 	async def _get_webhook_by_name(self, ctx: Channelable, maid_name):
-		if is_DM(ctx.channel):
-			webhook = None
-		else:
+		if ctx.channel is not None and is_not_DM(ctx.channel):
 			if hasattr(ctx, 'maid_webhook'):
-				maid_webhook = ctx.maid_webhook
+				maid_webhook = cast(Mapping[str, discord.Webhook], getattr(ctx, 'maid_webhook'))
 			else:
 				base_cog = self.bot.get_cog('Base')
 				assert isinstance(base_cog, BasicCommands)
 				maid_webhook = await base_cog.fetch_maids(get_guild_channel(ctx.channel))
 
 			webhook = maid_webhook.get(maid_name, None)
+		else:
+			webhook = None
 
 		return webhook
 
@@ -44,24 +47,28 @@ class MaidMixin:
 
 	def _random_maid(self, ctx: Channelable):
 		# If RandomMixin is not installed, Weight will use the built-in random generator.
-		maid = None
-		maid_weights = None
-		if is_DM(ctx.channel):
+		if ctx.channel is not None and is_not_DM(ctx.channel):
+			maid = None
+			maid_weights = None
+
+			# The negative case of typeguard does not narrow types (PEP 647)
+			assert not isinstance(ctx.channel, discord.PartialMessageable | discord.abc.PrivateChannel)
+
+			if hasattr(ctx, 'maid_weights'):
+				maid_weights = cast(Weight, getattr(ctx, 'maid_weights'))
+			else:
+				base_cog = self.bot.get_cog('Base')
+				assert isinstance(base_cog, BasicCommands)
+				maid_weights = base_cog.fetch_weight(get_guild_channel(ctx.channel))
+
+			if isinstance(self, RandomMixin):
+				maid = maid_weights.random_get(self._get_random_generator(ctx))
+			else:
+				maid = maid_weights.random_get()
+
+			return maid
+		else:
 			return None
-
-		if hasattr(ctx, 'maid_weights'):
-			maid_weights = ctx.maid_weights
-		else:
-			base_cog = self.bot.get_cog('Base')
-			assert isinstance(base_cog, BasicCommands)
-			maid_weights = base_cog.fetch_weight(get_guild_channel(ctx.channel))
-
-		if isinstance(self, RandomMixin):
-			maid = maid_weights.random_get(self._get_random_generator(ctx))
-		else:
-			maid = maid_weights.random_get()
-
-		return maid
 
 class RandomMixin:
 	state: State
@@ -69,23 +76,24 @@ class RandomMixin:
 
 	def _get_random_generator(self, ctx: Channelable) -> random.Random:
 		channel = ctx.channel
-		if is_DM(channel):
+
+		if channel is not None and is_not_DM(channel):
+			channel = get_guild_channel(channel)
+			generator = cast(random.Random, self.state.get(self.__state_random_key__.format(channel.id)))
+			if generator is None:
+				generator = random.Random()
+				self.state.set(self.__state_random_key__.format(channel.id), generator)
+		else:
 			if not hasattr(self, '_common_random'):
-				setattr(self, '_common_random', random.Random()) # Used in DM
-
-			return self._common_random  # type: ignore[attr-defined]
-
-		channel = get_guild_channel(channel)
-		generator = self.state.get(self.__state_random_key__.format(channel.id))
-		if generator is None:
-			generator = random.Random()
-			self.state.set(self.__state_random_key__.format(channel.id), generator)
+				generator = random.Random()
+				setattr(self, '_common_random', generator) # Used in DM
+			else:
+				generator = cast(random.Random, getattr(self, '_common_random'))
 
 		return generator
 
 	def _set_seed(self, ctx: Channelable, seed = Optional[str]):
-		channel = get_guild_channel(ctx.channel)
-		if is_DM(channel):
-			return
-		generator = random.Random(seed)
-		self.state.set(self.__state_random_key__.format(channel.id), generator)
+		if ctx.channel is not None and is_not_DM(ctx.channel):
+			channel = get_guild_channel(ctx.channel)
+			generator = random.Random(seed)
+			self.state.set(self.__state_random_key__.format(channel.id), generator)

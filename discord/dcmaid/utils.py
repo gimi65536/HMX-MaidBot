@@ -4,8 +4,8 @@ import discord.utils
 from asyncio import get_running_loop
 from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
-from typing import Any, Optional
-from .typing import Channelable, QuasiContext
+from typing import Any, cast, Optional, TypeGuard
+from .typing import Channelable, ChannelType, GuildChannelType, QuasiContext
 
 EmptyCharacter = '\u200b'
 
@@ -32,7 +32,7 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 	if isinstance(ch, discord.Thread):
 		if ch.parent is None:
-			return get_running_loop().run_until_complete(discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id))
+			return cast(discord.abc.GuildChannel, get_running_loop().run_until_complete(discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id)))
 		return ch.parent
 
 	return ch
@@ -131,8 +131,12 @@ def proxy(f_or_attr, /):
 			return f(self, *args, **kwargs)
 		return wrapper
 
-def is_DM(channel):
+def is_DM(channel) -> TypeGuard[discord.PartialMessageable | discord.abc.PrivateChannel]:
 	return isinstance(channel, (discord.PartialMessageable, discord.abc.PrivateChannel))
+
+# We define this since the negative case of typeguard does not narrow types (PEP 647)
+def is_not_DM(channel: ChannelType) -> TypeGuard[GuildChannelType]:
+	return not is_DM(channel)
 
 def get_bot_name_in_ctx(ctx: QuasiContext) -> str:
 	guild = ctx.guild
@@ -196,6 +200,7 @@ __all__ = (
 	'send_as',
 	'proxy',
 	'is_DM',
+	'is_not_DM',
 	'get_bot_name_in_ctx',
 	'int_to_emoji',
 	'generate_config',
