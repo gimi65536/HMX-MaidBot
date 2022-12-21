@@ -6,7 +6,7 @@ import discord
 from collections.abc import Sequence
 from importlib.resources import files
 from reader import load
-from typing import Any, Optional
+from typing import Any, cast, ClassVar, Optional
 from .basebot import Bot
 from .exception import DependentCogNotLoaded, MaidNotFound
 from .helper import get_help, update_help
@@ -29,15 +29,17 @@ class BaseCogMeta(discord.CogMeta):
 	Define a cog that automatically supports our help structure and localization.
 	'''
 
-	_common_table: Optional[dict[Optional[str], dict[Optional[str], str]]] = None
+	_common_table: ClassVar[Optional[dict[Optional[str], dict[Optional[str], str]]]] = None
+	__depend_cogs__: tuple[str, ...]
+	__cog_translation_table__: dict[Optional[str], dict[Optional[str], str]]
 
 	def __new__(mcls, *args, depends: Optional[Sequence[str]] = None, elementary: bool = False, **kwargs):
-		cls = super().__new__(mcls, *args, **kwargs)
+		cls = cast(BaseCogMeta, super().__new__(mcls, *args, **kwargs))
 		if elementary:
-			cls.__depend_cogs__ = ()  # type: ignore[attr-defined]
+			cls.__depend_cogs__ = ()
 		else:
-			cls.__depend_cogs__ = ('Base', )  # type: ignore[attr-defined]
-		cls.__depend_cogs__ += tuple(depends) if depends is not None else ()  # type: ignore[attr-defined]
+			cls.__depend_cogs__ = ('Base', )
+		cls.__depend_cogs__ += tuple(depends) if depends is not None else ()
 
 		commands: list[discord.ApplicationCommand] = []
 		for cmd in cls.__cog_commands__:
@@ -57,7 +59,7 @@ class BaseCogMeta(discord.CogMeta):
 			else:
 				mcls._common_table = common_d.get('__translation_table', {})
 
-		cls.__cog_translation_table__: dict[Optional[str], dict[Optional[str], str]] = mcls._common_table.copy()  # type: ignore[attr-defined, misc]
+		cls.__cog_translation_table__ = mcls._common_table.copy()
 
 		# Load specific table
 		d = load(base_path / f'{ cls.__cog_name__.lower() }')
@@ -65,7 +67,7 @@ class BaseCogMeta(discord.CogMeta):
 		if d is None:
 			return cls
 
-		cls.__cog_translation_table__.update(d.get('__translation_table', {}))  # type: ignore[attr-defined]
+		cls.__cog_translation_table__.update(d.get('__translation_table', {}))
 
 		for cmd in commands:
 			cmd_locale = d.get(cmd.qualified_name, {})
@@ -109,9 +111,9 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 		if not isinstance(bot, Bot):
 			raise TypeError('Only accepts basebot.Bot type.')
 
-		for cog_name in self.__depend_cogs__:  # type: ignore[attr-defined]
+		for cog_name in type(self).__depend_cogs__:
 			if bot.get_cog(cog_name) is None:
-				raise DependentCogNotLoaded(self.__depend_cogs__, cog_name)  # type: ignore[attr-defined]
+				raise DependentCogNotLoaded(type(self).__depend_cogs__, cog_name)
 
 		super().__init__()
 		self.bot = bot
@@ -158,7 +160,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 		default: Optional[str] = None,
 		format: dict[str, Any] = {}) -> Optional[str]:
 
-		table = cls.__cog_translation_table__  # type: ignore[attr-defined]
+		table = cls.__cog_translation_table__
 		if isinstance(locale_or_localeable, str) or locale_or_localeable is None:
 			return cls._get_nested_str(table, *args, locale_or_localeable, default = default, format = format)
 		else:

@@ -1,6 +1,17 @@
-from decouple import config, Csv  # type: ignore[import]
+from decouple import config, Csv
+from typing import TypedDict
 
-secret = {
+class _Secret(TypedDict):
+	app_id: int
+	app_client_secret: str
+	bot_token: str
+	mongo_address: str
+	mongo_admin: str
+	mongo_pwd: str
+	debug_server_id: list[int]
+	load_ext: list[str]
+
+secret: _Secret = { # type: ignore # python-decouple doesn't provide typing
 	"app_id": config('APP_ID', cast = int),
 	"app_client_secret": config('APP_CLIENT_SECRET'),
 	"bot_token": config('BOT_TOKEN'),
