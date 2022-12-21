@@ -92,7 +92,7 @@ class RandomMixin:
 
 		return generator
 
-	def _set_seed(self, ctx: Channelable, seed = Optional[str]):
+	def _set_seed(self, ctx: Channelable, seed: Optional[str]):
 		if ctx.channel is not None and is_not_DM(ctx.channel):
 			channel = get_guild_channel(ctx.channel)
 			generator = random.Random(seed)
