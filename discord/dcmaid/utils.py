@@ -1,4 +1,6 @@
 import discord
+import discord.abc
+import discord.utils
 from asyncio import get_running_loop
 from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
@@ -17,13 +19,13 @@ def check_server_text_channel(ctx: QuasiContext):
 # Retrieve maid names from the cog within the ctx.
 # If the cog does not have "maids" dict, then an empty list is returned.
 def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
+	from .basecog import BaseCog # Prevent circular dependency
+
 	cog = ctx.cog
-	if cog is None or not hasattr(cog, 'maids'):
+	if not isinstance(cog, BaseCog):
 		return []
 
-	maids: dict[str, Any] = cog.maids
-
-	return list(maids.keys())
+	return list(cog.maids.keys())
 
 # Given a messageable chat room in a guild, returns the parent channel if the chat room
 # is a thread, otherwise returns the argument itself.
@@ -98,7 +100,10 @@ async def send_as(ctx: Channelable, webhook = None, *args, **kwargs):
 	channel = ctx.channel
 	if webhook is None:
 		# Use bot
-		await channel.send(*args, **kwargs)
+		if isinstance(channel, discord.abc.Messageable):
+			await channel.send(*args, **kwargs)
+		else:
+			raise ValueError('Not sendable channel and no webhook provided')
 	else:
 		# Use webhook
 		if isinstance(channel, discord.Thread):
