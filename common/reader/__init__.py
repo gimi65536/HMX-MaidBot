@@ -17,7 +17,7 @@ class BaseReader:
 			path_with_suffix = add_suffix(path, suffix)
 			try:
 				# Compatible in zip...
-				with as_file(Path(path_with_suffix)) as real_path:
+				with as_file(Path(path_with_suffix)) as real_path: # type: ignore # Error in pyright but OK in mypy
 					with open(real_path) as f:
 						obj = cls.process(f)
 			except:

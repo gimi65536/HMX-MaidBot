@@ -5,7 +5,7 @@ from more_itertools import repeat_last, SequenceView
 from reader import load
 from simple_parsers.string_argument_parser import StringArgumentParser
 from types import EllipsisType, MappingProxyType
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 class GameData:
 	def __init__(self, d):
@@ -49,9 +49,20 @@ class GameData:
 		return SequenceView(self._d.get('alias', []))
 
 class BaseRollGameMeta(ABCMeta):
-	base_game_data: Optional[dict] = None
-	processed_options: set = set()
-	def __new__(mcls, *args, name = None):
+	base_game_data: ClassVar[Optional[dict]] = None
+	processed_options: ClassVar[set[Any]] = set()
+	game_name: Optional[str]
+	'''
+	game_name is a class property that assigned by "name" arguments when creating classes.
+	This game_name is a code name, not for human-read.
+	You should avoid using spaces in game_name, instead use spaces in the human-readable names and alias.
+	'''
+	game_data: GameData
+	'''
+	game_data stores some information.
+	'''
+	options: Optional[dict[EllipsisType | int, list[tuple[str, type]]]]
+	def __new__(mcls, *args, name: Optional[str] = None):
 		if mcls.base_game_data is None:
 			d = load(files(__package__) / 'games')
 			if d is None:
@@ -60,12 +71,13 @@ class BaseRollGameMeta(ABCMeta):
 				mcls.base_game_data = d
 
 		cls = super().__new__(mcls, *args)
-		if name is not None:
-			cls.game_name = name
-			cls.game_data = GameData(mcls.base_game_data.get(name, {}))
 
-		if not hasattr(cls, 'options'):
+		cls.game_name = name
+		cls.game_data = GameData(mcls.base_game_data.get(name, {}))
+
+		if not hasattr(cls, 'options') or cls.options is None:
 			# The basic classes have not declared options yet.
+			cls.options = None
 			return cls
 
 		options = cls.options
@@ -78,6 +90,7 @@ class BaseRollGameMeta(ABCMeta):
 					ellipsis_l = l
 					continue
 
+				assert isinstance(n, int)
 				if len(l) < n:
 					# Drop key
 					options.pop(n)
@@ -90,7 +103,7 @@ class BaseRollGameMeta(ABCMeta):
 				if length == 0:
 					# Invalid
 					options.pop(...)
-				elif any(n >= length - 1 for n in options.keys() if n is not ...):
+				elif any(n >= length - 1 for n in options.keys() if n is not ...): # type: ignore
 					# Drop ... due to ambiguity
 					options.pop(...)
 
@@ -123,17 +136,6 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 	and let the actual games have more power to decide how to pass arguments to their parents.
 	However, it is recommended to make actual games correspond to specific abstract games, i.e.,
 	one-to-one to share the metadata (e.g. help) in different platforms.
-	'''
-
-	game_name: str
-	'''
-	game_name is a class property that assigned by "name" arguments when creating classes.
-	This game_name is a code name, not for human-read.
-	You should avoid using spaces in game_name, instead use spaces in the human-readable names and alias.
-	'''
-	game_data: GameData
-	'''
-	game_data stores some information.
 	'''
 
 	# The necessary arguments are passed in __init__

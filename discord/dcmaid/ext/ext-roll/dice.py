@@ -1,5 +1,4 @@
 from . import DiscordDigitRollGame
-from ...utils import int_to_emoji
 from rollgames.dice import *
 
 class DiscordDiceGame(DiscordDigitRollGame, DiceGame, reg = True):
@@ -11,7 +10,7 @@ class _DiscordDiceNGame(DiscordDigitRollGame):
 	# To activate this __init__, please make this class the first parent class
 	def __init__(self, ctx, webhook, arguments, random, initial_text = None, **kwargs):
 		DiscordDigitRollGame.__init__(self, ctx, webhook, arguments, initial_text, kwargs)
-		type(self).__bases__[1].__init__(self, random)
+		type(self).__bases__[1].__init__(self, random) # type: ignore
 
 class DiscordDice4Game(_DiscordDiceNGame, Dice4Game, reg = True):
 	pass
