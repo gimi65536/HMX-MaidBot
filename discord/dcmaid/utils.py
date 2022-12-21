@@ -2,11 +2,8 @@ import discord
 from asyncio import get_running_loop
 from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
-from typing import Any, Optional, TYPE_CHECKING
-from .typing import QuasiContext
-
-if TYPE_CHECKING:
-	from .typing import Channelable
+from typing import Any, Optional
+from .typing import Channelable, QuasiContext
 
 EmptyCharacter = '\u200b'
 

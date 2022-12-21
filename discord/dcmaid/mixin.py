@@ -1,13 +1,10 @@
 import random
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from .basebot import Bot
 from .basecmd import BasicCommands
 from .state import State
-from .typing import QuasiContext
+from .typing import Channelable, QuasiContext
 from .utils import *
-
-if TYPE_CHECKING:
-	from .typing import Channelable
 
 class MaidMixin:
 	bot: Bot
