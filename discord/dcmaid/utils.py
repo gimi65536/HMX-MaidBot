@@ -195,6 +195,14 @@ def generate_config(**kwargs: dict[str, Any]) -> dict[str, Any]:
 		result[key] = config(key, **d)
 	return result
 
+def get_author(ctx: QuasiContext | discord.Message) -> Optional[discord.Member | discord.User]:
+	if isinstance(ctx, QuasiContext):
+		user = ctx.user
+	else:
+		user = ctx.author
+
+	return user
+
 __all__ = (
 	'EmptyCharacter',
 	'check_server_text_channel',
@@ -212,4 +220,5 @@ __all__ = (
 	'get_bot_name_in_ctx',
 	'int_to_emoji',
 	'generate_config',
+	'get_author',
 )

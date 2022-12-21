@@ -303,7 +303,11 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 			self.add_item(discord.ui.InputText(label = outer._trans(locale, 'arg-modal-label'), style = discord.InputTextStyle.long))
 
 		async def callback(self, interaction):
-			args = self.children[0].value.split('\n')
+			value = self.children[0].value
+			if value is None:
+				value = ''
+
+			args = value.split('\n')
 			arguments = StringArgumentParser.rebuild(args)
 
 			await self.outer._play(interaction, self.game_cls, arguments)

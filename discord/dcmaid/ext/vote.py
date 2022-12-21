@@ -1,5 +1,7 @@
+from __future__ import annotations
 import discord
-import uuid
+import discord.utils
+import uuid as uuid_m
 from ..basebot import Bot
 from ..basecog import BaseCog
 from ..typing import ChannelType, MessageableGuildChannel
@@ -14,7 +16,7 @@ from datetime import datetime, timedelta
 from hashlib import sha1 as _hash
 from proxy_types import CounterProxyType
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Generic, Optional, overload, Self, TypeVar
+from typing import Any, Generic, Optional, overload, Self, TypeVar
 
 config = generate_config(
 	EXT_VOTE_CUSTOM_PREFIX = {'default': 'HMX-vote-cog'},
@@ -70,7 +72,7 @@ class BasePoll:
 	vote_casted: MutableMapping[discord.Member, CounterProxyType[str]]
 	_vote_receive: MutableMapping[str, Counter[discord.Member]] # Not in db
 	_vote_casted: MutableMapping[discord.Member, Counter[str]]
-	uuid: uuid.UUID
+	uuid: uuid_m.UUID
 	msg: Optional[discord.Message] = None # Inserted by the Cog
 	processed_order: int # Not in db. Used by the Cog to refresh information correctly.
 	rwlock: RWLock # Not in db, of course
@@ -103,7 +105,7 @@ class BasePoll:
 		self.vote_receive = {o: CounterProxyType(c) for o, c in self._vote_receive.items()}
 		self.vote_casted = {}
 
-		self.uuid = uuid.uuid4()
+		self.uuid = uuid_m.uuid4()
 		self.processed_order = 0
 		self.rwlock = RWLock()
 
@@ -328,7 +330,7 @@ class BaseHoldSystem(Generic[T]):
 	Use db column to restore or not...
 	'''
 	def __init__(self, name: str, type: type[T], col = None):
-		self._on_process: dict[uuid.UUID, tuple[T, Task, Coroutine]] = {}
+		self._on_process: dict[uuid_m.UUID, tuple[T, Task, Coroutine]] = {}
 		self.name = name
 		self.type = type
 		self.col = col
@@ -344,7 +346,7 @@ class BaseHoldSystem(Generic[T]):
 		# This method should be called by cogs right after the hold system is created
 		return iter(self._restore_poll_info)
 
-	def _contain(self, poll_or_u: BasePoll | uuid.UUID):
+	def _contain(self, poll_or_u: BasePoll | uuid_m.UUID):
 		if isinstance(poll_or_u, BasePoll):
 			u = poll_or_u.uuid
 		else:
@@ -352,11 +354,11 @@ class BaseHoldSystem(Generic[T]):
 
 		return u in self._on_process
 
-	def retrieve(self, u: uuid.UUID) -> Optional[T]:
+	def retrieve(self, u: uuid_m.UUID) -> Optional[T]:
 		if u not in self._on_process:
 			return None
 
-		return self._on_process.get(u)[0]
+		return self._on_process[u][0]
 
 	async def register(self, poll: T, Coroutine: Coroutine, restore: bool = False):
 		# Coroutine will be awaited within the writer lock (see wait_for_timeout)
@@ -373,7 +375,7 @@ class BaseHoldSystem(Generic[T]):
 			if self.col is not None and not restore:
 				self.col.insert_one(poll.to_dict())
 
-	async def cancel(self, poll_or_u: T | uuid.UUID) -> bool:
+	async def cancel(self, poll_or_u: T | uuid_m.UUID) -> bool:
 		if isinstance(poll_or_u, BasePoll):
 			u = poll_or_u.uuid
 		else:
@@ -399,7 +401,10 @@ class BaseHoldSystem(Generic[T]):
 			return True # Canceled by this method
 
 	async def wait_for_timeout(self, poll: T):
-		await discord.utils.sleep_until(poll.until)
+		if poll.until is None:
+			await discord.utils.sleep_until(datetime.max)
+		else:
+			await discord.utils.sleep_until(poll.until)
 		async with poll.writer:
 			if not self._contain(poll):
 				return
@@ -443,14 +448,15 @@ class BaseHoldSystem(Generic[T]):
 		options = self._process_options(options)
 		return await self._remove_votes(poll, member, options)
 
-	async def add_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
-		if not self._contain(uuid):
+	async def add_votes_by_uuid(self, uuid: uuid_m.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
+		poll = self.retrieve(uuid)
+		if poll is None:
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
-		return await self._add_votes(self.retrieve(uuid), member, options)
+		return await self._add_votes(poll, member, options)
 
-	async def replace_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
+	async def replace_votes_by_uuid(self, uuid: uuid_m.UUID, member: discord.Member, options: list[str] | Counter[str]) -> Optional[list[Event]]:
 		# Replace is special because the given options usually don't have information of ALL other options.
 		# It is necessary to reveal the information from the poll instances.
 		poll = self.retrieve(uuid)
@@ -459,14 +465,15 @@ class BaseHoldSystem(Generic[T]):
 		options = self._process_options(options)
 		for o in poll.options:
 			options[o] = options[o]
-		return await self._replace_votes(self.retrieve(uuid), member, options)
+		return await self._replace_votes(poll, member, options)
 
-	async def remove_votes_by_uuid(self, uuid: uuid.UUID, member: discord.Member, options: Optional[list[str] | Counter[str]] = None) -> Optional[list[Event]]:
-		if not self._contain(uuid):
+	async def remove_votes_by_uuid(self, uuid: uuid_m.UUID, member: discord.Member, options: Optional[list[str] | Counter[str]] = None) -> Optional[list[Event]]:
+		poll = self.retrieve(uuid)
+		if poll is None:
 			# Happen if timeout
 			return None
 		options = self._process_options(options)
-		return await self._remove_votes(self.retrieve(uuid), member, options)
+		return await self._remove_votes(poll, member, options)
 
 	@overload
 	def _process_options(self, options: list[str] | Counter[str]) -> Counter[str]:
@@ -703,19 +710,19 @@ class VoteController(Generic[T]):
 	vote_action acts as a basic response, so it also provides an "edit" variation.
 	'''
 	@classmethod
-	def vote_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T, edit = False):
+	def vote_action(cls, cog: VoteCommands, system: BaseHoldSystem[T], poll: T, edit = False):
 		raise NotImplementedError
 
 	@classmethod
-	def lookup_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
+	def lookup_action(cls, cog: VoteCommands, system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	@classmethod
-	def early_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
+	def early_action(cls, cog: VoteCommands, system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	@classmethod
-	def cancel_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
+	def cancel_action(cls, cog: VoteCommands, system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	'''
@@ -726,16 +733,16 @@ class VoteController(Generic[T]):
 	'''
 
 	@classmethod
-	def select_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
+	def select_action(cls, cog: VoteCommands, system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 	@classmethod
-	def empty_action(cls, cog: 'VoteCommands', system: BaseHoldSystem[T], poll: T):
+	def empty_action(cls, cog: VoteCommands, system: BaseHoldSystem[T], poll: T):
 		raise NotImplementedError
 
 class PollController(VoteController[Poll]):
 	@classmethod
-	def vote_action(cls, cog, system, poll, edit = False):
+	def vote_action(cls, cog, system: PollHoldSystem, poll: Poll, edit = False):
 		async def f(button, interaction):
 			member = interaction.user
 			assert member is not None
@@ -779,7 +786,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def lookup_action(cls, cog, system, poll):
+	def lookup_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(button, interaction):
 			member = interaction.user
 			assert member is not None
@@ -803,7 +810,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def early_action(cls, cog, system, poll):
+	def early_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(button, interaction):
 			member = interaction.user
 			assert member is not None
@@ -826,7 +833,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def ensured_early_action(cls, cog, system, poll):
+	def ensured_early_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(button, interaction):
 			await interaction.response.edit_message(
 				content = cog._trans(interaction, 'early-done'),
@@ -848,7 +855,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def cancel_action(cls, cog, system, poll):
+	def cancel_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(button, interaction):
 			member = interaction.user
 			assert member is not None
@@ -871,7 +878,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def ensured_cancel_action(cls, cog, system, poll):
+	def ensured_cancel_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(button, interaction):
 			await interaction.response.edit_message(
 				content = cog._trans(interaction, 'cancel-done'),
@@ -892,12 +899,13 @@ class PollController(VoteController[Poll]):
 						description = cog._trans(interaction, 'canceled-poll'),
 						color = discord.Color.dark_grey()
 					)
-					await poll.msg.edit(content = None, embed = embed, view = None)
+					if poll.msg is not None:
+						await poll.msg.edit(content = None, embed = embed, view = None)
 
 		return f
 
 	@classmethod
-	def select_action(cls, cog, system, poll):
+	def select_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(select, interaction):
 			# This is a server-side check
 			# Do nothing
@@ -919,7 +927,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def ensured_select_action(cls, cog, system, poll, options):
+	def ensured_select_action(cls, cog, system: PollHoldSystem, poll: Poll, options):
 		async def f(button, interaction):
 			await interaction.response.edit_message(
 				content = '......',
@@ -943,7 +951,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def empty_action(cls, cog, system, poll):
+	def empty_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(button, interaction):
 			member = interaction.user
 			assert member is not None
@@ -959,7 +967,7 @@ class PollController(VoteController[Poll]):
 		return f
 
 	@classmethod
-	def ensured_empty_action(cls, cog, system, poll):
+	def ensured_empty_action(cls, cog, system: PollHoldSystem, poll: Poll):
 		async def f(button, interaction):
 			await interaction.response.edit_message(
 				content = '......',
@@ -996,6 +1004,9 @@ class VoteCommands(BaseCog, name = 'Vote'):
 
 	@discord.Cog.listener()
 	async def on_ready(self):
+		if self._poll_col is None:
+			return
+
 		for poll_info in self.poll_system.restore_poll_info():
 			if poll_info['msg'] is None:
 				# Not-registered poll, how is it in db???
@@ -1086,7 +1097,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 	)
 	async def poll(self, ctx,
 		title: str,
-		options: str,
+		o: str,
 		period: int,
 		period_unit,
 		realtime: bool,
@@ -1108,7 +1119,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			# Valid in semantics but too tricky to use
 			raise TooShortPeriodError(period, atleast)
 
-		options: list[str] = StringArgumentParser.pick(options)
+		options: list[str] = StringArgumentParser.pick(o)
 		max_options = config['EXT_VOTE_POLL_MAXIMUM_OPTIONS']
 		if len(options) > max_options:
 			raise TooManyOptionsError(len(options), max_options)
@@ -1162,7 +1173,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			votes = {o: 0 for o in poll.options}
 			total_votes = 0 # For consistence
 
-		kwargs = {'content': None}
+		kwargs: dict[str, Any] = {'content': None}
 
 		# The color is set to be randomly fixed according to the title
 		_h = _hash()
@@ -1173,9 +1184,14 @@ class VoteCommands(BaseCog, name = 'Vote'):
 				color = discord.Color.random(seed = _h.digest())
 			)
 		else:
+			if poll.until is None:
+				t = EmptyCharacter
+			else:
+				t = discord.utils.format_dt(poll.until, style = 'R')
+
 			embed = discord.Embed(
 				title = poll.title,
-				description = self._trans(locale, "poll-timestamp", format = {'t': discord.utils.format_dt(poll.until, style = 'R')}),
+				description = self._trans(locale, "poll-timestamp", format = {'t': t}),
 				color = discord.Color.random(seed = _h.digest())
 			)
 

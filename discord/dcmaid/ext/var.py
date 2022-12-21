@@ -2,6 +2,7 @@
 from __future__ import annotations
 import calcs
 import discord
+import discord.utils
 import re
 import sympy
 from ..basebot import Bot
@@ -232,10 +233,14 @@ class VariableSystem:
 		# thread scope
 		if isinstance(channel, discord.Thread):
 			scopes.append(self.add_scope(ChannelScope(channel)))
-		# channel scope
-		scopes.append(self.add_scope(ChannelScope(get_guild_channel(channel))))
-		# guild scope
-		if not is_DM(channel):
+
+		if is_DM(channel):
+			# channel scope
+			scopes.append(self.add_scope(ChannelScope(channel)))
+		elif is_not_DM(channel):
+			# channel scope
+			scopes.append(self.add_scope(ChannelScope(get_guild_channel(channel))))
+			# guild scope
 			scopes.append(self.add_scope(GuildScope(channel.guild)))
 
 		for scope in scopes:
@@ -414,7 +419,7 @@ class VarCommands(BaseCog, name = 'Var'):
 
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
-		self._parser = ...
+		self._parser: calcs.Parser = calcs.give_basic_parser() # ad-hoc
 		self._var_col = bot.db[config['EXT_VAR_DB_COLLECTION']] if config['EXT_VAR_DB_BASED'] else None
 		self._varsystem: VariableSystem = VariableSystem(self._var_col)
 
@@ -424,19 +429,21 @@ class VarCommands(BaseCog, name = 'Var'):
 
 	@staticmethod
 	def _check_permission(ctx: discord.Message | QuasiContext, obj, scope: str):
+		user = get_author(ctx)
+
 		# Premission check
-		if scope == 'channel' and not is_DM(obj):
-			assert isinstance(ctx.author, discord.Member)
-			p = get_guild_channel(obj).permissions_for(ctx.author)
+		if scope == 'channel' and is_not_DM(obj):
+			assert isinstance(user, discord.Member)
+			p = get_guild_channel(obj).permissions_for(user)
 			if not p.manage_channels:
 				if isinstance(obj, discord.Thread):
-					if ctx.author.id != obj.owner_id:
+					if user.id != obj.owner_id:
 						raise PermissionDenied('thread')
 				else:
 					raise PermissionDenied('channel')
 		elif scope == 'guild':
-			assert isinstance(ctx.author, discord.Member)
-			p = ctx.author.guild_permissions
+			assert isinstance(user, discord.Member)
+			p = user.guild_permissions
 			if not p.manage_guild:
 				raise PermissionDenied('guild')
 
@@ -473,11 +480,18 @@ class VarCommands(BaseCog, name = 'Var'):
 		elif scope_option == 'this':
 			return 'channel', channel
 		elif scope_option == 'channel':
-			return 'channel', get_guild_channel(channel)
-		else:
-			if is_DM(channel):
+			if channel is None:
 				raise NotInGuildError()
-			return 'guild', channel.guild
+
+			if is_not_DM(channel):
+				return 'channel', get_guild_channel(channel)
+			else:
+				return 'channel', channel
+		else:
+			if channel is not None and is_not_DM(channel):
+				return 'guild', channel.guild
+
+			raise NotInGuildError()
 
 	var_cmd_group = discord.SlashCommandGroup(
 		name = "var",
@@ -523,7 +537,7 @@ class VarCommands(BaseCog, name = 'Var'):
 			raise InvalidVariableNameError(name)
 
 		if not isinstance(ctx, discord.Message):
-			await ctx.defer()
+			await ctx.response.defer()
 
 		n, _ = await self._evaluate(ctx, value)
 
@@ -589,7 +603,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		# Below is the main parts of _assign
 
 		if not isinstance(ctx, discord.Message):
-			await ctx.defer()
+			await ctx.response.defer()
 
 		n, bookkeeping = await self._evaluate(ctx, value)
 		var = self._varsystem.to_var(name, obj)
@@ -650,18 +664,25 @@ class VarCommands(BaseCog, name = 'Var'):
 		except Exception as e:
 			raise ParseError(e)
 
+		user = get_author(ctx)
+		assert user is not None
+		assert ctx.channel is not None
+
 		try:
 			bookkeeping = BookKeeping()
-			mapping = self._varsystem.retrieve_mapping(ctx.author, ctx.channel, bookkeeping)
+			mapping = self._varsystem.retrieve_mapping(user, ctx.channel, bookkeeping)
 			n = await get_running_loop().run_in_executor(None, self._eval, expr, mapping, ctx)
 		except Exception as e:
 			raise CalculatorError(e)
 
 		if n.is_lvalue:
+			assert isinstance(n, calcs.LValue)
 			return n.content, bookkeeping
-		return n, bookkeeping
+		else:
+			assert isinstance(n, calcs.Constant)
+			return n, bookkeeping
 
-	def _eval(self, expr: sympy.Expr, mapping, ctx):
+	def _eval(self, expr: calcs.TreeNodeType, mapping, ctx):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
 	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception):
@@ -765,6 +786,8 @@ class VarCommands(BaseCog, name = 'Var'):
 				return prefix + ' ""'
 			else:
 				return prefix + f''' ``"{cls.escape(s)}"``'''
+		else:
+			raise ValueError('Unknown to_response error')
 
 	@classmethod
 	def escape(cls, s):
