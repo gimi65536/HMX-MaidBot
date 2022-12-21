@@ -1,15 +1,18 @@
 from discord import (
 	ApplicationContext,
+	CategoryChannel,
 	DMChannel,
+	ForumChannel,
 	GroupChannel,
 	Interaction,
 	Message,
 	PartialMessageable,
+	StageChannel,
 	TextChannel,
 	Thread,
 	VoiceChannel,
 )
-from discord.abc import GuildChannel, PrivateChannel
+from discord.abc import GuildChannel as GuildChannelAbc, PrivateChannel as PrivateChannelAbc
 from typing import Optional, Protocol, runtime_checkable, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -36,6 +39,10 @@ Localeable: TypeAlias = _Localeable1 | _Localeable2
 
 QuasiContext: TypeAlias = ApplicationContext | Interaction
 
+GuildChannel: TypeAlias = TextChannel | VoiceChannel | CategoryChannel | ForumChannel | StageChannel
+
+PrivateChannel: TypeAlias = DMChannel | GroupChannel | PartialMessageable
+
 ChannelType: TypeAlias = GuildChannel | PrivateChannel | PartialMessageable | Thread
 
 GuildChannelType: TypeAlias = GuildChannel | Thread
@@ -48,6 +55,10 @@ Channelable: TypeAlias = QuasiContext | Message
 __all__ = (
 	'Channelable',
 	'ChannelType',
+	'GuildChannel',
+	'GuildChannelAbc',
+	'PrivateChannel',
+	'PrivateChannelAbc',
 	'MessageableChannel',
 	'MessageableGuildChannel',
 	'GuildChannelType',
