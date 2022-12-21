@@ -4,8 +4,8 @@ import discord.utils
 from asyncio import get_running_loop
 from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
-from typing import Any, cast, Optional, TypeGuard
-from .typing import Channelable, ChannelType, GuildChannelType, QuasiContext
+from typing import Any, cast, Optional, overload, TypeGuard
+from .typing import Channelable, ChannelType, GuildChannelType, PrivateChannel, QuasiContext
 
 EmptyCharacter = '\u200b'
 
@@ -65,7 +65,15 @@ async def send_error_embed(ctx: QuasiContext | discord.Webhook | discord.Message
 	else:
 		await ctx.reply(embed = embed, **kwargs)
 
-def trim(string: Optional[str]):
+@overload
+def trim(string: str) -> str:
+	...
+
+@overload
+def trim(string: None) -> None:
+	...
+
+def trim(string):
 	if string is not None:
 		return string.strip()
 	return None
@@ -131,8 +139,8 @@ def proxy(f_or_attr, /):
 			return f(self, *args, **kwargs)
 		return wrapper
 
-def is_DM(channel) -> TypeGuard[discord.PartialMessageable | discord.abc.PrivateChannel]:
-	return isinstance(channel, (discord.PartialMessageable, discord.abc.PrivateChannel))
+def is_DM(channel) -> TypeGuard[PrivateChannel]:
+	return isinstance(channel, PrivateChannel)
 
 # We define this since the negative case of typeguard does not narrow types (PEP 647)
 def is_not_DM(channel: ChannelType) -> TypeGuard[GuildChannelType]:

@@ -153,18 +153,19 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 		else:
 			return now.format(**format)
 
+	# If get None then print None...
 	@classmethod
 	def _trans(cls,
 		locale_or_localeable: Optional[str] | Localeable,
 		*args: str,
 		default: Optional[str] = None,
-		format: dict[str, Any] = {}) -> Optional[str]:
+		format: dict[str, Any] = {}) -> str:
 
 		table = cls.__cog_translation_table__
 		if isinstance(locale_or_localeable, str) or locale_or_localeable is None:
-			return cls._get_nested_str(table, *args, locale_or_localeable, default = default, format = format)
+			return str(cls._get_nested_str(table, *args, locale_or_localeable, default = default, format = format))
 		else:
-			return cls._get_nested_str(table, *args, locale_or_localeable.locale, default = default, format = format)
+			return str(cls._get_nested_str(table, *args, locale_or_localeable.locale, default = default, format = format))
 
 	@staticmethod
 	def _ephemeral(ctx: discord.Message | QuasiContext) -> dict:

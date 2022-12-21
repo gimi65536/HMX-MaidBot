@@ -1,4 +1,5 @@
 import discord
+import discord.utils
 import re
 from collections.abc import Mapping
 from functools import partial
@@ -142,7 +143,6 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 		await self._fetch_maids(ctx, True)
 
-		channel = get_guild_channel(ctx.channel)
 		channel_id = ctx.channel_id
 		webhooks = self.state.get_installed_hooks(channel_id)
 
@@ -213,7 +213,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				default = '')
 		]
 	)
-	async def weight_get(self, ctx, maid_name):
+	async def weight_get(self, ctx, maid_name: str):
 		'''
 		`/{cmd_name} <?maid name>` returns the weight of appearances of a maid in this channel.
 		If maid is not given, returns the appearance weights of all the maids and {bot}.
@@ -365,9 +365,9 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 		channel = interaction.channel
 
-		if (isinstance(channel, discord.abc.GuildChannel) and hasattr(channel, 'purge')) or isinstance(channel, discord.Thread):
+		if (is_not_DM(channel) and hasattr(channel, 'purge')) or isinstance(channel, discord.Thread):
 			# TextChannel, VoiceChannel, ForumChannel, and Thread
-			await channel.purge(limit = None, reason = 'Clear all messages in the channel')
+			await channel.purge(limit = None, reason = 'Clear all messages in the channel') # type: ignore
 		elif is_DM(channel):
 			messages = []
 			async for m in channel.history(limit = None):
@@ -430,7 +430,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		if len(cmd_names) > 0 and (main_cmd := self.bot.get_application_command(cmd_names.pop(0), type = discord.ApplicationCommand)) is not None:
 			parent_cmd = main_cmd
 			for n in cmd_names:
-				if isinstance(parent_cmd, discord.SlashCommand):
+				if isinstance(parent_cmd, discord.SlashCommand) or not isinstance(parent_cmd, discord.SlashCommandGroup):
 					# No subcommand
 					fail = True
 					break
@@ -445,8 +445,11 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 			if not fail:
 				cmd = parent_cmd
+			else:
+				cmd = None
 		else:
 			fail = True
+			cmd = None
 
 		if fail:
 			await send_error_embed(ctx,
@@ -454,6 +457,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				value = self._trans(ctx, 'help-no-cmd-value', format = {'cmd_name': cmd_name})
 			)
 		else:
+			assert isinstance(cmd, discord.SlashCommand)
 			doc_locale_table = get_help(cmd)
 			locale = ctx.locale
 			if locale not in doc_locale_table:
@@ -463,7 +467,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 			if doc is None: # Caused by get(None, None)
 				doc_locale_table = cmd.description_localizations
-				if locale in doc_locale_table:
+				if doc_locale_table is not None and locale in doc_locale_table:
 					doc = doc_locale_table[locale]
 				else:
 					doc = cmd.description # There SHOULD be a string, not None
@@ -486,7 +490,11 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 			self.add_item(discord.ui.InputText(label = self._trans(locale, 'speak-modal-label'), style = discord.InputTextStyle.long))
 
 		async def callback(self, interaction):
-			text = self.children[0].value.strip()
+			value = self.children[0].value
+			if value is None:
+				value = ''
+
+			text = value.strip()
 			if len(text) == 0:
 				await send_error_embed(interaction,
 					name = self._trans(self.locale, 'speak-modal-empty'),

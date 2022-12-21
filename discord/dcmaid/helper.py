@@ -8,7 +8,7 @@ def cleandoc(text):
 	if text is not None:
 		doc = inspect.cleandoc(text)
 		return re.sub(r' +', ' ', doc)
-	return None
+	return ''
 
 def injure_help(text, locale = None):
 	def decorator(cmd):
