@@ -18,9 +18,9 @@ RUN rm -rf ./SimpleCalculator
 
 COPY discord .
 
-# If given, the image will be treated as in production
-ARG production
+# Give it to enable optimization
+ARG optimize
 
-RUN if [[ -z "$production" ]] ; then echo "python -u app.py" > start.sh ; else echo "python -u -O app.py" > start.sh ; fi
+RUN if [[ -z "$optimize" ]] ; then echo "python -u app.py" > start.sh ; else echo "python -u -O app.py" > start.sh ; fi
 
 CMD ["/bin/bash", "start.sh"]
