@@ -72,12 +72,19 @@ class BaseRollGameMeta(ABCMeta):
 
 		cls = super().__new__(mcls, *args)
 
-		cls.game_name = name
+		if not hasattr(cls, 'game_name'):
+			cls.game_name = name
+
+		if name is not None:
+			cls.game_name = name
+
 		cls.game_data = GameData(mcls.base_game_data.get(name, {}))
 
-		if not hasattr(cls, 'options') or cls.options is None:
+		if not hasattr(cls, 'options'):
 			# The basic classes have not declared options yet.
-			cls.options = None
+			# Do not assign any value, to let a multiple-inheritence class see the game parent instead of the base one
+			# But unbound values brake type correctness, how TODO?
+			# cls.options = None
 			return cls
 
 		options = cls.options

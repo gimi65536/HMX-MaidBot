@@ -208,7 +208,7 @@ __translation_table:
     zh-TW: 遊戲名稱錯誤
   game-name-error-value:
     ~: The game "{name}" is not found.
-    zh-TW: 找不到遊戲名稱「{game}」。
+    zh-TW: 找不到遊戲名稱「{name}」。
   arg-modal-title:
     ~: Input arguments (one per line)
     zh-TW: 輸入參數（一行一個）
