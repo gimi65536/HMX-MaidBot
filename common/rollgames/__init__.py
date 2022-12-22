@@ -62,6 +62,32 @@ class BaseRollGameMeta(ABCMeta):
 	game_data stores some information.
 	'''
 	options: Optional[dict[EllipsisType | int, list[tuple[str, type]]]]
+	'''
+	The class property "options" is to declare argument information and activate the preprocessor.
+	However, you still need to call __init__ of abstract games after you get the processed arguments.
+	For example, you define:
+	```
+	... in AbstractGame
+	options = {
+		0: [],
+		1: [('example', str)],
+		2: [('foo', int), ('bar', str)]
+	}
+	def __init__(self, foo, bar): ...
+	```
+	in your abstract games, and you need to use:
+	```
+	... in ActualGame
+	self.processed_kwargs = self._preprocess_args(arguments)
+	AbstractGame.__init__(self.processed_kwargs['foo'], self.processed_kwargs['bar'])
+	```
+	in your actual games for Discord, etc.
+
+	This design is to make the abstract games "keep pure" by not touching `self.processed_kwargs`
+	and let the actual games have more power to decide how to pass arguments to their parents.
+	However, it is recommended to make actual games correspond to specific abstract games, i.e.,
+	one-to-one to share the metadata (e.g. help) in different platforms.
+	'''
 	def __new__(mcls, *args, name: Optional[str] = None):
 		if mcls.base_game_data is None:
 			d = load(files(__package__) / 'games')
@@ -72,19 +98,15 @@ class BaseRollGameMeta(ABCMeta):
 
 		cls = super().__new__(mcls, *args)
 
-		if not hasattr(cls, 'game_name'):
-			cls.game_name = name
-
 		if name is not None:
 			cls.game_name = name
 
-		cls.game_data = GameData(mcls.base_game_data.get(name, {}))
+		mcls.__fall_base(cls, 'game_name')
+		cls.game_data = GameData(mcls.base_game_data.get(cls.game_name, {}))
 
-		if not hasattr(cls, 'options'):
+		mcls.__fall_base(cls, 'options')
+		if cls.options is None:
 			# The basic classes have not declared options yet.
-			# Do not assign any value, to let a multiple-inheritence class see the game parent instead of the base one
-			# But unbound values brake type correctness, how TODO?
-			# cls.options = None
 			return cls
 
 		options = cls.options
@@ -115,6 +137,14 @@ class BaseRollGameMeta(ABCMeta):
 					options.pop(...)
 
 		return cls
+
+	@staticmethod
+	def __fall_base(cls, property):
+		if getattr(cls, property, None) is None:
+			for base in cls.__bases__:
+				setattr(cls, property, getattr(base, property, None))
+				if getattr(cls, property) is not None:
+					return
 
 class BaseRollGame(metaclass = BaseRollGameMeta):
 	options: dict[(int | EllipsisType), list[tuple[str, type]]]
