@@ -9,7 +9,10 @@ state = State()
 intent = Intents.default()
 intent.message_content = True
 # intent.member = True # Enable it to reduce API call
-bot = Bot(db, state, intents = intent, debug_guilds = secret['debug_server_id'])
+if len(servers := secret['debug_server_id']) > 0:
+	bot = Bot(db, state, intents = intent, debug_guilds = servers)
+else:
+	bot = Bot(db, state, intents = intent)
 
 @bot.event
 async def on_ready():
