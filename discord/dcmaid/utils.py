@@ -4,8 +4,11 @@ import discord.utils
 from asyncio import get_running_loop
 from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
-from typing import Any, cast, Optional, overload, TypeGuard
+from typing import Any, Optional, overload, TypeGuard, TYPE_CHECKING
 from .typing import Channelable, ChannelType, GuildChannelType, PrivateChannel, QuasiContext
+
+if TYPE_CHECKING:
+	from typing import cast
 
 EmptyCharacter = '\u200b'
 
@@ -32,7 +35,11 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
 	if isinstance(ch, discord.Thread):
 		if ch.parent is None:
-			return cast(discord.abc.GuildChannel, get_running_loop().run_until_complete(discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id)))
+			parent = get_running_loop().run_until_complete(discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id))
+			if TYPE_CHECKING:
+				return cast(discord.abc.GuildChannel, parent)
+			else:
+				return parent
 		return ch.parent
 
 	return ch

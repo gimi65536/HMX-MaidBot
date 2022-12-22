@@ -4,7 +4,7 @@ from case_insensitive_dict import CaseInsensitiveDict
 from collections.abc import Mapping, MutableMapping
 from rollgames import BaseRollGame, BaseRollGameMeta
 from types import MappingProxyType
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from ...typing import QuasiContext
 from ...utils import get_author, send_as, int_to_emoji
 
@@ -14,6 +14,7 @@ _all_mapping_table: MutableMapping[str, type[DiscordRollGame]] = CaseInsensitive
 
 if TYPE_CHECKING:
 	from proxy_types import _MappingProxyType
+	from typing import cast
 	registered_games: Mapping[str, type[DiscordRollGame]] = _MappingProxyType(_registered_games)
 	all_mapping_table: Mapping[str, type[DiscordRollGame]] = _MappingProxyType(_all_mapping_table)
 else:
@@ -22,7 +23,11 @@ else:
 
 class DiscordRollGameMeta(BaseRollGameMeta):
 	def __new__(mcls, *args, reg = False, **kwargs):
-		cls = cast(type['DiscordRollGame'], super().__new__(mcls, *args, **kwargs))
+		if TYPE_CHECKING:
+			cls = cast(type['DiscordRollGame'], super().__new__(mcls, *args, **kwargs))
+		else:
+			cls = super().__new__(mcls, *args, **kwargs)
+
 		if reg:
 			assert cls.game_name is not None
 			_registered_games[cls.game_name] = cls

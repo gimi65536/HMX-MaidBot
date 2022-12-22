@@ -13,7 +13,7 @@ from ..utils import *
 from aiorwlock import RWLock
 from asyncio import get_running_loop
 from itertools import count
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 config = generate_config(
 	EXT_VAR_DB_BASED = {'default': False, 'cast': bool},
@@ -676,10 +676,12 @@ class VarCommands(BaseCog, name = 'Var'):
 			raise CalculatorError(e)
 
 		if n.is_lvalue:
-			assert isinstance(n, calcs.LValue)
+			if TYPE_CHECKING:
+				assert isinstance(n, calcs.LValue)
 			return n.content, bookkeeping
 		else:
-			assert isinstance(n, calcs.Constant)
+			if TYPE_CHECKING:
+				assert isinstance(n, calcs.Constant)
 			return n, bookkeeping
 
 	def _eval(self, expr: calcs.TreeNodeType, mapping, ctx):

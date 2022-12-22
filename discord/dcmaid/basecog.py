@@ -6,12 +6,15 @@ import discord
 from collections.abc import Sequence
 from importlib.resources import files
 from reader import load
-from typing import Any, cast, ClassVar, Optional
+from typing import Any, ClassVar, Optional, TYPE_CHECKING
 from .basebot import Bot
 from .exception import DependentCogNotLoaded, MaidNotFound
 from .helper import get_help, update_help
 from .typing import Localeable, QuasiContext
 from .utils import *
+
+if TYPE_CHECKING:
+	from typing import cast
 
 config = generate_config(
 	MESSAGE_EPHEMERAL_DELETE_AFTER = {'default': 30, 'cast': float},
@@ -34,7 +37,11 @@ class BaseCogMeta(discord.CogMeta):
 	__cog_translation_table__: dict[Optional[str], dict[Optional[str], str]]
 
 	def __new__(mcls, *args, depends: Optional[Sequence[str]] = None, elementary: bool = False, **kwargs):
-		cls = cast(BaseCogMeta, super().__new__(mcls, *args, **kwargs))
+		if TYPE_CHECKING:
+			cls = cast(BaseCogMeta, super().__new__(mcls, *args, **kwargs))
+		else:
+			cls = super().__new__(mcls, *args, **kwargs)
+
 		if elementary:
 			cls.__depend_cogs__ = ()
 		else:

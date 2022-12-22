@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: discord/Dockerfile
       args:
-        production: #"Production if given any value"
+        optimize: #"Optimize if given any value"
     environment:
       - APP_ID=114514
       - APP_CLIENT_SECRET=<secret>

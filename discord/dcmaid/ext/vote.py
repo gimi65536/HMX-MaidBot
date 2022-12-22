@@ -4,7 +4,7 @@ import discord.utils
 import uuid as uuid_m
 from ..basebot import Bot
 from ..basecog import BaseCog
-from ..typing import ChannelType, MessageableGuildChannel
+from ..typing import ChannelType, GuildChannelType, MessageableGuildChannel
 from ..utils import *
 from ..views import Button, Select, YesNoView
 from aiorwlock import RWLock
@@ -83,7 +83,7 @@ class BasePoll:
 			raise NonPositivePeriodError(period)
 
 		# Only used in guild channel...
-		# Mypy complains if I write 'CommonTextGuildChannel'... Related to #11673, not fixed yet in v0.991
+		# Mypy complains if I write 'MessageableGuildChannel'... Related to #11673, not fixed yet in v0.991
 		assert isinstance(channel, MessageableGuildChannel)
 
 		time_delta: Optional[timedelta] = period_to_delta(period, period_unit)
@@ -1147,7 +1147,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			message = poll.msg
 
 		channel = poll.channel
-		assert isinstance(channel, (discord.abc.GuildChannel, discord.Thread))
+		assert isinstance(channel, GuildChannelType)
 		#locale = channel.guild.preferred_locale
 		locale = poll.locale
 
