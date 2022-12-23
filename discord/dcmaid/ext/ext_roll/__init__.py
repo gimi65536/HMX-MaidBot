@@ -8,25 +8,21 @@ from typing import TYPE_CHECKING
 from ...typing import QuasiContext
 from ...utils import get_author, send_as, int_to_emoji
 
-_registered_games: MutableMapping[str, type[DiscordRollGame]] = CaseInsensitiveDict()
+_registered_games: MutableMapping[str, DiscordRollGameMeta] = CaseInsensitiveDict()
 
-_all_mapping_table: MutableMapping[str, type[DiscordRollGame]] = CaseInsensitiveDict()
+_all_mapping_table: MutableMapping[str, DiscordRollGameMeta] = CaseInsensitiveDict()
 
 if TYPE_CHECKING:
 	from proxy_types import _MappingProxyType
-	from typing import cast
-	registered_games: Mapping[str, type[DiscordRollGame]] = _MappingProxyType(_registered_games)
-	all_mapping_table: Mapping[str, type[DiscordRollGame]] = _MappingProxyType(_all_mapping_table)
+	registered_games: Mapping[str, DiscordRollGameMeta] = _MappingProxyType(_registered_games)
+	all_mapping_table: Mapping[str, DiscordRollGameMeta] = _MappingProxyType(_all_mapping_table)
 else:
 	registered_games = MappingProxyType(_registered_games)
 	all_mapping_table = MappingProxyType(_all_mapping_table)
 
 class DiscordRollGameMeta(BaseRollGameMeta):
 	def __new__(mcls, *args, reg = False, **kwargs):
-		if TYPE_CHECKING:
-			cls = cast(type['DiscordRollGame'], super().__new__(mcls, *args, **kwargs))
-		else:
-			cls = super().__new__(mcls, *args, **kwargs)
+		cls = super().__new__(mcls, *args, **kwargs)
 
 		if reg:
 			assert cls.game_name is not None

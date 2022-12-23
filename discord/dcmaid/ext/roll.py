@@ -9,6 +9,7 @@ from rollgames import (
 )
 from simple_parsers.string_argument_parser import StringArgumentParser
 from typing import Optional
+from . import ext_roll
 from ..basebot import Bot
 from ..basecog import BaseCog
 from ..constants import MAX_FIELDS_IN_EMBED
@@ -274,13 +275,13 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 			game_cls = ext_roll.all_mapping_table[game_name]
 			game_data = game_cls.game_data
 			embed = discord.Embed(title = game_data.get_name(locale), description = game_data.get_description(locale))
-			embed.add_field(name = self._trans(ctx, 'game-code-name'), value = game_cls.game_name, inline = False)
+			embed.add_field(name = self._trans(ctx, 'game-code-name'), value = str(game_cls.game_name), inline = False)
 			for n, table in game_data.get_help_dict().items(): # n may be ...
 				field_name: str  # type: ignore[annotation-unchecked]
 				if n is not ...:
 					field_name = self._trans(ctx, 'game-rule-on', format = {'n': n})
 				else:
-					if ... in game_cls.options:
+					if game_cls.options is not None and ... in game_cls.options:
 						field_name = self._trans(ctx, 'game-rule-on-variant', format = {'atleast': len(game_cls.options[...]) - 1})
 					else:
 						field_name = self._trans(ctx, 'game-rule-on-variant-erroneous')
@@ -338,7 +339,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 
 		game_cls = ext_roll.all_mapping_table[game_name]
 
-		if arguments is None and ... in game_cls.options and 0 not in game_cls.options:
+		if arguments is None and game_cls.options is not None and ... in game_cls.options and 0 not in game_cls.options:
 			# Modal
 			await ctx.send_modal(self._ArgumentModal(self, ctx.locale, game_cls))
 		else:
@@ -419,8 +420,6 @@ class ArgumentTypeError(ATE, discord.ApplicationCommandError):
 
 class GameNotFound(GNF, discord.ApplicationCommandError):
 	pass
-
-ext_roll = import_module('.ext-roll', __package__)
 
 def setup(bot):
 	cog = RollCommands(bot)

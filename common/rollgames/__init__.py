@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from importlib.resources import files
 from more_itertools import repeat_last, SequenceView
 from reader import load
@@ -8,37 +8,37 @@ from types import EllipsisType, MappingProxyType
 from typing import Any, ClassVar, Optional
 
 class GameData:
-	def __init__(self, d):
+	def __init__(self, d: dict[Any, Any]):
 		self._d = d
 
 	@staticmethod
-	def _get(table, locale):
+	def _get(table: dict[Any, Any], locale: Optional[str]) -> Any:
 		return table.get(locale, table.get(None, None))
 
-	def get_name(self, locale = None):
-		return self._get(self._d.get('name', {}), locale)
+	def get_name(self, locale: Optional[str] = None) -> str:
+		return str(self._get(self._d.get('name', {}), locale))
 
 	@property
-	def names(self):
+	def names(self) -> Mapping[Any, Any]:
 		return MappingProxyType(self._d.get('name', {}))
 
-	def get_description(self, locale = None):
-		return self._get(self._d.get('description', {}), locale)
+	def get_description(self, locale: Optional[str] = None) -> str:
+		return str(self._get(self._d.get('description', {}), locale))
 
 	@property
-	def descriptions(self):
+	def descriptions(self) -> Mapping[Any, Any]:
 		return MappingProxyType(self._d.get('description', {}))
 
-	def get_help_dict(self):
+	def get_help_dict(self) -> dict[Any, Any]:
 		return {(i if i != 'variant' else ...): MappingProxyType(d) for i, d in self._d.get('help', {}).items()}
 
-	def get_help(self, n, locale = None):
+	def get_help(self, n, locale: Optional[str] = None) -> Optional[str]:
 		if n is ...:
 			n = 'variant'
 		table = self._d.get('help', {}).get(n, {})
 		return self._get(table, locale)
 
-	def get_verbose(self, n, locale = None):
+	def get_verbose(self, n, locale: Optional[str] = None) -> Optional[str]:
 		if n is ...:
 			n = 'variant'
 		table = self._d.get('verbose', {}).get(n, {})
@@ -49,7 +49,7 @@ class GameData:
 		return SequenceView(self._d.get('alias', []))
 
 class BaseRollGameMeta(ABCMeta):
-	base_game_data: ClassVar[Optional[dict]] = None
+	base_game_data: ClassVar[Optional[dict[Any, Any]]] = None
 	processed_options: ClassVar[set[Any]] = set()
 	game_name: Optional[str]
 	'''
@@ -94,6 +94,8 @@ class BaseRollGameMeta(ABCMeta):
 			if d is None:
 				mcls.base_game_data = {}
 			else:
+				if not isinstance(d, dict):
+					raise ValueError('The topmost element of the games.* file should be in dict-like type')
 				mcls.base_game_data = d
 
 		cls = super().__new__(mcls, *args)
