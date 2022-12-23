@@ -1,0 +1,25 @@
+[tool.poetry]
+name = 'common'
+version = '0.4'
+description = 'Common utilities used in HMX-MaidBot project'
+authors = ['gimi65536']
+license = 'MIT'
+packages = [
+	{include = 'proxy_types'},
+	{include = 'reader'},
+	{include = 'rollgames'},
+	{include = 'simple_parsers'},
+]
+include = [
+	'*/py.typed',
+	'rollgames/games.*'
+]
+
+[tool.poetry.dependencies]
+python = '>= 3.11'
+more_itertools = '>= 9'
+pyparsing = '>= 3.0.9'
+
+[build-system]
+requires = ['poetry-core>=1.0.0']
+build-backend = 'poetry.core.masonry.api'
