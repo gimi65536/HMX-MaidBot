@@ -3,25 +3,25 @@ FROM python:3.11
 WORKDIR /tmp
 
 # Install requirements for this repo
-RUN pip install poetry
+RUN pip install --no-cache-dir poetry
 RUN poetry config virtualenvs.create false
 
 COPY discord/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY common/pyproject.toml common/poetry.lock ./common
-RUN cd ./common && poetry install --only main
+COPY common/pyproject.toml common/poetry.lock ./common/
+RUN cd ./common && poetry install --no-root
 
-COPY SimpleCalculator/pyproject.toml SimpleCalculator/poetry.lock ./SimpleCalculator
-RUN cd ./SimpleCalculator && poetry install --only main
+COPY SimpleCalculator/pyproject.toml SimpleCalculator/poetry.lock ./SimpleCalculator/
+RUN cd ./SimpleCalculator && poetry install --no-root
 
 # Install submodules
 COPY common ./common
-RUN cd ./common && poetry install
+RUN cd ./common && pip install .
 RUN rm -rf ./common
 
 COPY SimpleCalculator ./SimpleCalculator
-RUN cd ./SimpleCalculator && poetry install
+RUN cd ./SimpleCalculator && pip install .
 RUN rm -rf ./SimpleCalculator
 
 COPY discord .
