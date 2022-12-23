@@ -14,17 +14,17 @@ COPY discord/requirements.txt .
 RUN /venv/bin/pip install --no-cache-dir -r requirements.txt
 
 COPY common/pyproject.toml common/poetry.lock ./common/
-RUN cd ./common && poetry env use /venv/bin/python && poetry install --no-root
+RUN cd ./common && poetry export -f requirements.txt -o requirements.txt && /venv/bin/pip install --no-cache-dir -r requirements.txt
 
 COPY SimpleCalculator/pyproject.toml SimpleCalculator/poetry.lock ./SimpleCalculator/
-RUN cd ./SimpleCalculator && poetry env use /venv/bin/python && poetry install --no-root
+RUN cd ./SimpleCalculator && poetry export -f requirements.txt -o requirements.txt && /venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Install submodules
 COPY common ./common
-RUN cd ./common && /venv/bin/pip install .
+RUN cd ./common && /venv/bin/pip install --no-deps .
 
 COPY SimpleCalculator ./SimpleCalculator
-RUN cd ./SimpleCalculator && /venv/bin/pip install .
+RUN cd ./SimpleCalculator && /venv/bin/pip install --no-deps .
 
 FROM base as final
 
