@@ -147,34 +147,6 @@ class BaseRollGameMeta(ABCMeta):
 					return
 
 class BaseRollGame(metaclass = BaseRollGameMeta):
-	options: dict[(int | EllipsisType), list[tuple[str, type]]]
-	'''
-	The class property "options" is to declare argument information and activate the preprocessor.
-	However, you still need to call __init__ of abstract games after you get the processed arguments.
-	For example, you define:
-	```
-	... in AbstractGame
-	options = {
-		0: [],
-		1: [('example', str)],
-		2: [('foo', int), ('bar', str)]
-	}
-	def __init__(self, foo, bar): ...
-	```
-	in your abstract games, and you need to use:
-	```
-	... in ActualGame
-	self.processed_kwargs = self._preprocess_args(arguments)
-	AbstractGame.__init__(self.processed_kwargs['foo'], self.processed_kwargs['bar'])
-	```
-	in your actual games for Discord, etc.
-
-	This design is to make the abstract games "keep pure" by not touching `self.processed_kwargs`
-	and let the actual games have more power to decide how to pass arguments to their parents.
-	However, it is recommended to make actual games correspond to specific abstract games, i.e.,
-	one-to-one to share the metadata (e.g. help) in different platforms.
-	'''
-
 	# The necessary arguments are passed in __init__
 
 	@abstractmethod
@@ -198,6 +170,9 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 
 	@classmethod
 	def _preprocess_args(cls, arguments) -> tuple[dict[str, Any], bool]:
+		if cls.options is None:
+			raise AttributeError('Invalid preprocess on basic game classes!')
+
 		if arguments is None:
 			arguments = ''
 
