@@ -27,7 +27,7 @@ class MaidMixin:
 		setattr(ctx, 'maid_webhook', maid_webhook)
 		setattr(ctx, 'maid_weights', maid_weights)
 
-	async def _get_webhook_by_name(self, ctx: Channelable, maid_name):
+	async def _get_webhook_by_name(self, ctx: Channelable, maid_name: str):
 		if ctx.channel is not None and is_not_DM(ctx.channel):
 			if hasattr(ctx, 'maid_webhook'):
 				if TYPE_CHECKING:
@@ -47,7 +47,7 @@ class MaidMixin:
 
 	# Since webhooks cannot really reply or followup messages as a bot,
 	# here we simulate those with plain messages whoever the sender is.
-	async def _send_followup(self, ctx: QuasiContext, maid, *args, **kwargs):
+	async def _send_followup(self, ctx: QuasiContext, maid: str, *args, **kwargs):
 		webhook = await self._get_webhook_by_name(ctx, maid)
 		await send_as(ctx, webhook, *args, **kwargs)
 

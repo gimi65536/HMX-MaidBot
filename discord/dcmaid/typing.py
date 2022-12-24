@@ -7,6 +7,8 @@ from discord import (
 	Interaction,
 	Message,
 	PartialMessageable,
+	SlashCommand,
+	SlashCommandGroup,
 	StageChannel,
 	TextChannel,
 	Thread,
@@ -51,6 +53,8 @@ MessageableGuildChannel: TypeAlias = TextChannel | VoiceChannel | Thread
 
 # Since the type of .channel is too complex, we use positive list instead of Protocols
 Channelable: TypeAlias = QuasiContext | Message
+
+SlashType: TypeAlias = SlashCommand | SlashCommandGroup
 
 __all__ = (
 	'Channelable',

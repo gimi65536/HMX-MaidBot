@@ -128,7 +128,7 @@ class BaseCog(discord.Cog, metaclass = BaseCogMeta, elementary = True):
 		self.maids = bot.maids
 		self.state = bot.state
 
-	async def cog_command_error(self, ctx, exception):
+	async def cog_command_error(self, ctx: discord.ApplicationContext, exception: discord.ApplicationCommandError):
 		if isinstance(exception, MaidNotFound):
 			await send_error_embed(ctx,
 				name = self._trans(ctx, 'no-maid'),

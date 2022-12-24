@@ -1,3 +1,4 @@
+from __future__ import annotations
 import discord
 import re
 from .maid import Maid
@@ -5,9 +6,15 @@ from base64 import b64decode
 from collections.abc import Mapping
 from pymongo import ASCENDING
 from types import MappingProxyType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from pymongo.database import Database
+	from typing import Optional
+	from .state import State
 
 class Bot(discord.Bot):
-	def __init__(self, db, state, description = None, *args, **options):
+	def __init__(self, db: Database, state: State, description: Optional[str] = None, *args, **options):
 		super().__init__(description, *args, **options)
 		self._db = db
 		self._state = state
@@ -19,7 +26,7 @@ class Bot(discord.Bot):
 			return b64decode(m.group(1))
 
 	@classmethod
-	def _retrieve_maids(cls, db) -> Mapping[str, Maid]:
+	def _retrieve_maids(cls, db: Database) -> Mapping[str, Maid]:
 		# The maids information is loaded once per execution.
 		_maids = list(db['maid-list'].find().sort("_id", ASCENDING))
 		_maids_list = list(Maid(m['name'], m['display_name'], cls._data_base64_to_bytes(m['avatar'])) for m in _maids)

@@ -14,11 +14,11 @@ class Weight:
 	d: dict[tuple[Bot, discord.abc.GuildChannel], Weight] = {}
 
 	@staticmethod
-	def _get_key(bot, channel):
+	def _get_key(bot: Bot, channel: discord.abc.GuildChannel):
 		return (bot, channel)
 
 	@staticmethod
-	def _get_filter(channel):
+	def _get_filter(channel: discord.abc.GuildChannel):
 		return {'channel': channel.id, 'channel_type': channel.type.value}
 
 	def __init__(self, bot: Bot, channel: discord.abc.GuildChannel):

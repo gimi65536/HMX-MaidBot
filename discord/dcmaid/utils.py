@@ -2,10 +2,11 @@ import discord
 import discord.abc
 import discord.utils
 from asyncio import get_running_loop
+from collections.abc import Generator
 from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
-from typing import Any, Optional, overload, TypeGuard, TYPE_CHECKING
-from .typing import Channelable, ChannelType, GuildChannelType, PrivateChannel, QuasiContext
+from typing import Any, Callable, Concatenate, Optional, overload, ParamSpec, TypeGuard, TypeVar, TYPE_CHECKING
+from .typing import Channelable, ChannelType, GuildChannelType, PrivateChannel, QuasiContext, SlashType
 
 if TYPE_CHECKING:
 	from typing import cast
@@ -99,19 +100,19 @@ async def remove_thinking(ctx: QuasiContext):
 		# Delete error: No thinking message to delete
 		return
 
-def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[discord.SlashCommand | discord.SlashCommandGroup]:
+def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[SlashType]:
 	for cmd in group.subcommands:
 		if cmd.name == name:
 			return cmd
 	return None
 
-def walk_commands_and_groups(cmd):
+def walk_commands_and_groups(cmd: SlashType) -> Generator[SlashType, None, None]:
 	yield cmd
 	if isinstance(cmd, discord.SlashCommandGroup):
 		for subcmd in cmd.subcommands:
 			yield from walk_commands_and_groups(subcmd)
 
-async def send_as(ctx: Channelable, webhook = None, *args, **kwargs):
+async def send_as(ctx: Channelable, webhook: Optional[discord.Webhook] = None, *args, **kwargs):
 	channel = ctx.channel
 	if webhook is None:
 		# Use bot
@@ -126,12 +127,26 @@ async def send_as(ctx: Channelable, webhook = None, *args, **kwargs):
 		else:
 			await webhook.send(*args, **kwargs)
 
-def proxy(f_or_attr, /):
+S = TypeVar('S')
+T = TypeVar('T')
+P = ParamSpec('P')
+
+@overload
+def proxy(f: Callable[Concatenate[S, P], T], /) -> Callable[Concatenate[S, P], T]:
+	...
+
+@overload
+def proxy(attr: str, /) -> Callable[[Callable[Concatenate[S, P], T]], Callable[Concatenate[S, P], T]]:
+	...
+
+def proxy(f_or_attr: Callable[Concatenate[S, P], T] | str, /): # type: ignore
+	# The checker messes here because it is totally possible in Python that an object is both a str and a callable...
+	# But well... we just ignore it because the very special case is sucked.
 	if isinstance(f_or_attr, str):
 		attr = f_or_attr
-		def decorator(f):
+		def decorator(f: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
 			@wraps(f)
-			def wrapper(self, *args, **kwargs):
+			def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
 				if hasattr(self, attr):
 					self = getattr(self, attr)
 				return f(self, *args, **kwargs)
@@ -140,9 +155,9 @@ def proxy(f_or_attr, /):
 	else:
 		f = f_or_attr
 		@wraps(f)
-		def wrapper(self, *args, **kwargs):
+		def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
 			if hasattr(self, '_proxy'):
-				self = self._proxy
+				self = getattr(self, '_proxy')
 			return f(self, *args, **kwargs)
 		return wrapper
 

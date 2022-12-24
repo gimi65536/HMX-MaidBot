@@ -146,8 +146,9 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		channel_id = ctx.channel_id
 		webhooks = self.state.get_installed_hooks(channel_id)
 
-		for webhook in webhooks.values():
-			await webhook.delete()
+		if webhooks is not None:
+			for webhook in webhooks.values():
+				await webhook.delete()
 
 		self.db['channel-installed-maids'].delete_many({'channel_id': channel_id})
 		self.state.remove_installed_hooks(channel_id)
@@ -539,7 +540,9 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		if maid_name != '' and maid_name not in self.maids:
 			raise MaidNotFound(maid_name)
 
-		webhook = self.state.get_installed_hooks(ctx.channel_id).get(maid_name, None)
+		installed_hooks = self.state.get_installed_hooks(ctx.channel_id)
+		assert installed_hooks is not None # We have called fetch_maids so this should be true
+		webhook = installed_hooks.get(maid_name, None)
 
 		if len(text) == 0:
 			await ctx.send_modal(self._SpeakModal(self, ctx.locale, webhook))
