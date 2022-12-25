@@ -1,6 +1,6 @@
 from collections import Counter
 from collections.abc import Mapping, MutableMapping
-from typing import Optional, TypeVar
+from typing import Optional, overload, TypeVar
 
 KT = TypeVar('KT')
 VT = TypeVar('VT')
@@ -30,7 +30,19 @@ class _MappingProxyType(Mapping[KT, VT]):
 	def copy(self) -> MutableMapping[KT, VT]:
 		return {k: v for k, v in self.items()}
 
-	def get(self, key, default: T | None = None) -> VT | T | None:
+	@overload
+	def get(self, key: KT) -> VT | None:
+		...
+
+	@overload
+	def get(self, key: KT, default: T) -> VT | T:
+		...
+
+	@overload
+	def get(self, key: KT, default: None) -> VT | None:
+		...
+
+	def get(self, key, default = None): #type: ignore
 		return self._d.get(key, default)
 
 	def items(self):

@@ -132,34 +132,23 @@ T = TypeVar('T')
 P = ParamSpec('P')
 
 @overload
-def proxy(f: Callable[Concatenate[S, P], T], /) -> Callable[Concatenate[S, P], T]:
+def proxy(f: Callable[Concatenate[S, P], T], /, *, attr: str = '_proxy') -> Callable[Concatenate[S, P], T]:
 	...
 
 @overload
-def proxy(attr: str, /) -> Callable[[Callable[Concatenate[S, P], T]], Callable[Concatenate[S, P], T]]:
+def proxy(f: None = None, /, *, attr: str = '_proxy') -> Callable[[Callable[Concatenate[S, P], T]], Callable[Concatenate[S, P], T]]:
 	...
 
-def proxy(f_or_attr: Callable[Concatenate[S, P], T] | str, /): # type: ignore
-	# The checker messes here because it is totally possible in Python that an object is both a str and a callable...
-	# But well... we just ignore it because the very special case is sucked.
-	if isinstance(f_or_attr, str):
-		attr = f_or_attr
-		def decorator(f: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
-			@wraps(f)
-			def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
-				if hasattr(self, attr):
-					self = getattr(self, attr)
-				return f(self, *args, **kwargs)
-			return wrapper
-		return decorator
-	else:
-		f = f_or_attr
-		@wraps(f)
+def proxy(f: Optional[Callable[Concatenate[S, P], T]] = None, /, *, attr: str = '_proxy'): # type: ignore
+	# The checker messes here but well... we just ignore it. I don't even know this is a bug or not.
+	def decorator(g: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
+		@wraps(g)
 		def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
-			if hasattr(self, '_proxy'):
-				self = getattr(self, '_proxy')
-			return f(self, *args, **kwargs)
+			if hasattr(self, attr):
+				self = getattr(self, attr)
+			return g(self, *args, **kwargs)
 		return wrapper
+	return decorator(f) if f is not None else decorator
 
 def is_DM(channel) -> TypeGuard[PrivateChannel]:
 	return isinstance(channel, PrivateChannel)
