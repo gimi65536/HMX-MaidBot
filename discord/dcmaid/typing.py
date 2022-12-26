@@ -56,6 +56,11 @@ Channelable: TypeAlias = QuasiContext | Message
 
 SlashType: TypeAlias = SlashCommand | SlashCommandGroup
 
+Threadable: TypeAlias = TextChannel | ForumChannel
+
+# These types of channels can have webhooks, but the Webhook.channel is only of TextChannel.
+Webhookable: TypeAlias = TextChannel | VoiceChannel | ForumChannel
+
 __all__ = (
 	'Channelable',
 	'ChannelType',
@@ -68,4 +73,7 @@ __all__ = (
 	'GuildChannelType',
 	'Localeable',
 	'QuasiContext',
+	'SlashType',
+	'Threadable',
+	'Webhookable'
 )

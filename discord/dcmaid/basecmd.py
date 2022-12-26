@@ -1,18 +1,24 @@
+from __future__ import annotations
 import discord
 import discord.utils
 import re
 from collections.abc import Mapping
 from functools import partial
 from types import MappingProxyType
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from .basebot import Bot
 from .basecog import BaseCog
 from .exception import MaidNotFound
 from .helper import get_help, set_help
 from .perm import admin_only
+from .typing import GuildChannel, Webhookable
 from .utils import *
 from .views import YesNoView
 from .weight import Weight
+
+config = generate_config(
+	MAID_DB_COLLECTION = {'default': 'channel-installed-maids'},
+)
 
 # This cog (name = 'Base') defines the basic commands.
 class BasicCommands(BaseCog, name = 'Base', elementary = True):
@@ -34,10 +40,13 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 	# After fetch, the state "installed_hooks" should match the maid mapping.
 	# Also, note that we don't store webhook tokens in our db but store the
 	# full webhooks (containing tokens) in the server state.
-	async def _fetch_maids(self, channel, force = False) -> Mapping[str, discord.Webhook]:
+	async def _fetch_maids(self, channel: GuildChannel, force = False) -> Mapping[str, discord.Webhook]:
+		if not isinstance(channel, Webhookable):
+			return {}
+
 		channel_id = channel.id
 
-		col = self.db['channel-installed-maids']
+		col = self.db[config['MAID_DB_COLLECTION']]
 
 		# Here, we use "hook" to indicate the webhooks we know from our db,
 		# and "webhook" to the real webhooks in the channel.
@@ -93,7 +102,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 		return installed_hooks
 
-	async def fetch_maids(self, channel: discord.abc.GuildChannel):
+	async def fetch_maids(self, channel: GuildChannel):
 		'''
 		This method should be called in every command if the command uses maids.
 		An extension will call this method with `bot.get_cog('Base').fetch_maids(channel)`.
@@ -103,7 +112,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 	@system.command(
 		description = 'Initialize or update the maids'
 	)
-	async def initialize(self, ctx):
+	async def initialize(self, ctx: discord.ApplicationContext):
 		'''
 		`/{cmd_name}` is a basic command that users can call first to add maids (webhooks).
 		This command will not do anything if the server process already has the information \
@@ -113,6 +122,9 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		await self.fetch_maids(get_guild_channel(ctx.channel))
 		await ctx.send_response(
 			content = self._trans(ctx, 'succ-init'),
@@ -123,7 +135,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		description = 'Force the channel to synchronize the maids information',
 		default_member_permissions = admin_only
 	)
-	async def update(self, ctx):
+	async def update(self, ctx: discord.ApplicationContext):
 		'''
 		`/{cmd_name}` lets server OPs force to fetch the maid information stored on the process.
 		Usually users need this command if some maids are fired/deleted...
@@ -131,17 +143,23 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
 		'''
-		await self._fetch_maids(ctx, True)
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
+		await self._fetch_maids(get_guild_channel(ctx.channel), True)
 		await ctx.send_response(
 			content = self._trans(ctx, 'succ-update'),
 			ephemeral = True
 		)
 
-	async def _uninstall(self, ctx, button, interaction):
-		await interaction.response.defer()
-		await interaction.edit_original_message(content = self._trans(ctx, 'uninstalling'), view = None)
+	async def _uninstall(self, ctx: discord.ApplicationContext, button, interaction: discord.Interaction):
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel) and ctx.channel_id is not None
 
-		await self._fetch_maids(ctx, True)
+		await interaction.response.defer()
+		await interaction.edit_original_response(content = self._trans(ctx, 'uninstalling'), view = None)
+
+		await self._fetch_maids(get_guild_channel(ctx.channel), True)
 
 		channel_id = ctx.channel_id
 		webhooks = self.state.get_installed_hooks(channel_id)
@@ -150,10 +168,10 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 			for webhook in webhooks.values():
 				await webhook.delete()
 
-		self.db['channel-installed-maids'].delete_many({'channel_id': channel_id})
+		self.db[config['MAID_DB_COLLECTION']].delete_many({'channel_id': channel_id})
 		self.state.remove_installed_hooks(channel_id)
 
-		await interaction.edit_original_message(
+		await interaction.edit_original_response(
 			content = self._trans(ctx, 'succ-uninst')
 		)
 
@@ -161,7 +179,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		description = 'Uninstall maids',
 		default_member_permissions = admin_only
 	)
-	async def uninstall(self, ctx):
+	async def uninstall(self, ctx: discord.ApplicationContext):
 		'''
 		`/{cmd_name}` will delete the webhooks installed in this channel.
 		This command will fetch the maids information first.
@@ -169,6 +187,9 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		The response of the command is ephemeral.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		await ctx.send_response(
 			content = self._trans(ctx, 'ensure-uninst'),
 			ephemeral = True,
@@ -214,12 +235,15 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				default = '')
 		]
 	)
-	async def weight_get(self, ctx, maid_name: str):
+	async def weight_get(self, ctx: discord.ApplicationContext, maid_name: str):
 		'''
 		`/{cmd_name} <?maid name>` returns the weight of appearances of a maid in this channel.
 		If maid is not given, returns the appearance weights of all the maids and {bot}.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		maid_name = trim(maid_name)
 		if maid_name != '' and maid_name not in self.maids:
 			raise MaidNotFound(maid_name)
@@ -244,11 +268,14 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		name = 'get-bot',
 		description = 'Get the weight of appearances of the bot.'
 	)
-	async def weight_get_bot(self, ctx):
+	async def weight_get_bot(self, ctx: discord.ApplicationContext):
 		'''
 		`/{cmd_name}` returns the weight of appearances of {bot} in this channel.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		embed = discord.Embed(title = self._trans(ctx, 'weight'), color = discord.Color.blue())
 		embed.add_field(
@@ -273,11 +300,14 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				min_value = 0)
 		]
 	)
-	async def weight_set(self, ctx, maid_name, weight):
+	async def weight_set(self, ctx: discord.ApplicationContext, maid_name: str, weight: int):
 		'''
 		`/{cmd_name} <maid name> <weight>` sets the weight of appearances of a maid in this channel.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		maid_name = trim(maid_name)
 		if maid_name not in self.maids:
 			raise MaidNotFound(maid_name)
@@ -302,11 +332,14 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				min_value = 0)
 		]
 	)
-	async def weight_set_bot(self, ctx, weight):
+	async def weight_set_bot(self, ctx: discord.ApplicationContext, weight: int):
 		'''
 		`/{cmd_name} <weight>` sets the weight of appearances of {bot} in this channel.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		w = self.fetch_weight(get_guild_channel(ctx.channel))
 		w.set_bot_weight(weight)
 
@@ -328,13 +361,16 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				default = None)
 		]
 	)
-	async def introduce(self, ctx, maid_name):
+	async def introduce(self, ctx: discord.ApplicationContext, maid_name: Optional[str]):
 		'''
 		`/{cmd_name} <?maid name>` is a basic command to let {bot} introduce maids we have.
 		This command also attempt to add maids if the server process has not remembered the \
 		channel, just like what the initialize command does, so this command is free to call by any user.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		await self.fetch_maids(get_guild_channel(ctx.channel))
 
 		maid_name = trim(maid_name)
@@ -351,7 +387,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 	@discord.slash_command(
 		description = 'Retrieve the server time'
 	)
-	async def now(self, ctx):
+	async def now(self, ctx: discord.ApplicationContext):
 		'''
 		`/{cmd_name}` returns the server time.
 		'''
@@ -360,13 +396,13 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		embed.set_footer(text = self._trans(ctx, 'shown-timezone'))
 		await ctx.send_response(embed = embed)
 
-	async def _cls(self, button, interaction):
+	async def _cls(self, button, interaction: discord.Interaction):
 		await interaction.response.defer()
-		await interaction.edit_original_message(content = self._trans(interaction, 'deleting'), view = None)
+		await interaction.edit_original_response(content = self._trans(interaction, 'deleting'), view = None)
 
 		channel = interaction.channel
 
-		if (is_not_DM(channel) and hasattr(channel, 'purge')) or isinstance(channel, discord.Thread):
+		if (channel is not None and is_not_DM(channel) and hasattr(channel, 'purge')) or isinstance(channel, discord.Thread):
 			# TextChannel, VoiceChannel, ForumChannel, and Thread
 			await channel.purge(limit = None, reason = 'Clear all messages in the channel') # type: ignore
 		elif is_DM(channel):
@@ -414,7 +450,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 				default = 'help')
 		]
 	)
-	async def help(self, ctx, cmd_name):
+	async def help(self, ctx: discord.ApplicationContext, cmd_name: str):
 		'''
 		`/{cmd_name}` <?command name> gives the illustration of the command written by the author.
 		Internally, this command retrieves `__commands_help__` of every command as illustration \
@@ -482,7 +518,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 	class _SpeakModal(discord.ui.Modal):
 		# Add outer to enable localization of the cog. Maybe it is awful.
-		def __init__(self, outer, locale, webhook = None, *args, **kwargs):
+		def __init__(self, outer: BasicCommands, locale: Optional[str], webhook: Optional[discord.Webhook] = None, *args, **kwargs):
 			super().__init__(title = outer._trans(locale, 'speak-modal-title'), *args, **kwargs)
 			self._trans = outer._trans
 			self.locale = locale
@@ -490,7 +526,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 			self.add_item(discord.ui.InputText(label = self._trans(locale, 'speak-modal-label'), style = discord.InputTextStyle.long))
 
-		async def callback(self, interaction):
+		async def callback(self, interaction: discord.Interaction):
 			value = self.children[0].value
 			if value is None:
 				value = ''
@@ -525,7 +561,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 			)
 		]
 	)
-	async def speak(self, ctx, maid_name, text):
+	async def speak(self, ctx: discord.ApplicationContext, maid_name: str, text: str):
 		'''
 		`/{cmd_name}` <?maid_name> <?text> is a command to make a maid send a message.
 		If the name is not provided, then {bot} herself will speak the text.
@@ -534,6 +570,9 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 		This command is for OPs only.
 		Can be only called in a server channel.
 		'''
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel) and ctx.channel_id is not None
+
 		await self.fetch_maids(get_guild_channel(ctx.channel))
 
 		maid_name = trim(maid_name)

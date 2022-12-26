@@ -1,38 +1,45 @@
+from __future__ import annotations
 import discord
+from collections.abc import Coroutine
+from typing import Any, Callable, Optional, TypeAlias
 
 class Button(discord.ui.Button):
-	def __init__(self, callback, *args, **kwargs):
+	def __init__(self, callback: ButtonCallback, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self._c = callback
 
 	async def callback(self, interaction: discord.Interaction):
 		await self._c(self, interaction)
+
+ButtonCallback: TypeAlias = Callable[[Button, discord.Interaction], Coroutine[Any, Any, Any]]
 
 class Select(discord.ui.Select):
-	def __init__(self, callback, *args, **kwargs):
+	def __init__(self, callback: SelectCallback, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self._c = callback
 
 	async def callback(self, interaction: discord.Interaction):
 		await self._c(self, interaction)
 
-async def _default_yes_callback(button, interaction):
+SelectCallback: TypeAlias = Callable[[Select, discord.Interaction], Coroutine[Any, Any, Any]]
+
+async def _default_yes_callback(button: Button, interaction: discord.Interaction):
 	await interaction.response.edit_message(content = "Yes", view = None)
 
-async def _default_no_callback(button, interaction):
+async def _default_no_callback(button: Button, interaction: discord.Interaction):
 	await interaction.response.edit_message(content = "No", view = None)
 
 class YesNoView(discord.ui.View):
 	def __init__(self,
-		yes_label = 'Yes',
-		no_label = 'No',
-		yes_style = discord.ButtonStyle.primary,
-		no_style = discord.ButtonStyle.secondary,
-		yes_emoji = None,
-		no_emoji = None,
-		yes_callback = _default_yes_callback,
-		no_callback = _default_no_callback,
-		yes_left = True,
+		yes_label: str = 'Yes',
+		no_label: str = 'No',
+		yes_style: discord.ButtonStyle = discord.ButtonStyle.primary,
+		no_style: discord.ButtonStyle = discord.ButtonStyle.secondary,
+		yes_emoji: Optional[discord.PartialEmoji | discord.Emoji | str] = None,
+		no_emoji: Optional[discord.PartialEmoji | discord.Emoji | str] = None,
+		yes_callback: ButtonCallback = _default_yes_callback,
+		no_callback: ButtonCallback = _default_no_callback,
+		yes_left: bool = True,
 		**kwargs
 	):
 		super().__init__(**kwargs)

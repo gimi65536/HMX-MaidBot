@@ -5,7 +5,7 @@ from typing import Optional, TYPE_CHECKING
 from .basebot import Bot
 from .basecmd import BasicCommands
 from .state import State
-from .typing import Channelable, QuasiContext
+from .typing import Channelable, GuildChannel, QuasiContext
 from .utils import *
 from .weight import Weight
 
@@ -16,9 +16,12 @@ class MaidMixin:
 	bot: Bot
 
 	# You need to override cog_before_invoke manually when inherit the mixin
-	async def _cog_before_invoke(self, ctx):
+	async def _cog_before_invoke(self, ctx: discord.ApplicationContext):
 		if is_DM(ctx.channel):
 			return
+
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
 
 		base_cog = self.bot.get_cog('Base')
 		assert isinstance(base_cog, BasicCommands)
@@ -27,7 +30,7 @@ class MaidMixin:
 		setattr(ctx, 'maid_webhook', maid_webhook)
 		setattr(ctx, 'maid_weights', maid_weights)
 
-	async def _get_webhook_by_name(self, ctx: Channelable, maid_name: str):
+	async def _get_webhook_by_name(self, ctx: Channelable, maid_name: Optional[str]):
 		if ctx.channel is not None and is_not_DM(ctx.channel):
 			if hasattr(ctx, 'maid_webhook'):
 				if TYPE_CHECKING:
@@ -39,7 +42,10 @@ class MaidMixin:
 				assert isinstance(base_cog, BasicCommands)
 				maid_webhook = await base_cog.fetch_maids(get_guild_channel(ctx.channel))
 
-			webhook = maid_webhook.get(maid_name, None)
+			if maid_name is None:
+				webhook = None
+			else:
+				webhook = maid_webhook.get(maid_name, None)
 		else:
 			webhook = None
 
@@ -47,7 +53,7 @@ class MaidMixin:
 
 	# Since webhooks cannot really reply or followup messages as a bot,
 	# here we simulate those with plain messages whoever the sender is.
-	async def _send_followup(self, ctx: QuasiContext, maid: str, *args, **kwargs):
+	async def _send_followup(self, ctx: QuasiContext, maid: Optional[str], *args, **kwargs):
 		webhook = await self._get_webhook_by_name(ctx, maid)
 		await send_as(ctx, webhook, *args, **kwargs)
 

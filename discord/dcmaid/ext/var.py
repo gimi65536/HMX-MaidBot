@@ -8,12 +8,16 @@ import sympy
 from ..basebot import Bot
 from ..basecog import BaseCog
 from ..helper import set_help
-from ..typing import ChannelType, QuasiContext
+from ..typing import ChannelType, GuildChannel, QuasiContext
 from ..utils import *
 from aiorwlock import RWLock
 from asyncio import get_running_loop
 from itertools import count
-from typing import Optional, TYPE_CHECKING
+from typing import Literal, Optional, TypeAlias, TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from pymongo.collection import Collection
+	from typing import assert_type
 
 config = generate_config(
 	EXT_VAR_DB_BASED = {'default': False, 'cast': bool},
@@ -83,11 +87,11 @@ class BookKeeping(dict[calcs.Var, tuple[calcs.Constant, calcs.Constant]]):
 		return self._order
 
 class VariableSystem:
-	def __init__(self, col = None):
+	def __init__(self, col: Optional[Collection] = None):
 		self.col = col
 
 		if col is not None:
-			col.create_index({'scope_type': 1, 'scope_id': 1, 'name': 1})
+			col.create_index([('scope_type', 1), ('scope_id', 1), ('name', 1)])
 
 		self._managed_scopes: dict[int, Scope] = {} # id: Scope
 		self._stored_value: dict[int, tuple[RWLock, dict[str, calcs.Constant]]] = {} # scope_id: (lock, {name: constant})
@@ -105,7 +109,7 @@ class VariableSystem:
 
 		return calcs.Var(name, scope)
 
-	async def restore_info(self, bot):
+	async def restore_info(self, bot: Bot):
 		# Injure all names in SymPy
 		for n in dir(sympy):
 			if not n.startswith('_'):
@@ -181,7 +185,7 @@ class VariableSystem:
 		self._update_record[scope.id] = {}
 		return scope
 
-	async def add_var(self, name, obj: discord.User | discord.Member | discord.Guild | ChannelType, default: calcs.Constant = calcs.NumberConstant(sympy.Integer(0))) -> bool:
+	async def add_var(self, name: str, obj: discord.User | discord.Member | discord.Guild | ChannelType, default: calcs.Constant = calcs.NumberConstant(sympy.Integer(0))) -> bool:
 		match obj:
 			case discord.User() | discord.Member():
 				scope = self.add_scope(UserScope(obj))
@@ -205,7 +209,7 @@ class VariableSystem:
 
 			return True
 
-	def exist_var(self, name, obj: discord.User | discord.Member | discord.Guild | ChannelType) -> bool:
+	def exist_var(self, name: str, obj: discord.User | discord.Member | discord.Guild | ChannelType) -> bool:
 		match obj:
 			case discord.User() | discord.Member():
 				scope = self.add_scope(UserScope(obj))
@@ -377,7 +381,7 @@ class _ChangeScopeOperator(calcs.UnaryOperator):
 
 		raise ValueError('Only applied on variables')
 
-	def _cast_scope(self, var: calcs.Var, bot: Bot, ctx):
+	def _cast_scope(self, var: calcs.Var, bot: Bot, ctx: discord.Message | QuasiContext):
 		raise NotImplementedError
 
 class ToThreadOperator(_ChangeScopeOperator):
@@ -388,17 +392,31 @@ class ToThreadOperator(_ChangeScopeOperator):
 
 class ToChannelOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
-		var.scope = ChannelScope(get_guild_channel(ctx.channel))
+		if is_DM(ctx.channel):
+			var.scope = ChannelScope(ctx.channel)
+		else:
+			if TYPE_CHECKING:
+				assert isinstance(ctx.channel, GuildChannel)
+
+			var.scope = ChannelScope(get_guild_channel(ctx.channel))
 
 class ToGuildOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
 		if is_DM(ctx.channel):
 			raise ValueError('Not in guild')
+
+		if TYPE_CHECKING:
+			assert isinstance(ctx.channel, GuildChannel)
+
 		var.scope = GuildScope(ctx.channel.guild)
 
 class ToIndividualOperator(_ChangeScopeOperator):
 	def _cast_scope(self, var, bot, ctx):
-		var.scope = UserScope(ctx.user)
+		author = get_author(ctx)
+		if TYPE_CHECKING:
+			assert author is not None
+
+		var.scope = UserScope(author)
 
 _eval_prefix = '=$'
 
@@ -412,6 +430,9 @@ scope_option = discord.Option(str,
 		discord.OptionChoice('guild', 'guild')
 	],
 	default = 'user')
+
+ScopeOptionLiteral: TypeAlias = Literal['user', 'this', 'channel', 'guild']
+ScopeLiteral: TypeAlias = Literal['user', 'channel', 'guild']
 
 class VarCommands(BaseCog, name = 'Var'):
 	_backticks = re.compile('`(?=`)|`$')
@@ -428,7 +449,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		await self._varsystem.restore_info(self.bot)
 
 	@staticmethod
-	def _check_permission(ctx: discord.Message | QuasiContext, obj, scope: str):
+	def _check_permission(ctx: discord.Message | QuasiContext, obj, scope: ScopeLiteral):
 		user = get_author(ctx)
 
 		# Premission check
@@ -473,8 +494,10 @@ class VarCommands(BaseCog, name = 'Var'):
 		return scope
 
 	@staticmethod
-	def _scope_option_process(ctx: discord.ApplicationContext, scope_option: str):
+	def _scope_option_process(ctx: discord.ApplicationContext, scope_option: ScopeOptionLiteral):
 		channel = ctx.channel
+		assert channel is not None
+
 		if scope_option == 'user':
 			return 'user', ctx.author
 		elif scope_option == 'this':
@@ -488,6 +511,9 @@ class VarCommands(BaseCog, name = 'Var'):
 			else:
 				return 'channel', channel
 		else:
+			if TYPE_CHECKING:
+				assert_type(scope_option, Literal['guild'])
+
 			if channel is not None and is_not_DM(channel):
 				return 'guild', channel.guild
 
@@ -516,7 +542,7 @@ class VarCommands(BaseCog, name = 'Var'):
 			scope_option,
 		]
 	)
-	async def declare(self, ctx, name, value, scope_option):
+	async def declare(self, ctx: discord.ApplicationContext, name: str, value: str, scope_option: ScopeOptionLiteral):
 		'''
 		`/{cmd_name} <name> <?value> <?scope>` declares a variable with a value in the scope.
 		By default, value is 0 and scope is individual.
@@ -528,7 +554,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		s = self.to_response(n, ctx.locale)
 		await ctx.followup.send(self._trans(ctx, f'declare-success-{self._scope_to_readable(obj, scope)}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 
-	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str) -> calcs.Constant:
+	async def _declare(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: ScopeLiteral) -> calcs.Constant:
 		self._check_permission(ctx, obj, scope)
 
 		if self._varsystem.exist_var(name, obj):
@@ -564,7 +590,7 @@ class VarCommands(BaseCog, name = 'Var'):
 				default = False),
 		]
 	)
-	async def assign(self, ctx, name, value, scope_option, declare):
+	async def assign(self, ctx: discord.ApplicationContext, name: str, value: str, scope_option: ScopeOptionLiteral, declare: bool):
 		'''
 		`/{cmd_name} <name> <value> <?scope> <?declare>` updates a variable with a value in the scope.
 		By default, scope is individual and auto-declaration is disabled.
@@ -576,7 +602,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		s = self.to_response(n, ctx.locale)
 		await ctx.followup.send(self._trans(ctx, f'update-success-{self._scope_to_readable(obj, scope)}', format = {'name': name, 'n': s}), ephemeral = (scope != 'user'))
 
-	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: str, declare: bool = False) -> calcs.Constant:
+	async def _assign(self, ctx: discord.Message | QuasiContext, obj, name: str, value: str, scope: ScopeLiteral, declare: bool = False) -> calcs.Constant:
 		if declare:
 			try:
 				n = await self._declare(ctx, obj, name, value, scope)
@@ -623,7 +649,7 @@ class VarCommands(BaseCog, name = 'Var'):
 			scope_option,
 		]
 	)
-	async def remove(self, ctx, name, scope_option):
+	async def remove(self, ctx: discord.ApplicationContext, name: str, scope_option: ScopeOptionLiteral):
 		'''
 		`/{cmd_name} <name> <?scope>` removes a variable in the scope.
 		By default, scope is individual.
@@ -633,7 +659,7 @@ class VarCommands(BaseCog, name = 'Var'):
 		await self._remove(ctx, obj, name, scope)
 		await ctx.send_response(self._trans(ctx, f'remove-success-{self._scope_to_readable(obj, scope)}', format = {'name': name}), ephemeral = (scope != 'user'))
 
-	async def _remove(self, ctx: discord.Message | QuasiContext, obj, name: str, scope: str):
+	async def _remove(self, ctx: discord.Message | QuasiContext, obj, name: str, scope: ScopeLiteral):
 		self._check_permission(ctx, obj, scope)
 
 		var = self._varsystem.to_var(name, obj)
@@ -649,7 +675,7 @@ class VarCommands(BaseCog, name = 'Var'):
 				description = 'Expression'),
 		]
 	)
-	async def evaluate(self, ctx, expression):
+	async def evaluate(self, ctx: discord.ApplicationContext, expression: str):
 		'''
 		`/{cmd_name} <expression>` evaluates the expression.
 		'''
@@ -670,7 +696,7 @@ class VarCommands(BaseCog, name = 'Var'):
 
 		try:
 			bookkeeping = BookKeeping()
-			mapping = self._varsystem.retrieve_mapping(user, ctx.channel, bookkeeping)
+			mapping = await self._varsystem.retrieve_mapping(user, ctx.channel, bookkeeping)
 			n = await get_running_loop().run_in_executor(None, self._eval, expr, mapping, ctx)
 		except Exception as e:
 			raise CalculatorError(e)
@@ -684,10 +710,10 @@ class VarCommands(BaseCog, name = 'Var'):
 				assert isinstance(n, calcs.Constant)
 			return n, bookkeeping
 
-	def _eval(self, expr: calcs.TreeNodeType, mapping, ctx):
+	def _eval(self, expr: calcs.TreeNodeType, mapping: dict[calcs.Var, calcs.LValue], ctx: discord.Message | QuasiContext):
 		return expr.eval(mapping, bot = self.bot, ctx = ctx)
 
-	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception):
+	async def _error_handle(self, ctx: QuasiContext | discord.Message, exception: _VarExtError):
 		locale = self._pick_locale(ctx)
 
 		match exception:
@@ -755,7 +781,7 @@ class VarCommands(BaseCog, name = 'Var'):
 				await super().cog_command_error(ctx, exception)
 
 	@discord.Cog.listener()
-	async def on_message(self, message):
+	async def on_message(self, message: discord.Message):
 		if not message.author.bot and message.content.startswith(_eval_prefix):
 			expression = message.content[len(_eval_prefix):]
 			try:
@@ -767,7 +793,7 @@ class VarCommands(BaseCog, name = 'Var'):
 				await message.reply(f'```\n{e}```', **self._ephemeral(message))
 				return
 
-			await message.reply(self.to_response(n), self._pick_locale(message))
+			await message.reply(self.to_response(n, self._pick_locale(message)))
 
 	@classmethod
 	def to_response(cls, n: calcs.Constant, locale: Optional[str] = None) -> str:
@@ -792,10 +818,10 @@ class VarCommands(BaseCog, name = 'Var'):
 			raise ValueError('Unknown to_response error')
 
 	@classmethod
-	def escape(cls, s):
+	def escape(cls, s: str):
 		return cls._backticks.sub('`' + EmptyCharacter, s)
 
-	def can_be_varname(self, name):
+	def can_be_varname(self, name: str):
 		return self._varname.fullmatch(name) and not name[0].isdigit() and not self._parser.is_op_symbol(name)
 
 class _VarExtError(discord.ApplicationCommandError):

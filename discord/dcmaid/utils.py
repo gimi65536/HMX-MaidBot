@@ -6,7 +6,7 @@ from collections.abc import Generator
 from decouple import config, Csv  # type: ignore[import]
 from functools import wraps
 from typing import Any, Callable, Concatenate, Optional, overload, ParamSpec, TypeGuard, TypeVar, TYPE_CHECKING
-from .typing import Channelable, ChannelType, GuildChannelType, PrivateChannel, QuasiContext, SlashType
+from .typing import Channelable, ChannelType, GuildChannel, GuildChannelType, PrivateChannel, QuasiContext, SlashType, Threadable
 
 if TYPE_CHECKING:
 	from typing import cast
@@ -33,12 +33,12 @@ def autocomplete_get_maid_names(ctx: discord.AutocompleteContext) -> list[str]:
 
 # Given a messageable chat room in a guild, returns the parent channel if the chat room
 # is a thread, otherwise returns the argument itself.
-def get_guild_channel(ch: discord.abc.GuildChannel | discord.Thread):
+def get_guild_channel(ch: GuildChannel | discord.Thread):
 	if isinstance(ch, discord.Thread):
 		if ch.parent is None:
 			parent = get_running_loop().run_until_complete(discord.utils.get_or_fetch(ch.guild, 'channel', ch.parent_id))
 			if TYPE_CHECKING:
-				return cast(discord.abc.GuildChannel, parent)
+				return cast(Threadable, parent)
 			else:
 				return parent
 		return ch.parent
@@ -106,7 +106,7 @@ def get_subcommand(group: discord.SlashCommandGroup, name: str) -> Optional[Slas
 			return cmd
 	return None
 
-def walk_commands_and_groups(cmd: SlashType) -> Generator[SlashType, None, None]:
+def walk_commands_and_groups(cmd: discord.ApplicationCommand) -> Generator[discord.ApplicationCommand, None, None]:
 	yield cmd
 	if isinstance(cmd, discord.SlashCommandGroup):
 		for subcmd in cmd.subcommands:

@@ -6,7 +6,7 @@ from ..basebot import Bot
 from ..basecog import BaseCog
 from ..typing import ChannelType, GuildChannelType, MessageableGuildChannel
 from ..utils import *
-from ..views import Button, Select, YesNoView
+from ..views import Button, ButtonCallback, Select, SelectCallback, YesNoView
 from aiorwlock import RWLock
 from asyncio import get_running_loop, Task
 from collections import Counter
@@ -16,7 +16,10 @@ from datetime import datetime, timedelta
 from hashlib import sha1 as _hash
 from proxy_types import CounterProxyType
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Any, Generic, Optional, overload, Self, TypeVar
+from typing import Any, Generic, Optional, overload, Self, TypeVar, TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from pymongo.collection import Collection
 
 config = generate_config(
 	EXT_VOTE_CUSTOM_PREFIX = {'default': 'HMX-vote-cog'},
@@ -329,7 +332,7 @@ class BaseHoldSystem(Generic[T]):
 	'''
 	Use db column to restore or not...
 	'''
-	def __init__(self, name: str, type: type[T], col = None):
+	def __init__(self, name: str, type: type[T], col: Optional[Collection] = None):
 		self._on_process: dict[uuid_m.UUID, tuple[T, Task, Coroutine]] = {}
 		self.name = name
 		self.type = type
@@ -337,7 +340,7 @@ class BaseHoldSystem(Generic[T]):
 		self._restore_poll_info = []
 
 		if col is not None:
-			col.create_index({'uuid': 1})
+			col.create_index([('uuid', 1)])
 			# Restore poll info from database, but this class does not construct
 			# poll objects since the system has no knowledge about the Bot
 			self._restore_poll_info = col.find()
@@ -418,7 +421,7 @@ class BaseHoldSystem(Generic[T]):
 			# Coroutine is called after the processed order increased
 			await Coroutine
 
-	def _update_db(self, events):
+	def _update_db(self, events: list[Event]):
 		if self.col is not None:
 			for event in events:
 				filter, update = event.to_dict_pair()
@@ -514,7 +517,7 @@ class PollHoldSystem(BaseHoldSystem[Poll]):
 			return Counter(set(options))
 
 	async def _add_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
-		events = []
+		events: list[Event] = []
 		async with poll.writer:
 			if not self._contain(poll):
 				# Happen if timeout
@@ -544,7 +547,7 @@ class PollHoldSystem(BaseHoldSystem[Poll]):
 		return events
 
 	async def _replace_votes(self, poll: Poll, member: discord.Member, options: Counter[str]) -> Optional[list[Event]]:
-		events = []
+		events: list[Event] = []
 		async with poll.writer:
 			if not self._contain(poll):
 				# Happen if timeout
@@ -579,7 +582,7 @@ class PollHoldSystem(BaseHoldSystem[Poll]):
 		return events
 
 	async def _remove_votes(self, poll: Poll, member: discord.Member, options: Optional[Counter[str]]) -> Optional[list[Event]]:
-		events = []
+		events: list[Event] = []
 		async with poll.writer:
 			if not self._contain(poll):
 				# Happen if timeout
@@ -629,15 +632,15 @@ class VoteOptionView(discord.ui.View):
 
 	def __init__(
 		self,
-		poll,
-		vote_label,
-		vote_callback,
-		lookup_label,
-		lookup_callback,
-		early_label,
-		early_callback,
-		cancel_label,
-		cancel_callback
+		poll: Poll,
+		vote_label: str,
+		vote_callback: ButtonCallback,
+		lookup_label: str,
+		lookup_callback: ButtonCallback,
+		early_label: str,
+		early_callback: ButtonCallback,
+		cancel_label: str,
+		cancel_callback: ButtonCallback
 	):
 		super().__init__(timeout = None)
 
@@ -680,7 +683,7 @@ class VoteOptionView(discord.ui.View):
 		self.add_item(cancel_button)
 
 class VoteView(discord.ui.View):
-	def __init__(self, poll, select_callback, empty_label, empty_callback):
+	def __init__(self, poll: Poll, select_callback: SelectCallback, empty_label: str, empty_callback: ButtonCallback):
 		super().__init__(timeout = 0)
 
 		options = [discord.SelectOption(label = o) for o in poll.options]
@@ -743,9 +746,11 @@ class VoteController(Generic[T]):
 class PollController(VoteController[Poll]):
 	@classmethod
 	def vote_action(cls, cog, system: PollHoldSystem, poll: Poll, edit = False):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
 			if not poll.has_user(member):
 				async with poll.writer:
@@ -787,9 +792,11 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def lookup_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
 			if not poll.has_user(member):
 				async with poll.writer:
@@ -811,9 +818,11 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def early_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
 			if poll.author != member:
 				await send_error_embed(interaction,
@@ -834,14 +843,16 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def ensured_early_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			await interaction.response.edit_message(
 				content = cog._trans(interaction, 'early-done'),
 				view = None
 			)
 
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
 			if poll.author != member:
 				# This should not be triggered
@@ -856,9 +867,11 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def cancel_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
 			if poll.author != member or not poll.channel.permissions_for(member).manage_messages:
 				await send_error_embed(interaction,
@@ -879,14 +892,16 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def ensured_cancel_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			await interaction.response.edit_message(
 				content = cog._trans(interaction, 'cancel-done'),
 				view = None
 			)
 
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
 			if poll.author != member:
 				# This should not be triggered
@@ -906,15 +921,15 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def select_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(select, interaction):
+		async def f(select: Select, interaction: discord.Interaction):
 			# This is a server-side check
 			# Do nothing
 			l = len(select.values)
 			if l < poll.min_votes or l > poll.max_votes:
-				await interaction.defer()
+				await interaction.response.defer()
 				return
 
-			options = '\n'.join(select.values)
+			options: str = '\n'.join(select.values) # type: ignore # Pure string selection
 			content = f'```\n{options}```'
 			await interaction.response.edit_message(
 				content = content,
@@ -928,15 +943,17 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def ensured_select_action(cls, cog, system: PollHoldSystem, poll: Poll, options):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			await interaction.response.edit_message(
 				content = '......',
 				view = None
 			)
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
-			result = await system.replace_votes(poll, interaction.user, options)
+			result = await system.replace_votes(poll, member, options)
 			if result is None:
 				# Due
 				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'vote-failed'))
@@ -952,9 +969,11 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def empty_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
 			await interaction.response.edit_message(
 				content = cog._trans(interaction, 'empty-check'),
@@ -968,15 +987,17 @@ class PollController(VoteController[Poll]):
 
 	@classmethod
 	def ensured_empty_action(cls, cog, system: PollHoldSystem, poll: Poll):
-		async def f(button, interaction):
+		async def f(button, interaction: discord.Interaction):
 			await interaction.response.edit_message(
 				content = '......',
 				view = None
 			)
 			member = interaction.user
-			assert member is not None
+			if TYPE_CHECKING:
+				# Running in guilds
+				assert isinstance(member, discord.Member)
 
-			result = await system.remove_votes(poll, interaction.user)
+			result = await system.remove_votes(poll, member)
 			if result is None:
 				# Due
 				await (await interaction.original_response()).edit(content = cog._trans(interaction, 'empty-failed'))
@@ -1138,13 +1159,15 @@ class VoteCommands(BaseCog, name = 'Vote'):
 			# If processed_order is right...
 			await self._render(poll, message = message)
 
-	async def _render(self, poll: BasePoll, message = None, end = False):
+	async def _render(self, poll: BasePoll, message: Optional[discord.Message] = None, end = False):
 		'''
 		This method is recommended to be invoked into writer locks to maintain the rendering order.
 		This method does not handle anything about processing order and mutex locks.
 		'''
 		if message is None:
 			message = poll.msg
+			if message is None:
+				raise AttributeError("None message to render.")
 
 		channel = poll.channel
 		assert isinstance(channel, GuildChannelType)
@@ -1156,7 +1179,7 @@ class VoteCommands(BaseCog, name = 'Vote'):
 		else:
 			raise AttributeError("Unknown poll type to render.")
 
-	async def _render_field_poll(self, poll: Poll, locale, message, end = False):
+	async def _render_field_poll(self, poll: Poll, locale: Optional[str], message: discord.Message, end = False):
 		show_result = False
 		show_name = False
 		if end:

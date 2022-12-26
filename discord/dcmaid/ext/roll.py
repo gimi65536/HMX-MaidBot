@@ -1,3 +1,4 @@
+from __future__ import annotations
 import discord
 from discord.ext.pages import Paginator
 from importlib import import_module
@@ -8,7 +9,7 @@ from rollgames import (
 	GameNotFound as GNF
 )
 from simple_parsers.string_argument_parser import StringArgumentParser
-from typing import Optional
+from typing import Any, Iterable, Optional
 from . import ext_roll
 from ..basebot import Bot
 from ..basecog import BaseCog
@@ -28,20 +29,20 @@ _play_prefix = '~'
 class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 	def __init__(self, bot: Bot):
 		super().__init__(bot)
-		self._help_pages: dict[str, Paginator] = {}
+		self._help_pages: dict[Optional[str], Paginator] = {}
 
 	async def cog_before_invoke(self, ctx):
 		await self._cog_before_invoke(ctx)
 
 	@staticmethod
-	def _list_message(l):
+	def _list_message(l: Iterable[Any]):
 		l = list(l)
 		max_digit = len(str(len(l)))
 		l = [f"{i:{max_digit}}: {e}" for i, e in enumerate(l, 1)]
 		return '\n'.join(l)
 
 	@classmethod
-	def _build_box_message(cls, ctx: QuasiContext, tran_key, l, /, **kwargs):
+	def _build_box_message(cls, ctx: QuasiContext, tran_key: str, l: Iterable[Any], /, **kwargs):
 		assert ctx.user is not None
 		return f'<@{ctx.user.id}>\n```\n{cls._trans(ctx, tran_key, format = kwargs)}\n{cls._list_message(l)}```'
 
@@ -63,7 +64,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 				default = None)
 		]
 	)
-	async def seed(self, ctx, seed: Optional[str]):
+	async def seed(self, ctx: discord.ApplicationContext, seed: Optional[str]):
 		'''
 		`/seed <?seed>` sets the seed number of the random generator for the guild channel.
 		This command is for OPs only.
@@ -87,7 +88,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 		'''
 	)
 
-	async def _dist(self, ctx, results, tran_key, /, **kwargs):
+	async def _dist(self, ctx: QuasiContext, results: Iterable[Any], tran_key: str, /, **kwargs):
 		await remove_thinking(ctx)
 		message = self._build_box_message(ctx, tran_key, results, **kwargs)
 		maid = self._random_maid(ctx)
@@ -107,7 +108,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 			_exec_time_option
 		]
 	)
-	async def uniform(self, ctx, a, b, n):
+	async def uniform(self, ctx: discord.ApplicationContext, a: float, b: float, n: int):
 		'''
 		`/{cmd_name} <?lower> <?upper> <?number>` generates `n` random numbers
 		with uniform distribution in `[lower, upper]`.
@@ -131,7 +132,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 			_exec_time_option
 		]
 	)
-	async def randint(self, ctx, a, b, n):
+	async def randint(self, ctx: discord.ApplicationContext, a: int, b: int, n: int):
 		'''
 		`/{cmd_name} <?lower> <?upper> <?number>` generates `n` random integers
 		fairly in `[lower, upper]`.
@@ -159,7 +160,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 			_exec_time_option
 		]
 	)
-	async def triangular(self, ctx, a, m, b, n):
+	async def triangular(self, ctx: discord.ApplicationContext, a: float, m: float, b: float, n: int):
 		'''
 		`/{cmd_name} <?lower> <?upper> <?number>` generates `n` random numbers
 		with triangular distribution in `[lower, upper]`.
@@ -169,28 +170,28 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 		results = (self._get_random_generator(ctx).triangular(a, b, m) for _ in range(n))
 		await self._dist(ctx, results, 'dist-triangular', lower = a, mode = m, upper = b, n = n)
 
-	async def beta(self, ctx, a, b, n):
+	async def beta(self, ctx: discord.ApplicationContext, a: float, b: float, n: int):
 		NotImplemented
 
-	async def exponential(self, ctx, l, n):
+	async def exponential(self, ctx: discord.ApplicationContext, l: float, n: int):
 		NotImplemented
 
-	async def gamma(self, ctx, a, b, n):
+	async def gamma(self, ctx: discord.ApplicationContext, a: float, b: float, n: int):
 		NotImplemented
 
-	async def lognormal(self, ctx, m, s, n):
+	async def lognormal(self, ctx: discord.ApplicationContext, m: float, s: float, n: int):
 		NotImplemented
 
-	async def normal(self, ctx, m, s, n):
+	async def normal(self, ctx: discord.ApplicationContext, m: float, s: float, n: int):
 		NotImplemented
 
-	async def vonmises(self, ctx, m, s, n):
+	async def vonmises(self, ctx: discord.ApplicationContext, m: float, s: float, n: int):
 		NotImplemented
 
-	async def pareto(self, ctx, a, n):
+	async def pareto(self, ctx: discord.ApplicationContext, a: float, n: int):
 		NotImplemented
 
-	async def weibull(self, ctx, a, b, n):
+	async def weibull(self, ctx: discord.ApplicationContext, a: float, b: float, n: int):
 		NotImplemented
 
 	async def cog_command_error(self, ctx, exception):
@@ -238,7 +239,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 				default = None)
 		]
 	)
-	async def game_help(self, ctx, game_name):
+	async def game_help(self, ctx: discord.ApplicationContext, game_name: Optional[str]):
 		'''
 		`/{cmd_name} <?game name>` gives the help of the specific game,
 		or lists all the games we have if the game name is not given.
@@ -296,7 +297,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 			await ctx.send_response(embed = embed)
 
 	class _ArgumentModal(discord.ui.Modal):
-		def __init__(self, outer, locale, game_cls, *args, **kwargs):
+		def __init__(self, outer: RollCommands, locale: Optional[str], game_cls: ext_roll.DiscordRollGameMeta, *args, **kwargs):
 			super().__init__(title = outer._trans(locale, 'arg-modal-title'), *args, **kwargs)
 			self.outer = outer
 			self.game_cls = game_cls
@@ -325,7 +326,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 				default = None)
 		]
 	)
-	async def play(self, ctx, game_name, arguments):
+	async def play(self, ctx: discord.ApplicationContext, game_name: str, arguments: Optional[str]):
 		'''
 		`/{cmd_name} <game name> <args>` play a game with given arguments.
 		The arguments are separated by whitespaces.
@@ -345,7 +346,7 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 		else:
 			await self._play(ctx, game_cls, arguments)
 
-	async def _play(self, ctx: discord.Message | QuasiContext, game_cls, arguments):
+	async def _play(self, ctx: discord.Message | QuasiContext, game_cls: ext_roll.DiscordRollGameMeta, arguments: Optional[str]):
 		game_data = game_cls.game_data
 		maid = self._random_maid(ctx)
 		webhook = await self._get_webhook_by_name(ctx, maid)
@@ -381,17 +382,17 @@ class RollCommands(BaseCog, MaidMixin, RandomMixin, name = 'Roll'):
 
 		await game.run()
 
-	def load_game_ext(self, ext):
+	def load_game_ext(self, ext: str):
 		self._help_pages = {}
 		import_module(f'.{ext}', ext_roll.__package__)
 
-	def load_game_exts(self, exts):
+	def load_game_exts(self, exts: Iterable[str]):
 		self._help_pages = {}
 		for ext in exts:
 			import_module(f'.{ext}', ext_roll.__package__)
 
 	@discord.Cog.listener()
-	async def on_message(self, message):
+	async def on_message(self, message: discord.Message):
 		'''
 		This provides a "message command" version of playing games.
 		We don't use the ext.commands, though, because that will cause more problems.

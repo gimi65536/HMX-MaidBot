@@ -156,7 +156,7 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		# _roll() is implemented in games
 		pass
 
-	async def _process(self, obj):
+	async def _process(self, obj: Any):
 		# _process() is specified in each actual class
 		return str(obj)
 
@@ -164,14 +164,14 @@ class BaseRollGame(metaclass = BaseRollGameMeta):
 		return []
 
 	@abstractmethod
-	async def _send(self, content):
+	async def _send(self, content: Any):
 		# _send() is implemented in each platform
 		# content is not necessary to be a string,
 		# everything is your choice.
 		pass
 
 	@classmethod
-	def _preprocess_args(cls, arguments) -> tuple[dict[str, Any], bool]:
+	def _preprocess_args(cls, arguments: Optional[str]) -> tuple[dict[str, Any], bool]:
 		if cls.options is None:
 			raise AttributeError('Invalid preprocess on basic game classes!')
 

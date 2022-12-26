@@ -4,7 +4,7 @@ from case_insensitive_dict import CaseInsensitiveDict
 from collections.abc import Mapping, MutableMapping
 from rollgames import BaseRollGame, BaseRollGameMeta
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 from ...typing import QuasiContext
 from ...utils import get_author, send_as, int_to_emoji
 
@@ -37,7 +37,7 @@ class DiscordRollGameMeta(BaseRollGameMeta):
 		return cls
 
 class DiscordRollGame(BaseRollGame, metaclass = DiscordRollGameMeta):
-	def __init__(self, ctx: discord.Message | QuasiContext, webhook, arguments: str, initial_text = None, send_options = {}):
+	def __init__(self, ctx: discord.Message | QuasiContext, webhook, arguments: Optional[str], initial_text = None, send_options = {}):
 		self.ctx = ctx
 		self.webhook = webhook
 		self.initial = initial_text
