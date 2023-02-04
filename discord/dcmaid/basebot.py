@@ -2,6 +2,7 @@ from __future__ import annotations
 import discord
 import re
 from .maid import Maid
+from .utils import generate_config
 from base64 import b64decode
 from collections.abc import Mapping
 from pymongo import ASCENDING
