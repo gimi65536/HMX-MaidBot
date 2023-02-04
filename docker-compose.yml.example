@@ -21,6 +21,7 @@ services:
       - MAID_LIST_COLLECTION=maid-list
       - MAID_INSTALLED_COLLECTION=channel-installed-maids
       - MESSAGE_EPHEMERAL_DELETE_AFTER=30
+      - MAID_WEIGHT_IN_CHANNEL_COLLECTION=channel-maids-weight
       #- DEFAULT_LOCALE=en-US
       - EXT_VAR_DB_BASED=False
       - EXT_VAR_DB_COLLECTION=var_system

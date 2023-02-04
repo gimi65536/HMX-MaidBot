@@ -4,11 +4,15 @@ import random
 from threading import Lock
 from typing import Optional
 from .basebot import Bot
-from .utils import proxy
+from .utils import proxy, generate_config
+
+config = generate_config(
+	MAID_WEIGHT_IN_CHANNEL_COLLECTION = {'default': 'channel-maids-weight'},
+)
 
 class Weight:
 	creation_lock = Lock()
-	col_name = 'channel-maids-weight'
+	col_name = config['MAID_WEIGHT_IN_CHANNEL_COLLECTION']
 	field_name = 'weights'
 	bot_key = '____bot'
 	d: dict[tuple[Bot, discord.abc.GuildChannel], Weight] = {}
