@@ -13,6 +13,10 @@ if TYPE_CHECKING:
 	from typing import Optional
 	from .state import State
 
+config = generate_config(
+	MAID_LIST_COLLECTION = {'default': 'maid-list'},
+)
+
 class Bot(discord.Bot):
 	def __init__(self, db: Database, state: State, description: Optional[str] = None, *args, **options):
 		super().__init__(description, *args, **options)
@@ -28,7 +32,7 @@ class Bot(discord.Bot):
 	@classmethod
 	def _retrieve_maids(cls, db: Database) -> Mapping[str, Maid]:
 		# The maids information is loaded once per execution.
-		_maids = list(db['maid-list'].find().sort("_id", ASCENDING))
+		_maids = list(db[config['MAID_LIST_COLLECTION']].find().sort("_id", ASCENDING))
 		_maids_list = list(Maid(m['name'], m['display_name'], cls._data_base64_to_bytes(m['avatar'])) for m in _maids)
 		# This dict provides a way to retrieve maids by names.
 		# Also, with the features of dict, the maid order is kept.

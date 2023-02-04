@@ -8,6 +8,7 @@ class _Secret(TypedDict):
 	mongo_address: str
 	mongo_admin: str
 	mongo_pwd: str
+	mongo_db: str
 	debug_server_id: list[int]
 	load_ext: list[str]
 
@@ -18,6 +19,7 @@ secret: _Secret = { # type: ignore # python-decouple doesn't provide typing
 	"mongo_address": config('MONGO_ADDRESS'),
 	"mongo_admin": config('MONGO_ADMIN'),
 	"mongo_pwd": config('MONGO_PWD'),
+	"mongo_db": config('MONGO_DB'),
 	"debug_server_id": config('DEBUG_SERVER_ID', cast = Csv(int)),
 	"load_ext": config('LOAD_EXT', default = '', cast = Csv())
 }

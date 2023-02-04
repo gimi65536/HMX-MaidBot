@@ -17,7 +17,7 @@ from .views import YesNoView
 from .weight import Weight
 
 config = generate_config(
-	MAID_DB_COLLECTION = {'default': 'channel-installed-maids'},
+	MAID_INSTALLED_COLLECTION = {'default': 'channel-installed-maids'},
 )
 
 # This cog (name = 'Base') defines the basic commands.
@@ -46,7 +46,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 
 		channel_id = channel.id
 
-		col = self.db[config['MAID_DB_COLLECTION']]
+		col = self.db[config['MAID_INSTALLED_COLLECTION']]
 
 		# Here, we use "hook" to indicate the webhooks we know from our db,
 		# and "webhook" to the real webhooks in the channel.
@@ -168,7 +168,7 @@ class BasicCommands(BaseCog, name = 'Base', elementary = True):
 			for webhook in webhooks.values():
 				await webhook.delete()
 
-		self.db[config['MAID_DB_COLLECTION']].delete_many({'channel_id': channel_id})
+		self.db[config['MAID_INSTALLED_COLLECTION']].delete_many({'channel_id': channel_id})
 		self.state.remove_installed_hooks(channel_id)
 
 		await interaction.edit_original_response(

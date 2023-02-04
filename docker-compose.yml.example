@@ -12,10 +12,25 @@ services:
       - MONGO_ADDRESS=mongodb
       - MONGO_ADMIN=admin
       - MONGO_PWD=<password>
+      - MONGO_DB=maid-bot
       - DEBUG_SERVER_ID=1919810
       - DEFAULT_LOCALE=zh-TW
       - LOAD_EXT=roll,vote
       - EXT_ROLL_GAME=dice,choose
+      # Below for reminder
+      - MAID_LIST_COLLECTION=maid-list
+      - MAID_INSTALLED_COLLECTION=channel-installed-maids
+      - MESSAGE_EPHEMERAL_DELETE_AFTER=30
+      #- DEFAULT_LOCALE=en-US
+      - EXT_VAR_DB_BASED=False
+      - EXT_VAR_DB_COLLECTION=var_system
+      - EXT_VOTE_CUSTOM_PREFIX=HMX-vote-cog
+      - EXT_VOTE_POLL_DB_BASED=False
+      - EXT_VOTE_POLL_DB_COLLECTION=poll-system
+      - EXT_VOTE_POLL_PERIOD_ATLEAST=60
+      - EXT_VOTE_POLL_MAXIMUM_OPTIONS=20
+      - EXT_VOTE_BET_DB_BASED=False
+      - EXT_VOTE_BET_DB_COLLECTION=bet-system
     networks:
       - mongo
 networks:

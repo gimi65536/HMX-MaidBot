@@ -24,11 +24,11 @@ if TYPE_CHECKING:
 config = generate_config(
 	EXT_VOTE_CUSTOM_PREFIX = {'default': 'HMX-vote-cog'},
 	EXT_VOTE_POLL_DB_BASED = {'default': False, 'cast': bool},
-	EXT_VOTE_POLL_DB_COLLECTION = {'default': 'poll_system'},
+	EXT_VOTE_POLL_DB_COLLECTION = {'default': 'poll-system'},
 	EXT_VOTE_POLL_PERIOD_ATLEAST = {'default': 60, 'cast': int},
 	EXT_VOTE_POLL_MAXIMUM_OPTIONS = {'default': 20, 'cast': int},
 	EXT_VOTE_BET_DB_BASED = {'default': False, 'cast': bool},
-	EXT_VOTE_BET_DB_COLLECTION = {'default': 'bet_system'},
+	EXT_VOTE_BET_DB_COLLECTION = {'default': 'bet-system'},
 )
 
 time_units = [
