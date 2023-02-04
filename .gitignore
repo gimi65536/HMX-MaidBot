@@ -134,3 +134,6 @@ secret.json
 restart.sh
 
 *.sublime-*
+
+/.backup
+/.bkscript
